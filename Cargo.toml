@@ -5,3 +5,4 @@ authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
 
 [dependencies]
 sdl2 = "0.30.0"
+nfd = "0.0.4"

@@ -1,5 +1,7 @@
+extern crate nfd;
 extern crate sdl2;
 
+use nfd::Response;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -8,7 +10,18 @@ use sdl2::render::TextureAccess;
 
 use std::time::Duration;
 
+
 pub fn main() {
+    let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
+        panic!(e);
+    });
+
+    match result {
+        Response::Okay(file_path) => println!("Opened: {:?}", file_path),
+        Response::OkayMultiple(files) => println!("Opened: {:?}", files),
+        Response::Cancel => println!("No file opened!"),
+    }
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let keyboard = sdl_context.keyboard();
