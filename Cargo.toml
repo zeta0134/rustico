@@ -2,6 +2,7 @@
 name = "rusticnes-sdl"
 version = "0.1.0"
 authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
+build = "build.rs"
 
 [dependencies]
 sdl2 = "0.30.0"

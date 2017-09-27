@@ -85,9 +85,9 @@ pub fn main() {
     debug_canvas.present();
 
     let mut game_screen_texture_creator = game_canvas.texture_creator();
-    let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 800, 600).unwrap();
+    let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 200, 100).unwrap();
 
-    let mut game_screen_buffer = [0u8; 800 * 600 * 4];
+    let mut game_screen_buffer = [0u8; 200 * 100 * 4];
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -132,13 +132,13 @@ pub fn main() {
         // Wheeeee....
         for x in 0 .. 200 {
             for y in 0 .. 100 {
-                game_screen_buffer[((y * 800 + x) * 4) + 3] = x as u8;
-                game_screen_buffer[((y * 800 + x) * 4) + 2] = y as u8;
-                game_screen_buffer[((y * 800 + x) * 4) + 1] = (x ^ y ^ frame_counter) as u8;
-                game_screen_buffer[((y * 800 + x) * 4) + 0] = 255;
+                game_screen_buffer[((y * 200 + x) * 4) + 3] = x as u8;
+                game_screen_buffer[((y * 200 + x) * 4) + 2] = y as u8;
+                game_screen_buffer[((y * 200 + x) * 4) + 1] = (x ^ y ^ frame_counter) as u8;
+                game_screen_buffer[((y * 200 + x) * 4) + 0] = 255;
             }
         }
-        game_screen_texture.update(None, &game_screen_buffer, 800 * 4);
+        game_screen_texture.update(None, &game_screen_buffer, 200 * 4);
 
         game_canvas.set_draw_color(Color::RGB(0, 0, 0));
         game_canvas.clear();
