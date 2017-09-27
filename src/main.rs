@@ -2,6 +2,7 @@ extern crate nfd;
 extern crate sdl2;
 
 use nfd::Response;
+use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -10,9 +11,43 @@ use sdl2::render::TextureAccess;
 
 use std::time::Duration;
 
+struct SimplePulse {
+    pub period: u16,
+    pub period_current: u16,
+    pub sequence: bool
+}
+
+impl SimplePulse {
+    pub fn new() -> SimplePulse {
+        return SimplePulse {
+            period: 200,
+            period_current: 0,
+            sequence: false,
+        }
+    }
+
+    fn gen(&mut self, num_samples: usize) -> Vec<u16> {
+        let mut buffer = Vec::new();
+        for x in 0 .. num_samples {
+            if self.sequence {
+                buffer.push(0);
+            } else {
+                buffer.push(16384);
+            }
+
+            if self.period_current == 0 {
+                self.sequence = !self.sequence;
+                self.period_current = self.period;
+            } else {
+                self.period_current -= 1;
+            }
+        }
+        return buffer;
+    }
+}
 
 pub fn main() {
-    let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
+    /*let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
         panic!(e);
     });
 
@@ -20,9 +55,10 @@ pub fn main() {
         Response::Okay(file_path) => println!("Opened: {:?}", file_path),
         Response::OkayMultiple(files) => println!("Opened: {:?}", files),
         Response::Cancel => println!("No file opened!"),
-    }
+    }*/
 
     let sdl_context = sdl2::init().unwrap();
+    let audio_subsystem = sdl_context.audio().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let keyboard = sdl_context.keyboard();
 
@@ -57,6 +93,17 @@ pub fn main() {
 
     let mut frame_counter = 0;
 
+    // Audio!
+    let desired_spec = AudioSpecDesired {
+        freq: Some(44100),
+        channels: Some(1),
+        samples: Some(1024)
+    };
+
+    let device = audio_subsystem.open_queue::<u16, _>(None, &desired_spec).unwrap();
+    device.resume();
+    let mut pulse = SimplePulse::new();
+
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -77,12 +124,14 @@ pub fn main() {
                 _ => {}
             }
         }
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        //::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 120));
         // The rest of the game loop goes here...
 
+        device.queue(&pulse.gen(735));
+
         // Wheeeee....
-        for x in 0 .. 800 {
-            for y in 0 .. 600 {
+        for x in 0 .. 200 {
+            for y in 0 .. 100 {
                 game_screen_buffer[((y * 800 + x) * 4) + 3] = x as u8;
                 game_screen_buffer[((y * 800 + x) * 4) + 2] = y as u8;
                 game_screen_buffer[((y * 800 + x) * 4) + 1] = (x ^ y ^ frame_counter) as u8;
