@@ -1,6 +1,8 @@
 extern crate nfd;
 extern crate sdl2;
 
+extern crate rusticnes_core;
+
 use nfd::Response;
 use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;
@@ -9,88 +11,90 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
 
+use rusticnes_core::memory;
+use rusticnes_core::nes;
+use rusticnes_core::nes::NesState;
+use rusticnes_core::mmc::none::NoneMapper;
+use rusticnes_core::cartridge;
+use rusticnes_core::palettes::NTSC_PAL;
+
+use std::error::Error;
+use std::fs::File;
+use std::io::Read;
 use std::time::Duration;
 
-struct SimplePulse {
-    pub period: u16,
-    pub period_current: u16,
-    pub sequence: bool
-}
-
-impl SimplePulse {
-    pub fn new() -> SimplePulse {
-        return SimplePulse {
-            period: 200,
-            period_current: 0,
-            sequence: false,
-        }
-    }
-
-    fn gen(&mut self, num_samples: usize) -> Vec<u16> {
-        let mut buffer = Vec::new();
-        for x in 0 .. num_samples {
-            if self.sequence {
-                buffer.push(0);
-            } else {
-                buffer.push(16384);
-            }
-
-            if self.period_current == 0 {
-                self.sequence = !self.sequence;
-                self.period_current = self.period;
-            } else {
-                self.period_current -= 1;
-            }
-        }
-        return buffer;
-    }
-}
-
 pub fn main() {
-    /*let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
+    let mut nes = NesState::new(Box::new(NoneMapper::new()));
+    let mut running = false;
+
+    let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
         panic!(e);
     });
 
     match result {
-        Response::Okay(file_path) => println!("Opened: {:?}", file_path),
+        Response::Okay(file_path) => {
+            println!("Opened: {:?}", file_path);
+
+            println!("Attempting to load {}...", file_path);
+
+            let mut file = match File::open(file_path) {
+                Err(why) => panic!("Couldn't open mario.nes: {}", why.description()),
+                Ok(file) => file,
+            };
+            // Read the whole thing
+            let mut cartridge = Vec::new();
+            match file.read_to_end(&mut cartridge) {
+                Err(why) => panic!("Couldn't read data: {}", why.description()),
+                Ok(bytes_read) => {
+                    println!("Data read successfully: {}", bytes_read);
+
+                    let nes_header = cartridge::extract_header(&cartridge);
+                    cartridge::print_header_info(nes_header);
+                    let mapper = cartridge::load_from_cartridge(nes_header, &cartridge);
+                    nes = NesState::new(mapper);
+                    running = true;
+
+                    // Initialize CPU register state for power-up sequence
+                    nes.registers.a = 0;
+                    nes.registers.y = 0;
+                    nes.registers.x = 0;
+                    nes.registers.s = 0xFD;
+
+                    let pc_low = memory::read_byte(&mut nes, 0xFFFC);
+                    let pc_high = memory::read_byte(&mut nes, 0xFFFD);
+                    nes.registers.pc = pc_low as u16 + ((pc_high as u16) << 8);
+                },
+            };
+
+
+        },
         Response::OkayMultiple(files) => println!("Opened: {:?}", files),
         Response::Cancel => println!("No file opened!"),
-    }*/
+    }
+
+
 
     let sdl_context = sdl2::init().unwrap();
     let audio_subsystem = sdl_context.audio().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let keyboard = sdl_context.keyboard();
 
-    let game_window = video_subsystem.window("Game Window", 800, 600)
+    let game_window = video_subsystem.window("Game Window", 512, 480)
         .position_centered()
         .opengl()
         .build()
         .unwrap();
 
-    let debug_window = video_subsystem.window("Debug Window", 400, 300)
-        .position_centered()
-        .opengl()
-        .build()
-        .unwrap();
-
-    let mut game_canvas = game_window.into_canvas().build().unwrap();
+    let mut game_canvas = game_window.into_canvas().present_vsync().build().unwrap();
     game_canvas.set_draw_color(Color::RGB(192, 96, 96));
     game_canvas.clear();
     game_canvas.present();
 
-    let mut debug_canvas = debug_window.into_canvas().build().unwrap();
-    debug_canvas.set_draw_color(Color::RGB(96, 96, 192));
-    debug_canvas.clear();
-    debug_canvas.present();
-
     let mut game_screen_texture_creator = game_canvas.texture_creator();
-    let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 200, 100).unwrap();
+    let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 256, 240).unwrap();
 
-    let mut game_screen_buffer = [0u8; 200 * 100 * 4];
-
+    let mut game_screen_buffer = [0u8; 256 * 240 * 4];
     let mut event_pump = sdl_context.event_pump().unwrap();
-
     let mut frame_counter = 0;
 
     // Audio!
@@ -102,7 +106,17 @@ pub fn main() {
 
     let device = audio_subsystem.open_queue::<u16, _>(None, &desired_spec).unwrap();
     device.resume();
-    let mut pulse = SimplePulse::new();
+
+    let key_mappings: [Keycode; 8] = [
+        Keycode::X,
+        Keycode::Z,
+        Keycode::RShift,
+        Keycode::Return,
+        Keycode::Up,
+        Keycode::Down,
+        Keycode::Left,
+        Keycode::Right,
+    ];
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -110,35 +124,68 @@ pub fn main() {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
-                Event::KeyDown { .. } => {
+                Event::KeyDown { keycode: Some(key), .. } => {
                     if sdl_context.keyboard().focused_window_id().is_some() {
                         let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
                         if game_canvas.window().id() == focused_window_id {
-                            game_canvas.set_draw_color(Color::RGB(192, 96, 192));
-                        }
-                        if debug_canvas.window().id() == focused_window_id {
-                            debug_canvas.set_draw_color(Color::RGB(192, 96, 192));
+                            for i in 0 .. 8 {
+                                if key == key_mappings[i] {
+                                    // Set the corresponding bit
+                                    nes.p1_input |= 0x1 << i;
+                                }
+                            }
+                            match key {
+                                Keycode::R => {running = !running;},
+                                _ => ()
+                            }
                         }
                     }
-                }
+                },
+                Event::KeyUp { keycode: Some(key), .. } => {
+                    if sdl_context.keyboard().focused_window_id().is_some() {
+                        let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
+                        if game_canvas.window().id() == focused_window_id {
+                            for i in 0 .. 8 {
+                                if key == key_mappings[i] {
+                                    // Clear the corresponding bit
+                                    nes.p1_input &= (0x1 << i) ^ 0xFF;
+                                }
+                            }
+                        }
+                    }
+                },
                 _ => {}
             }
         }
-        //::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 120));
-        // The rest of the game loop goes here...
 
-        device.queue(&pulse.gen(735));
+        // Run the NES game loop if a cartridge is loaded
+        if running {
+            nes::run_until_vblank(&mut nes);
 
-        // Wheeeee....
-        for x in 0 .. 200 {
-            for y in 0 .. 100 {
-                game_screen_buffer[((y * 200 + x) * 4) + 3] = x as u8;
-                game_screen_buffer[((y * 200 + x) * 4) + 2] = y as u8;
-                game_screen_buffer[((y * 200 + x) * 4) + 1] = (x ^ y ^ frame_counter) as u8;
-                game_screen_buffer[((y * 200 + x) * 4) + 0] = 255;
+            // Update the game screen
+            for x in 0 .. 256 {
+                for y in 0 .. 240 {
+                    let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
+                    game_screen_buffer[((y * 256 + x) * 4) + 3] = NTSC_PAL[palette_index + 0];
+                    game_screen_buffer[((y * 256 + x) * 4) + 2] = NTSC_PAL[palette_index + 1];
+                    game_screen_buffer[((y * 256 + x) * 4) + 1] = NTSC_PAL[palette_index + 2];
+                    game_screen_buffer[((y * 256 + x) * 4) + 0] = 255;
+                }
             }
         }
-        game_screen_texture.update(None, &game_screen_buffer, 200 * 4);
+
+        // Delay for 1 / 60th of a frame, turned off for now. I think this
+        // causes SDL to either vsync, or run unchecked. Need to investigate
+        // this later, and figure out the best way to target 60 FPS in a
+        // cross-platform friendly manner.
+        //::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 120));
+
+        if nes.apu.buffer_full {
+            device.queue(&nes.apu.output_buffer);
+            nes.apu.buffer_full = false;
+        }
+
+        game_screen_texture.update(None, &game_screen_buffer, 256 * 4);
 
         game_canvas.set_draw_color(Color::RGB(0, 0, 0));
         game_canvas.clear();
@@ -146,8 +193,6 @@ pub fn main() {
         game_canvas.copy(&game_screen_texture, None, None);
         game_canvas.present();
 
-        debug_canvas.clear();
-        debug_canvas.present();
         frame_counter += 1;
     }
 }

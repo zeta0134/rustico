@@ -7,3 +7,4 @@ build = "build.rs"
 [dependencies]
 sdl2 = "0.30.0"
 nfd = "0.0.4"
+rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core" }
