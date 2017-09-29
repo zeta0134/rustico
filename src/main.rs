@@ -23,7 +23,6 @@ use rusticnes_core::palettes::NTSC_PAL;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
-use std::time::Duration;
 
 pub fn main() {
     let mut nes = NesState::new(Box::new(NoneMapper::new()));
@@ -34,50 +33,6 @@ pub fn main() {
     let keyboard = sdl_context.keyboard();
 
     let mut game_window = game_window::GameWindow::new(&sdl_context);
-
-    let result = nfd::dialog().filter("nes").open().unwrap_or_else(|e| { panic!(e); });
-
-    match result {
-        Response::Okay(file_path) => {
-            println!("Opened: {:?}", file_path);
-
-            println!("Attempting to load {}...", file_path);
-
-            let mut file = match File::open(file_path) {
-                Err(why) => panic!("Couldn't open mario.nes: {}", why.description()),
-                Ok(file) => file,
-            };
-            // Read the whole thing
-            let mut cartridge = Vec::new();
-            match file.read_to_end(&mut cartridge) {
-                Err(why) => panic!("Couldn't read data: {}", why.description()),
-                Ok(bytes_read) => {
-                    println!("Data read successfully: {}", bytes_read);
-
-                    let nes_header = cartridge::extract_header(&cartridge);
-                    cartridge::print_header_info(nes_header);
-                    let mapper = cartridge::load_from_cartridge(nes_header, &cartridge);
-                    nes = NesState::new(mapper);
-                    game_window.running = true;
-
-                    // Initialize CPU register state for power-up sequence
-                    nes.registers.a = 0;
-                    nes.registers.y = 0;
-                    nes.registers.x = 0;
-                    nes.registers.s = 0xFD;
-
-                    let pc_low = memory::read_byte(&mut nes, 0xFFFC);
-                    let pc_high = memory::read_byte(&mut nes, 0xFFFD);
-                    nes.registers.pc = pc_low as u16 + ((pc_high as u16) << 8);
-                },
-            };
-
-
-        },
-        Response::OkayMultiple(files) => println!("Opened: {:?}", files),
-        Response::Cancel => println!("No file opened!"),
-    }
-
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     // Audio!
@@ -88,6 +43,7 @@ pub fn main() {
     };
 
     let device = audio_subsystem.open_queue::<u16, _>(None, &desired_spec).unwrap();
+    device.clear();
     device.resume();
 
     'running: loop {
@@ -110,12 +66,7 @@ pub fn main() {
         // Update all windows
         game_window.update(&mut nes);
 
-        // Delay for 1 / 60th of a frame, turned off for now. I think this
-        // causes SDL to either vsync, or run unchecked. Need to investigate
-        // this later, and figure out the best way to target 60 FPS in a
-        // cross-platform friendly manner.
-        //::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 120));
-
+        // Play Audio
         if nes.apu.buffer_full {
             device.queue(&nes.apu.output_buffer);
             nes.apu.buffer_full = false;
@@ -123,5 +74,6 @@ pub fn main() {
 
         // Draw all windows
         game_window.draw();
+
     }
 }

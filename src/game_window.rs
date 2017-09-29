@@ -1,9 +1,14 @@
+extern crate nfd;
 extern crate sdl2;
 
+use rusticnes_core::cartridge;
+use rusticnes_core::memory;
+use rusticnes_core::mmc::none::NoneMapper;
 use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
 
+use nfd::Response;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -11,16 +16,19 @@ use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
 use sdl2::video::WindowContext;
 
+use std::error::Error;
+use std::fs::File;
+use std::io::Read;
+
 pub struct GameWindow {
   pub canvas: sdl2::render::WindowCanvas,
   pub screen_buffer: [u8; 256 * 240 * 4],
-
   pub running: bool,
+  pub file_loaded: bool,
 }
 
 impl GameWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> GameWindow {
-    let audio_subsystem = sdl_context.audio().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let keyboard = sdl_context.keyboard();
 
@@ -40,8 +48,57 @@ impl GameWindow {
     return GameWindow {
       canvas: game_canvas,
       screen_buffer: game_screen_buffer,
-      running: false
+      running: false,
+      file_loaded: false
     }
+  }
+
+  pub fn open_file_dialog(&mut self, nes: &mut NesState) {
+    let result = nfd::dialog().filter("nes").open().unwrap_or_else(|e| { panic!(e); });
+
+    match result {
+      Response::Okay(file_path) => {
+        println!("Opened: {:?}", file_path);
+        println!("Attempting to load {}...", file_path);
+
+        self.open_file(nes, &file_path);
+      },
+      Response::OkayMultiple(files) => println!("Opened: {:?}", files),
+      Response::Cancel => println!("No file opened!"),
+    }
+  }
+
+  pub fn open_file(&mut self, nes: &mut NesState, file_path: &str) {
+    let mut file = match File::open(file_path) {
+      Err(why) => panic!("Couldn't open {}: {}", file_path, why.description()),
+      Ok(file) => file,
+    };
+    // Read the whole thing
+    let mut cartridge = Vec::new();
+    match file.read_to_end(&mut cartridge) {
+      Err(why) => panic!("Couldn't read data: {}", why.description()),
+      Ok(bytes_read) => {
+        println!("Data read successfully: {}", bytes_read);
+
+        let nes_header = cartridge::extract_header(&cartridge);
+        cartridge::print_header_info(nes_header);
+        let mapper = cartridge::load_from_cartridge(nes_header, &cartridge);
+        *nes = NesState::new(mapper);
+        self.running = true;
+        self.file_loaded = true;
+        nes.apu.buffer_full = false;
+
+        // Initialize CPU register state for power-up sequence
+        nes.registers.a = 0;
+        nes.registers.y = 0;
+        nes.registers.x = 0;
+        nes.registers.s = 0xFD;
+
+        let pc_low = memory::read_byte(nes, 0xFFFC);
+        let pc_high = memory::read_byte(nes, 0xFFFD);
+        nes.registers.pc = pc_low as u16 + ((pc_high as u16) << 8);
+      },
+    };
   }
 
   pub fn update(&mut self, nes: &mut NesState) {
@@ -94,9 +151,14 @@ impl GameWindow {
           }
         }
         match key {
-          Keycode::R => {self.running = !self.running;},
+          Keycode::R => {
+            if self.file_loaded {
+              self.running = !self.running;
+            }
+          },
+          Keycode::O => {self.open_file_dialog(nes);},
           _ => ()
-        }         
+        }
       },
       Event::KeyUp { keycode: Some(key), .. } => {
         for i in 0 .. 8 {
