@@ -3,7 +3,6 @@ extern crate sdl2;
 
 use rusticnes_core::cartridge;
 use rusticnes_core::memory;
-use rusticnes_core::mmc::none::NoneMapper;
 use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
@@ -14,7 +13,6 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
-use sdl2::video::WindowContext;
 
 use std::error::Error;
 use std::fs::File;
@@ -30,7 +28,6 @@ pub struct GameWindow {
 impl GameWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> GameWindow {
     let video_subsystem = sdl_context.video().unwrap();
-    let keyboard = sdl_context.keyboard();
 
     let window = video_subsystem.window("RusticNES", 512, 480)
         .position_centered()
@@ -43,7 +40,7 @@ impl GameWindow {
     game_canvas.clear();
     game_canvas.present();
 
-    let mut game_screen_buffer = [0u8; 256 * 240 * 4];
+    let game_screen_buffer = [0u8; 256 * 240 * 4];
 
     return GameWindow {
       canvas: game_canvas,
@@ -123,9 +120,9 @@ impl GameWindow {
       let game_screen_texture_creator = self.canvas.texture_creator();
       let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 256, 240).unwrap();
       
-      game_screen_texture.update(None, &self.screen_buffer, 256 * 4);
       self.canvas.set_draw_color(Color::RGB(255, 255, 255));
-      self.canvas.copy(&game_screen_texture, None, None);
+      let _ = game_screen_texture.update(None, &self.screen_buffer, 256 * 4);
+      let _ = self.canvas.copy(&game_screen_texture, None, None);
     }
     self.canvas.present();
   }
