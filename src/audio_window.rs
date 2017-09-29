@@ -1,20 +1,11 @@
 extern crate sdl2;
 
 use rusticnes_core::apu::ApuState;
-use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
-use rusticnes_core::palettes::NTSC_PAL;
 
-use nfd::Response;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
-
-use std::error::Error;
-use std::fs::File;
-use std::io::Read;
 
 pub struct AudioWindow {
   pub canvas: sdl2::render::WindowCanvas,
@@ -135,7 +126,7 @@ impl AudioWindow {
     self.canvas.present();
   }
 
-  pub fn handle_event(&mut self, nes: &mut NesState, event: &sdl2::event::Event) {
+  pub fn handle_event(&mut self, _: &mut NesState, _: &sdl2::event::Event) {
     
   }
 }
