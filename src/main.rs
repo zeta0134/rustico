@@ -3,6 +3,7 @@ extern crate sdl2;
 
 extern crate rusticnes_core;
 
+mod audio_window;
 mod game_window;
 
 use sdl2::audio::AudioSpecDesired;
@@ -18,7 +19,9 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let audio_subsystem = sdl_context.audio().unwrap();
 
+    let mut audio_window = audio_window::AudioWindow::new(&sdl_context);
     let mut game_window = game_window::GameWindow::new(&sdl_context);
+
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     // Audio!
@@ -42,7 +45,10 @@ pub fn main() {
                     if sdl_context.keyboard().focused_window_id().is_some() {
                         let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
                         if game_window.canvas.window().id() == focused_window_id {
-                            game_window.handle_event(&mut nes, event);
+                            game_window.handle_event(&mut nes, &event);
+                        }
+                        if audio_window.canvas.window().id() == focused_window_id {
+                            audio_window.handle_event(&mut nes, &event);
                         }
                     }
                 }
@@ -51,6 +57,7 @@ pub fn main() {
 
         // Update all windows
         game_window.update(&mut nes);
+        audio_window.update(&mut nes);
 
         // Play Audio
         if nes.apu.buffer_full {
@@ -60,6 +67,7 @@ pub fn main() {
 
         // Draw all windows
         game_window.draw();
+        audio_window.draw();
 
     }
 }

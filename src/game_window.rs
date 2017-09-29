@@ -30,7 +30,7 @@ impl GameWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("RusticNES", 512, 480)
-        .position_centered()
+        .position(50, 50)
         .opengl()
         .build()
         .unwrap();
@@ -127,7 +127,7 @@ impl GameWindow {
     self.canvas.present();
   }
 
-  pub fn handle_event(&mut self, nes: &mut NesState, event: sdl2::event::Event) {
+  pub fn handle_event(&mut self, nes: &mut NesState, event: &sdl2::event::Event) {
     let key_mappings: [Keycode; 8] = [
       Keycode::X,
       Keycode::Z,
@@ -139,7 +139,7 @@ impl GameWindow {
       Keycode::Right,
     ];
 
-    match event {
+    match *event {
       Event::KeyDown { keycode: Some(key), .. } => {
         for i in 0 .. 8 {
           if key == key_mappings[i] {
