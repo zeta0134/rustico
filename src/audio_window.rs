@@ -43,21 +43,21 @@ impl AudioWindow {
   pub fn draw_waveform(&mut self, audiobuffer: &[u16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
     let mut last_y = 0;
     for dx in x .. (x + width) {
-        let sample_index = (start_index + dx as usize) % audiobuffer.len();
-        let sample = audiobuffer[sample_index];
-        let current_x = dx as u32;
-        let mut current_y = ((sample as u32 * height) / scale) as u32;
-        if current_y >= height {
-            current_y = height - 1;
-        }
-        for dy in current_y .. last_y {
-            self.put_pixel(current_x, y + dy, color);
-        }
-        for dy in last_y .. current_y {
-            self.put_pixel(current_x, y + dy, color);
-        }
-        last_y = current_y;
-        self.put_pixel(dx, y + current_y, color);
+      let sample_index = (start_index + dx as usize) % audiobuffer.len();
+      let sample = audiobuffer[sample_index];
+      let current_x = dx as u32;
+      let mut current_y = ((sample as u32 * height) / scale) as u32;
+      if current_y >= height {
+          current_y = height - 1;
+      }
+      for dy in current_y .. last_y {
+        self.put_pixel(current_x, y + dy, color);
+      }
+      for dy in last_y .. current_y {
+        self.put_pixel(current_x, y + dy, color);
+      }
+      last_y = current_y;
+      self.put_pixel(dx, y + current_y, color);
     }
   }
 
