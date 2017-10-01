@@ -35,6 +35,8 @@ pub fn main() {
     device.clear();
     device.resume();
 
+    let mut ctrl_mod = false;
+
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -42,6 +44,7 @@ pub fn main() {
                     break 'running
                 },
                 _ => {
+                    // Pass events to sub-windows
                     if sdl_context.keyboard().focused_window_id().is_some() {
                         let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
                         if game_window.canvas.window().id() == focused_window_id {
@@ -50,6 +53,27 @@ pub fn main() {
                         if audio_window.canvas.window().id() == focused_window_id {
                             audio_window.handle_event(&mut nes, &event);
                         }
+                    }
+
+                    // Handle global keypress events here
+                    match event {
+                        Event::KeyDown { keycode: Some(key), .. } => {
+                            if key == Keycode::LCtrl || key == Keycode::RCtrl {
+                                ctrl_mod = true;
+                            }
+                            if ctrl_mod {
+                                match key {
+                                    Keycode::Q => { break 'running },
+                                    _ => ()
+                                }
+                            }
+                        },
+                        Event::KeyUp { keycode: Some(key), .. } => {
+                            if key == Keycode::LCtrl || key == Keycode::RCtrl {
+                                ctrl_mod = false;
+                            }
+                        },
+                        _ => () 
                     }
                 }
             }
