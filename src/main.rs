@@ -40,6 +40,9 @@ pub fn main() {
     let mut ctrl_mod = false;
 
     'running: loop {
+        if !game_window.shown {
+            break 'running
+        }
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
@@ -108,7 +111,9 @@ pub fn main() {
         }
 
         // Update all windows
-        game_window.update(&mut nes);
+        if game_window.shown {
+            game_window.update(&mut nes);
+        }
         if audio_window.shown {
             audio_window.update(&mut nes);
         }
@@ -123,7 +128,9 @@ pub fn main() {
         }
 
         // Draw all windows
-        game_window.draw();
+        if game_window.shown {
+            game_window.draw();
+        }
         if audio_window.shown {
             audio_window.draw();
         }

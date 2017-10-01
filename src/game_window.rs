@@ -9,6 +9,7 @@ use rusticnes_core::palettes::NTSC_PAL;
 
 use nfd::Response;
 use sdl2::event::Event;
+use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
@@ -23,6 +24,7 @@ pub struct GameWindow {
   pub screen_buffer: [u8; 256 * 240 * 4],
   pub running: bool,
   pub file_loaded: bool,
+  pub shown: bool,
 }
 
 impl GameWindow {
@@ -46,7 +48,8 @@ impl GameWindow {
       canvas: game_canvas,
       screen_buffer: game_screen_buffer,
       running: false,
-      file_loaded: false
+      file_loaded: false,
+      shown: true,
     }
   }
 
@@ -139,7 +142,12 @@ impl GameWindow {
       Keycode::Right,
     ];
 
+    let id = self.canvas.window().id();
     match *event {
+      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+        self.shown = false;
+        self.canvas.window_mut().hide();
+      },
       Event::KeyDown { keycode: Some(key), .. } => {
         for i in 0 .. 8 {
           if key == key_mappings[i] {
