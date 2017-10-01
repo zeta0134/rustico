@@ -5,6 +5,7 @@ extern crate rusticnes_core;
 
 mod audio_window;
 mod game_window;
+mod vram_window;
 
 use sdl2::audio::AudioSpecDesired;
 use sdl2::event::Event;
@@ -21,6 +22,7 @@ pub fn main() {
 
     let mut audio_window = audio_window::AudioWindow::new(&sdl_context);
     let mut game_window = game_window::GameWindow::new(&sdl_context);
+    let mut vram_window = vram_window::VramWindow::new(&sdl_context);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -53,6 +55,9 @@ pub fn main() {
                         if audio_window.canvas.window().id() == focused_window_id {
                             audio_window.handle_event(&mut nes, &event);
                         }
+                        if vram_window.canvas.window().id() == focused_window_id {
+                            vram_window.handle_event(&mut nes, &event);
+                        }
                     }
 
                     // Handle global keypress events here
@@ -82,6 +87,7 @@ pub fn main() {
         // Update all windows
         game_window.update(&mut nes);
         audio_window.update(&mut nes);
+        vram_window.update(&mut nes);
 
         // Play Audio
         if nes.apu.buffer_full {
@@ -92,6 +98,7 @@ pub fn main() {
         // Draw all windows
         game_window.draw();
         audio_window.draw();
+        vram_window.draw();
 
     }
 }
