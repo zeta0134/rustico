@@ -1,35 +1,26 @@
 extern crate sdl2;
 
 use rusticnes_core::mmc::mapper::Mapper;
-use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::ppu;
 use rusticnes_core::palettes::NTSC_PAL;
 
-use nfd::Response;
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;
-use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 use sdl2::render::TextureAccess;
 
-use std::error::Error;
-use std::fs::File;
-use std::io::Read;
-
 pub struct SimpleBuffer {
     buffer: Vec<u8>,
-    width: u32,
-    height: u32
+    width: u32
 }
 
 impl SimpleBuffer {
     pub fn new(width: u32, height: u32) -> SimpleBuffer {
         return SimpleBuffer{
             width: width,
-            height: height,
             buffer: vec!(0u8; (width * height * 4) as usize)
         }
     }
@@ -143,10 +134,10 @@ impl VramWindow {
     self.canvas.present();
   }
 
-  pub fn handle_event(&mut self, nes: &mut NesState, event: &sdl2::event::Event) {
-    let id = self.canvas.window().id();
+  pub fn handle_event(&mut self, _: &mut NesState, event: &sdl2::event::Event) {
+    let self_id = self.canvas.window().id();
     match *event {
-      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } if id == self_id => {
         self.shown = false;
         self.canvas.window_mut().hide();
       },
