@@ -153,7 +153,6 @@ impl GameWindow {
               self.running = !self.running;
             }
           },
-          Keycode::O => {self.open_file_dialog(nes);},
           _ => ()
         }
       },

@@ -69,6 +69,7 @@ pub fn main() {
                             if ctrl_mod {
                                 match key {
                                     Keycode::Q => { break 'running },
+                                    Keycode::O => { game_window.open_file_dialog(&mut nes); },
                                     _ => ()
                                 }
                             } else {
