@@ -44,6 +44,7 @@ pub struct VramWindow {
   pub chr0_buffer: SimpleBuffer,
   pub chr1_buffer: SimpleBuffer,
   pub nametable_buffer: SimpleBuffer,
+  pub shown: bool,
 }
 
 impl VramWindow {
@@ -52,6 +53,7 @@ impl VramWindow {
 
     let window = video_subsystem.window("VRAM Debugger", 512, 736)
         .position(570, 50)
+        .hidden()
         .opengl()
         .build()
         .unwrap();
@@ -66,6 +68,7 @@ impl VramWindow {
       chr0_buffer: SimpleBuffer::new(128, 128),
       chr1_buffer: SimpleBuffer::new(128, 128),
       nametable_buffer: SimpleBuffer::new(512, 480),
+      shown: false,
     }
   }
 

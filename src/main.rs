@@ -71,6 +71,28 @@ pub fn main() {
                                     Keycode::Q => { break 'running },
                                     _ => ()
                                 }
+                            } else {
+                                match key {
+                                    Keycode::F1 => {
+                                        if vram_window.shown {
+                                            vram_window.shown = false;
+                                            vram_window.canvas.window_mut().hide();
+                                        } else {
+                                            vram_window.shown = true;
+                                            vram_window.canvas.window_mut().show();
+                                        }
+                                    },
+                                    Keycode::F2 => {
+                                        if audio_window.shown {
+                                            audio_window.shown = false;
+                                            audio_window.canvas.window_mut().hide();
+                                        } else {
+                                            audio_window.shown = true;
+                                            audio_window.canvas.window_mut().show();
+                                        }
+                                    },
+                                    _ => ()
+                                }
                             }
                         },
                         Event::KeyUp { keycode: Some(key), .. } => {
@@ -86,8 +108,12 @@ pub fn main() {
 
         // Update all windows
         game_window.update(&mut nes);
-        audio_window.update(&mut nes);
-        vram_window.update(&mut nes);
+        if audio_window.shown {
+            audio_window.update(&mut nes);
+        }
+        if vram_window.shown {
+            vram_window.update(&mut nes);
+        }
 
         // Play Audio
         if nes.apu.buffer_full {
@@ -97,8 +123,12 @@ pub fn main() {
 
         // Draw all windows
         game_window.draw();
-        audio_window.draw();
-        vram_window.draw();
+        if audio_window.shown {
+            audio_window.draw();
+        }
+        if vram_window.shown {
+            vram_window.draw();
+        }
 
     }
 }

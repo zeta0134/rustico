@@ -10,6 +10,7 @@ use sdl2::render::TextureAccess;
 pub struct AudioWindow {
   pub canvas: sdl2::render::WindowCanvas,
   pub screen_buffer: [u8; 256 * 192 * 4],
+  pub shown: bool,
 }
 
 impl AudioWindow {
@@ -18,6 +19,7 @@ impl AudioWindow {
 
     let window = video_subsystem.window("Audio Debugger", 512, 384)
         .position(50, 565)
+        .hidden()
         .opengl()
         .build()
         .unwrap();
@@ -32,6 +34,7 @@ impl AudioWindow {
     return AudioWindow {
       canvas: canvas,
       screen_buffer: screen_buffer,
+      shown: false,
     }
   }
 
