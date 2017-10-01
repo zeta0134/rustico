@@ -33,7 +33,7 @@ pub fn main() {
         samples: Some(2048)
     };
 
-    let device = audio_subsystem.open_queue::<u16, _>(None, &desired_spec).unwrap();
+    let device = audio_subsystem.open_queue::<i16, _>(None, &desired_spec).unwrap();
     device.clear();
     device.resume();
 
@@ -123,7 +123,11 @@ pub fn main() {
 
         // Play Audio
         if nes.apu.buffer_full {
-            device.queue(&nes.apu.output_buffer);
+            let mut buffer = [0i16; 4096];
+            for i in 0 .. 4096 {
+                buffer[i] = nes.apu.output_buffer[i] as i16;
+            }
+            device.queue(&buffer);
             nes.apu.buffer_full = false;
         }
 
