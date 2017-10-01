@@ -8,6 +8,7 @@ use rusticnes_core::palettes::NTSC_PAL;
 
 use nfd::Response;
 use sdl2::event::Event;
+use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
@@ -143,7 +144,14 @@ impl VramWindow {
   }
 
   pub fn handle_event(&mut self, nes: &mut NesState, event: &sdl2::event::Event) {
-    
+    let id = self.canvas.window().id();
+    match *event {
+      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+        self.shown = false;
+        self.canvas.window_mut().hide();
+      },
+      _ => ()
+    }
   }
 }
 

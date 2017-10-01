@@ -3,6 +3,8 @@ extern crate sdl2;
 use rusticnes_core::apu::ApuState;
 use rusticnes_core::nes::NesState;
 
+use sdl2::event::Event;
+use sdl2::event::WindowEvent;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
@@ -129,8 +131,15 @@ impl AudioWindow {
     self.canvas.present();
   }
 
-  pub fn handle_event(&mut self, _: &mut NesState, _: &sdl2::event::Event) {
-    
+  pub fn handle_event(&mut self, _: &mut NesState, event: &sdl2::event::Event) {
+    let id = self.canvas.window().id();
+    match *event {
+      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+        self.shown = false;
+        self.canvas.window_mut().hide();
+      },
+      _ => ()
+    }
   }
 }
 
