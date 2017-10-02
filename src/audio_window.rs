@@ -132,9 +132,9 @@ impl AudioWindow {
   }
 
   pub fn handle_event(&mut self, _: &mut NesState, event: &sdl2::event::Event) {
-    let id = self.canvas.window().id();
+    let self_id = self.canvas.window().id();
     match *event {
-      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } if id == self_id => {
         self.shown = false;
         self.canvas.window_mut().hide();
       },
