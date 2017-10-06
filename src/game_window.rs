@@ -3,6 +3,7 @@ extern crate sdl2;
 
 use rusticnes_core::cartridge;
 use rusticnes_core::memory;
+use rusticnes_core::mmc::mapper::Mirroring;
 use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
@@ -130,6 +131,45 @@ impl GameWindow {
     self.canvas.present();
   }
 
+  pub fn print_program_state(nes: &mut NesState) {
+    let registers = nes.registers;
+    println!("=== NES State ===");
+    println!("A: 0x{:02X} X: 0x{:02X} Y: 0x{:02X}", registers.a, registers.x, registers.y);
+    println!("PC: 0x{:02X} S: 0x{:02X}", registers.pc, registers.s);
+    println!("Flags: nv  dzic");
+    println!("       {:b}{:b}  {:b}{:b}{:b}{:b}",
+      registers.flags.negative as u8,
+      registers.flags.overflow as u8,
+      registers.flags.decimal as u8,
+      registers.flags.zero as u8,
+      registers.flags.interrupts_disabled as u8,
+      registers.flags.carry as u8,
+    );
+    println!("\nMemory @ Program Counter");
+    // print out the next 8 bytes or so from the program counter
+    let mut pc = registers.pc;
+    for _ in 1 .. 8 {
+      println!("0x{:04X}: 0x{:02X}", pc, memory::passively_read_byte(nes, pc));
+      pc = pc.wrapping_add(1);
+    }
+ 
+    let mirror_mode = match nes.mapper.mirroring() {
+      Mirroring::Horizontal => "Horizontal",
+      Mirroring::Vertical => "Vertical",
+      Mirroring::OneScreenLower => "OneScreen - Lower",
+      Mirroring::OneScreenUpper => "OneScreen - Upper",
+      Mirroring::FourScreen => "FourScreen",
+    };
+ 
+    println!("\nPPU: Control: {:02X} Mask: {:02X} Status: {:02X}, Scroll: {:02X}, {:02X}",
+      nes.ppu.control, nes.ppu.mask, nes.ppu.status, nes.ppu.scroll_x, nes.ppu.scroll_y);
+    println!("OAM Address: {:04X} PPU Address: {:04X}",
+      nes.ppu.oam_addr, nes.ppu.current_addr);
+    println!("Frame: {}, Scanline: {}, M. Clock: {}, CPU. Cycle: {}, Scanline Cycles: {}, Mirroring: {}\n",
+      nes.ppu.current_frame, nes.ppu.current_scanline, nes.master_clock, (nes.cpu.tick + 1), nes.ppu.scanline_cycles, mirror_mode);
+    nes.mapper.print_debug_status();
+  }
+
   pub fn handle_event(&mut self, nes: &mut NesState, event: &sdl2::event::Event) {
     let key_mappings: [Keycode; 8] = [
       Keycode::X,
@@ -160,6 +200,22 @@ impl GameWindow {
             if self.file_loaded {
               self.running = !self.running;
             }
+          },
+          Keycode::Space => {
+            nes::step(nes);
+            GameWindow::print_program_state(nes);
+          },
+          Keycode::C => {
+            nes::cycle(nes);
+            GameWindow::print_program_state(nes);
+          },
+          Keycode::H => {
+            nes::run_until_hblank(nes);
+            GameWindow::print_program_state(nes);
+          },
+          Keycode::V => {
+            nes::run_until_vblank(nes);
+            GameWindow::print_program_state(nes);
           },
           _ => ()
         }
