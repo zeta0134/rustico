@@ -11,3 +11,4 @@ Cargo.lock
 **/*.rs.bk
 SDL2.dll
 *.nes
+*.sav

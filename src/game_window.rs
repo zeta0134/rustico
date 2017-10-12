@@ -15,12 +15,16 @@ use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
 
+use std::path::PathBuf;
+
 pub struct GameWindow {
   pub canvas: sdl2::render::WindowCanvas,
   pub screen_buffer: [u8; 256 * 240 * 4],
   pub running: bool,
   pub file_loaded: bool,
   pub shown: bool,
+  pub game_path: PathBuf,
+  pub save_path: PathBuf,
 }
 
 impl GameWindow {
@@ -46,6 +50,8 @@ impl GameWindow {
       running: false,
       file_loaded: false,
       shown: true,
+      game_path: PathBuf::from(""),
+      save_path: PathBuf::from(""),
     }
   }
 
@@ -71,6 +77,11 @@ impl GameWindow {
         *nes = nes_state;
         self.running = true;
         self.file_loaded = true;
+        self.game_path = PathBuf::from(file_path);
+        self.save_path = self.game_path.with_extension("sav");
+        if nes.mapper.has_sram() {
+          nes.read_sram(self.save_path.to_str().unwrap());
+        }
       },
       None => ()
     }
@@ -161,6 +172,9 @@ impl GameWindow {
       Event::Window { window_id: id, win_event: WindowEvent::Close, .. } if id == self_id => {
         self.shown = false;
         self.canvas.window_mut().hide();
+        // We're closing the program, so write out the SRAM one last time
+        nes.write_sram(self.save_path.to_str().unwrap());
+        println!("SRAM Saved!");
       },
       Event::KeyDown { keycode: Some(key), .. } => {
         for i in 0 .. 8 {
@@ -190,6 +204,11 @@ impl GameWindow {
           Keycode::V => {
             nes.run_until_vblank();
             GameWindow::print_program_state(nes);
+          },
+          Keycode::S => {
+            // Manual SRAM write
+            nes.write_sram(self.save_path.to_str().unwrap());
+            println!("SRAM Saved!");
           },
           _ => ()
         }
