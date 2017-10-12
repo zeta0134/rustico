@@ -4,7 +4,6 @@ extern crate sdl2;
 use rusticnes_core::cartridge;
 use rusticnes_core::memory;
 use rusticnes_core::mmc::mapper::Mirroring;
-use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
 
@@ -104,17 +103,17 @@ impl GameWindow {
 
   pub fn update(&mut self, nes: &mut NesState) {
     if self.running {
-      nes::run_until_vblank(nes);
+      nes.run_until_vblank();
+    }
 
-      // Update the game screen
-      for x in 0 .. 256 {
-        for y in 0 .. 240 {
-          let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
-          self.screen_buffer[((y * 256 + x) * 4) + 3] = NTSC_PAL[palette_index + 0];
-          self.screen_buffer[((y * 256 + x) * 4) + 2] = NTSC_PAL[palette_index + 1];
-          self.screen_buffer[((y * 256 + x) * 4) + 1] = NTSC_PAL[palette_index + 2];
-          self.screen_buffer[((y * 256 + x) * 4) + 0] = 255;
-        }
+    // Update the game screen
+    for x in 0 .. 256 {
+      for y in 0 .. 240 {
+        let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
+        self.screen_buffer[((y * 256 + x) * 4) + 3] = NTSC_PAL[palette_index + 0];
+        self.screen_buffer[((y * 256 + x) * 4) + 2] = NTSC_PAL[palette_index + 1];
+        self.screen_buffer[((y * 256 + x) * 4) + 1] = NTSC_PAL[palette_index + 2];
+        self.screen_buffer[((y * 256 + x) * 4) + 0] = 255;
       }
     }
   }
@@ -202,19 +201,19 @@ impl GameWindow {
             }
           },
           Keycode::Space => {
-            nes::step(nes);
+            nes.step();
             GameWindow::print_program_state(nes);
           },
           Keycode::C => {
-            nes::cycle(nes);
+            nes.cycle();
             GameWindow::print_program_state(nes);
           },
           Keycode::H => {
-            nes::run_until_hblank(nes);
+            nes.run_until_hblank();
             GameWindow::print_program_state(nes);
           },
           Keycode::V => {
-            nes::run_until_vblank(nes);
+            nes.run_until_vblank();
             GameWindow::print_program_state(nes);
           },
           _ => ()
