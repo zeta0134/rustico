@@ -1,9 +1,9 @@
 extern crate nfd;
 extern crate sdl2;
 
-use rusticnes_core::cartridge;
 use rusticnes_core::memory;
 use rusticnes_core::mmc::mapper::Mirroring;
+use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
 
@@ -14,10 +14,6 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
-
-use std::error::Error;
-use std::fs::File;
-use std::io::Read;
 
 pub struct GameWindow {
   pub canvas: sdl2::render::WindowCanvas,
@@ -69,36 +65,15 @@ impl GameWindow {
   }
 
   pub fn open_file(&mut self, nes: &mut NesState, file_path: &str) {
-    let mut file = match File::open(file_path) {
-      Err(why) => panic!("Couldn't open {}: {}", file_path, why.description()),
-      Ok(file) => file,
-    };
-    // Read the whole thing
-    let mut cartridge = Vec::new();
-    match file.read_to_end(&mut cartridge) {
-      Err(why) => panic!("Couldn't read data: {}", why.description()),
-      Ok(bytes_read) => {
-        println!("Data read successfully: {}", bytes_read);
-
-        let nes_header = cartridge::extract_header(&cartridge);
-        cartridge::print_header_info(nes_header);
-        let mapper = cartridge::load_from_cartridge(nes_header, &cartridge);
-        *nes = NesState::new(mapper);
+    let maybe_nes = nes::open_file(file_path);
+    match maybe_nes {
+      Some(nes_state) => {
+        *nes = nes_state;
         self.running = true;
         self.file_loaded = true;
-        nes.apu.buffer_full = false;
-
-        // Initialize CPU register state for power-up sequence
-        nes.registers.a = 0;
-        nes.registers.y = 0;
-        nes.registers.x = 0;
-        nes.registers.s = 0xFD;
-
-        let pc_low = memory::read_byte(nes, 0xFFFC);
-        let pc_high = memory::read_byte(nes, 0xFFFD);
-        nes.registers.pc = pc_low as u16 + ((pc_high as u16) << 8);
       },
-    };
+      None => ()
+    }
   }
 
   pub fn update(&mut self, nes: &mut NesState) {
