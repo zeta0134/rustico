@@ -105,14 +105,12 @@ impl GameWindow {
   }
 
   pub fn draw(&mut self) {
-    if self.running {
-      let game_screen_texture_creator = self.canvas.texture_creator();
-      let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 256, 240).unwrap();
-      
-      self.canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = game_screen_texture.update(None, &self.screen_buffer, 256 * 4);
-      let _ = self.canvas.copy(&game_screen_texture, None, None);
-    }
+    let game_screen_texture_creator = self.canvas.texture_creator();
+    let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 256, 240).unwrap();
+    
+    self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+    let _ = game_screen_texture.update(None, &self.screen_buffer, 256 * 4);
+    let _ = self.canvas.copy(&game_screen_texture, None, None);
     self.canvas.present();
   }
 
@@ -146,12 +144,14 @@ impl GameWindow {
       Mirroring::FourScreen => "FourScreen",
     };
  
-    println!("\nPPU: Control: {:02X} Mask: {:02X} Status: {:02X}, Scroll: {:02X}, {:02X}",
-      nes.ppu.control, nes.ppu.mask, nes.ppu.status, nes.ppu.scroll_x, nes.ppu.scroll_y);
+    println!("\nPPU: Control: {:02X} Mask: {:02X} Status: {:02X} Fine Y: {:02X}",
+      nes.ppu.control, nes.ppu.mask, nes.ppu.status, nes.ppu.fine_y());
+    println!("VRAM: Current: {:016b} Temp:Address: {:016b}",
+      nes.ppu.current_vram_address, nes.ppu.temporary_vram_address);
     println!("OAM Address: {:04X} PPU Address: {:04X}",
-      nes.ppu.oam_addr, nes.ppu.current_addr);
-    println!("Frame: {}, Scanline: {}, M. Clock: {}, CPU. Cycle: {}, Scanline Cycles: {}, Mirroring: {}\n",
-      nes.ppu.current_frame, nes.ppu.current_scanline, nes.master_clock, (nes.cpu.tick + 1), nes.ppu.scanline_cycles, mirror_mode);
+      nes.ppu.oam_addr, nes.ppu.current_vram_address);
+    println!("Frame: {}, Scanline: {}, M. Clock: {}, CPU. Cycle: {}, Scanline Cycle: {}, Mirroring: {}\n",
+      nes.ppu.current_frame, nes.ppu.current_scanline, nes.master_clock, (nes.cpu.tick + 1), nes.ppu.current_scanline_cycle, mirror_mode);
     nes.mapper.print_debug_status();
   }
 
