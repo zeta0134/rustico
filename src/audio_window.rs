@@ -45,7 +45,7 @@ impl AudioWindow {
     self.screen_buffer[index .. (index + 4)].clone_from_slice(color);
   }
 
-  pub fn draw_waveform(&mut self, audiobuffer: &[u16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
+  pub fn draw_waveform(&mut self, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
     let mut last_y = 0;
     for dx in x .. (x + width) {
       let sample_index = (start_index + dx as usize) % audiobuffer.len();
