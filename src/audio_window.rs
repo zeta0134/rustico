@@ -5,6 +5,7 @@ use rusticnes_core::nes::NesState;
 
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;
+use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
@@ -131,12 +132,32 @@ impl AudioWindow {
     self.canvas.present();
   }
 
-  pub fn handle_event(&mut self, _: &mut NesState, event: &sdl2::event::Event) {
+  pub fn handle_event(&mut self, nes: &mut NesState, event: &sdl2::event::Event) {
     let self_id = self.canvas.window().id();
     match *event {
       Event::Window { window_id: id, win_event: WindowEvent::Close, .. } if id == self_id => {
         self.shown = false;
         self.canvas.window_mut().hide();
+      },
+      Event::KeyDown { keycode: Some(key), .. } => {
+        match key {
+          Keycode::F5 => {
+            nes.apu.pulse_1.debug_disable = !nes.apu.pulse_1.debug_disable;
+          },
+          Keycode::F6 => {
+            nes.apu.pulse_2.debug_disable = !nes.apu.pulse_2.debug_disable;
+          },
+          Keycode::F7 => {
+            nes.apu.triangle.debug_disable = !nes.apu.triangle.debug_disable;
+          },
+          Keycode::F8 => {
+            nes.apu.noise.debug_disable = !nes.apu.noise.debug_disable;
+          },
+          Keycode::F9 => {
+            nes.apu.dmc.debug_disable = !nes.apu.dmc.debug_disable;
+          },
+          _ => ()
+        }
       },
       _ => ()
     }
