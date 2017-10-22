@@ -174,7 +174,7 @@ impl GameWindow {
         self.canvas.window_mut().hide();
         // We're closing the program, so write out the SRAM one last time
         nes.write_sram(self.save_path.to_str().unwrap());
-        println!("SRAM Saved!");
+        println!("SRAM Saved! (Closing Main Window)");
       },
       Event::KeyDown { keycode: Some(key), .. } => {
         for i in 0 .. 8 {

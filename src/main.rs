@@ -45,20 +45,21 @@ pub fn main() {
         }
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                Event::Quit {..} => {
                     break 'running
                 },
                 _ => {
                     // Pass events to sub-windows
                     if sdl_context.keyboard().focused_window_id().is_some() {
                         let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
-                        if game_window.canvas.window().id() == focused_window_id {
+                        let any_window_focused = 
+                            game_window.canvas.window().id() == focused_window_id || 
+                            audio_window.canvas.window().id() == focused_window_id || 
+                            vram_window.canvas.window().id() == focused_window_id;
+
+                        if any_window_focused {
                             game_window.handle_event(&mut nes, &event);
-                        }
-                        if audio_window.canvas.window().id() == focused_window_id {
                             audio_window.handle_event(&mut nes, &event);
-                        }
-                        if vram_window.canvas.window().id() == focused_window_id {
                             vram_window.handle_event(&mut nes, &event);
                         }
                     }
@@ -78,19 +79,13 @@ pub fn main() {
                             } else {
                                 match key {
                                     Keycode::F1 => {
-                                        if vram_window.shown {
-                                            vram_window.shown = false;
-                                            vram_window.canvas.window_mut().hide();
-                                        } else {
+                                        if !vram_window.shown {
                                             vram_window.shown = true;
                                             vram_window.canvas.window_mut().show();
                                         }
                                     },
                                     Keycode::F2 => {
-                                        if audio_window.shown {
-                                            audio_window.shown = false;
-                                            audio_window.canvas.window_mut().hide();
-                                        } else {
+                                        if !audio_window.shown {
                                             audio_window.shown = true;
                                             audio_window.canvas.window_mut().show();
                                         }
