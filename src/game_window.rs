@@ -73,7 +73,7 @@ impl GameWindow {
   pub fn open_file(&mut self, nes: &mut NesState, file_path: &str) {
     let maybe_nes = nes::open_file(file_path);
     match maybe_nes {
-      Some(nes_state) => {
+      Ok(nes_state) => {
         *nes = nes_state;
         self.running = true;
         self.file_loaded = true;
@@ -83,7 +83,9 @@ impl GameWindow {
           nes.read_sram(self.save_path.to_str().unwrap());
         }
       },
-      None => ()
+      Err(why) => {
+        println!("{}", why);
+      }
     }
   }
 
