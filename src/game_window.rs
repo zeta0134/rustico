@@ -3,7 +3,6 @@ extern crate sdl2;
 
 use rusticnes_core::memory;
 use rusticnes_core::mmc::mapper::Mirroring;
-use rusticnes_core::nes;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
 
@@ -15,6 +14,10 @@ use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
 
+use std::error::Error;
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 use std::path::PathBuf;
 
 pub struct GameWindow {
@@ -71,22 +74,40 @@ impl GameWindow {
   }
 
   pub fn open_file(&mut self, nes: &mut NesState, file_path: &str) {
-    let maybe_nes = nes::open_file(file_path);
-    match maybe_nes {
-      Ok(nes_state) => {
-        *nes = nes_state;
-        self.running = true;
-        self.file_loaded = true;
-        self.game_path = PathBuf::from(file_path);
-        self.save_path = self.game_path.with_extension("sav");
-        if nes.mapper.has_sram() {
-          nes.read_sram(self.save_path.to_str().unwrap());
-        }
-      },
-      Err(why) => {
-        println!("{}", why);
-      }
-    }
+    let file = File::open(file_path);
+    match file {
+        Err(why) => {
+            println!("Couldn't open {}: {}", file_path, why.description());
+            return;
+        },
+        Ok(_) => (),
+    };
+    // Read the whole thing
+    let mut cartridge = Vec::new();
+    match file.unwrap().read_to_end(&mut cartridge) {
+        Err(why) => {
+            println!("Couldn't read from {}: {}", file_path, why.description());
+        },
+        Ok(bytes_read) => {
+            println!("Data read successfully: {}", bytes_read);
+            let maybe_nes = NesState::from_rom(&cartridge);
+            match maybe_nes {
+            Ok(nes_state) => {
+              *nes = nes_state;
+              self.running = true;
+              self.file_loaded = true;
+              self.game_path = PathBuf::from(file_path);
+              self.save_path = self.game_path.with_extension("sav");
+              if nes.mapper.has_sram() {
+                read_sram(nes, self.save_path.to_str().unwrap());
+              }
+            },
+            Err(why) => {
+              println!("{}", why);
+            }
+          }
+        },
+    };    
   }
 
   pub fn update(&mut self, nes: &mut NesState) {
@@ -175,7 +196,7 @@ impl GameWindow {
         self.shown = false;
         self.canvas.window_mut().hide();
         // We're closing the program, so write out the SRAM one last time
-        nes.write_sram(self.save_path.to_str().unwrap());
+        write_sram(nes, self.save_path.to_str().unwrap());
         println!("SRAM Saved! (Closing Main Window)");
       },
       Event::KeyDown { keycode: Some(key), .. } => {
@@ -209,7 +230,7 @@ impl GameWindow {
           },
           Keycode::S => {
             // Manual SRAM write
-            nes.write_sram(self.save_path.to_str().unwrap());
+            write_sram(nes, self.save_path.to_str().unwrap());
             println!("SRAM Saved!");
           },
           _ => ()
@@ -228,3 +249,38 @@ impl GameWindow {
   }
 }
 
+fn read_sram(nes: &mut NesState, file_path: &str) {
+    let file = File::open(file_path);
+    match file {
+        Err(why) => {
+            println!("Couldn't open {}: {}", file_path, why.description());
+            return;
+        },
+        Ok(_) => (),
+    };
+    // Read the whole thing
+    let mut sram_data = Vec::new();
+    match file.unwrap().read_to_end(&mut sram_data) {
+        Err(why) => {
+            println!("Couldn't read data: {}", why.description());
+            return;
+        },
+        Ok(_) => {
+            nes.set_sram(sram_data);
+        }
+    }
+}
+
+fn write_sram(nes: &mut NesState, file_path: &str) {
+    if nes.mapper.has_sram() {
+        let file = File::create(file_path);
+        match file {
+            Err(why) => {
+                println!("Couldn't open {}: {}", file_path, why.description());
+            },
+            Ok(mut file) => {
+                let _ = file.write_all(&nes.sram());
+            },
+        };
+    }
+}
