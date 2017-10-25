@@ -12,6 +12,7 @@ use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
+use sdl2::rect::Rect;
 use sdl2::render::TextureAccess;
 
 use std::error::Error;
@@ -36,7 +37,7 @@ impl GameWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> GameWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("RusticNES", 512, 480)
+    let window = video_subsystem.window("RusticNES", (256 - 16) * 2, (240 - 16) * 2)
         .position(50, 50)
         .opengl()
         .build()
@@ -63,7 +64,11 @@ impl GameWindow {
   }
 
   pub fn resize_window(&mut self) {
-    let _ = self.canvas.window_mut().set_size(self.scale * 256, self.scale * 240);
+    if self.display_overscan {
+      let _ = self.canvas.window_mut().set_size(self.scale * 256, self.scale * 240);
+    } else {
+      let _ = self.canvas.window_mut().set_size(self.scale * (256 - 16), self.scale * (240 - 16));
+    }
   }
 
   pub fn open_file_dialog(&mut self, nes: &mut NesState) {
@@ -141,7 +146,12 @@ impl GameWindow {
     
     self.canvas.set_draw_color(Color::RGB(255, 255, 255));
     let _ = game_screen_texture.update(None, &self.screen_buffer, 256 * 4);
-    let _ = self.canvas.copy(&game_screen_texture, None, None);
+    if self.display_overscan {
+      let _ = self.canvas.copy(&game_screen_texture, None, None);
+    } else {
+      let borderless_rectangle = Rect::new(8, 8, 256 - 16, 240 - 16);
+      let _ = self.canvas.copy(&game_screen_texture, borderless_rectangle, None);
+    }
     self.canvas.present();
   }
 
@@ -252,6 +262,10 @@ impl GameWindow {
               self.scale -= 1;
               self.resize_window();
             }
+          },
+          Keycode::KpMultiply=> {
+            self.display_overscan = !self.display_overscan;
+            self.resize_window();
           },
           _ => ()
         }
