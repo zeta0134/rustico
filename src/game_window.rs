@@ -28,6 +28,8 @@ pub struct GameWindow {
   pub shown: bool,
   pub game_path: PathBuf,
   pub save_path: PathBuf,
+  pub scale: u32,
+  pub display_overscan: bool,
 }
 
 impl GameWindow {
@@ -55,7 +57,13 @@ impl GameWindow {
       shown: true,
       game_path: PathBuf::from(""),
       save_path: PathBuf::from(""),
+      scale: 2,
+      display_overscan: false,
     }
+  }
+
+  pub fn resize_window(&mut self) {
+    let _ = self.canvas.window_mut().set_size(self.scale * 256, self.scale * 240);
   }
 
   pub fn open_file_dialog(&mut self, nes: &mut NesState) {
@@ -232,6 +240,18 @@ impl GameWindow {
             // Manual SRAM write
             write_sram(nes, self.save_path.to_str().unwrap());
             println!("SRAM Saved!");
+          },
+          Keycode::KpPlus | Keycode::Plus => {
+            if self.scale < 8 {
+              self.scale += 1;
+              self.resize_window();
+            }
+          },
+          Keycode::KpMinus | Keycode::Minus => {
+            if self.scale > 1 {
+              self.scale -= 1;
+              self.resize_window();
+            }
           },
           _ => ()
         }
