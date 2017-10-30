@@ -258,7 +258,7 @@ impl GameWindow {
             write_sram(nes, self.save_path.to_str().unwrap());
             println!("SRAM Saved!");
           },
-          Keycode::KpPlus | Keycode::Plus => {
+          Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {
             if self.scale < 8 {
               self.scale += 1;
               self.resize_window();
