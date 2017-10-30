@@ -230,6 +230,13 @@ impl GameWindow {
               self.running = !self.running;
             }
           },
+          Keycode::Escape => {
+            self.shown = false;
+            self.canvas.window_mut().hide();
+            // We're closing the program, so write out the SRAM one last time
+            write_sram(nes, self.save_path.to_str().unwrap());
+            println!("SRAM Saved! (Escape closes Main Window)");
+          },
           Keycode::Space => {
             nes.step();
             GameWindow::print_program_state(nes);
