@@ -1,3 +1,4 @@
+extern crate image;
 extern crate nfd;
 extern crate sdl2;
 

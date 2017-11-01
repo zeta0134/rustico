@@ -5,6 +5,7 @@ authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
 build = "build.rs"
 
 [dependencies]
+image = "*"
 sdl2 = "0.30.0"
 nfd = "0.0.4"
 rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core" }
