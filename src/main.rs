@@ -4,6 +4,7 @@ extern crate sdl2;
 extern crate rusticnes_core;
 
 mod audio_window;
+mod drawing;
 mod game_window;
 mod vram_window;
 
