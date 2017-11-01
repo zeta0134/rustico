@@ -2,7 +2,9 @@ use image;
 use image::Pixel;
 
 use std::path::Path;
+use std::ascii::AsciiExt;
 
+#[derive(Clone)]
 pub struct SimpleBuffer {
     pub buffer: Vec<u8>,
     pub width: u32,
@@ -22,27 +24,73 @@ impl SimpleBuffer {
         let index = ((y * self.width + x) * 4) as usize;
         self.buffer[index .. (index + 4)].clone_from_slice(color);
     }
+
+    pub fn get_pixel(&self, x: u32, y: u32) -> [u8; 4] {
+        let index = ((y * self.width + x) * 4) as usize;
+        return [
+            self.buffer[index],
+            self.buffer[index + 1],
+            self.buffer[index + 2],
+            self.buffer[index + 3]];
+    }
 }
 
 pub struct Font {
-    pub raw_buffer: SimpleBuffer,
     pub glyph_width: u32,
+    pub glyphs: Vec<SimpleBuffer>,
 }
 
 impl Font {
-    pub fn new(bitmap_filename: &str, glyph_width: u32) -> Font {
+    pub fn new(bitmap_filename: &str, glyph_width: u32, ) -> Font {
         let img = image::open(&Path::new(bitmap_filename)).unwrap().to_rgba();
-        let dimensions = img.dimensions();
-        let mut raw_buffer = SimpleBuffer::new(dimensions.0, dimensions.1);
-        for x in 0 .. dimensions.0 {
-            for y in 0 .. dimensions.1 {
+        let (img_width, img_height) = img.dimensions();
+
+        // First, read everything into a raw buffer
+        let mut raw_buffer = SimpleBuffer::new(img_width, img_height);
+        for x in 0 .. img_width {
+            for y in 0 .. img_height {
                 let pixel = img[(x, y)].to_rgba();
                 raw_buffer.put_pixel(x, y, &pixel.data);
             }
         }
-        return Font {
-            raw_buffer: raw_buffer,
-            glyph_width: glyph_width,
+
+        // Now, run through the newly read raw buffer, and convert each individual character into its
+        // own glyph:
+        let mut glyphs = vec!(SimpleBuffer::new(glyph_width, img_height); 128 - 32);
+        for i in 0 .. (128 - 32) {
+            for y in 0 .. img_height {
+                for x in 0 .. glyph_width {
+                    glyphs[i].put_pixel(x, y, &raw_buffer.get_pixel((i as u32) * glyph_width + (x as u32), (y as u32)));
+                }
+            }
         }
+
+        return Font {
+            glyph_width: glyph_width,
+            glyphs: glyphs,
+        }
+    }
+}
+
+pub fn blit(destination: &mut SimpleBuffer, source: &SimpleBuffer, dx: u32, dy: u32) {
+    for x in 0 .. source.width {
+        for y in 0 .. source.height {
+            destination.put_pixel(dx + x, dy + y, &source.get_pixel(x, y));
+        }
+    }
+}
+
+pub fn char(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, c: char) {
+    if c.is_ascii() {
+        let ascii_code_point = c as u32;
+        if ascii_code_point >= 32 && ascii_code_point < 127 {
+            blit(destination, &font.glyphs[(ascii_code_point - 32) as usize], x, y);
+        }
+    }
+}
+
+pub fn text(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, s: &str) {
+    for i in 0 .. s.len() {
+        char(destination, font, x + (i as u32) * font.glyph_width, y, s.chars().nth(i).unwrap());
     }
 }

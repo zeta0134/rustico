@@ -10,6 +10,8 @@ use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
 
+use drawing;
+use drawing::Font;
 use drawing::SimpleBuffer;
 
 pub fn draw_waveform(imagebuffer: &mut SimpleBuffer, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
@@ -33,7 +35,7 @@ pub fn draw_waveform(imagebuffer: &mut SimpleBuffer, audiobuffer: &[i16], start_
   }
 }
 
-pub fn draw_audio_samples(imagebuffer: &mut SimpleBuffer, apu: &ApuState) {
+pub fn draw_audio_samples(imagebuffer: &mut SimpleBuffer, font: &Font, apu: &ApuState) {
   // Background
   // TODO: Optimize this somewhat
   for x in 0 .. 256 {
@@ -78,12 +80,16 @@ pub fn draw_audio_samples(imagebuffer: &mut SimpleBuffer, apu: &ApuState) {
   }
   draw_waveform(imagebuffer, &apu.sample_buffer,
       apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 16384);
+
+  // TESTING THINGS!!
+  drawing::text(imagebuffer, font, 0, 0, "Hello World!");
 }
 
 pub struct AudioWindow {
   pub canvas: sdl2::render::WindowCanvas,
   pub buffer: SimpleBuffer,
   pub shown: bool,
+  pub font: Font,
 }
 
 impl AudioWindow {
@@ -102,15 +108,18 @@ impl AudioWindow {
     canvas.clear();
     canvas.present();
 
+    let font = Font::new("assets/8x8_font.png", 8);
+
     return AudioWindow {
       canvas: canvas,
       buffer: SimpleBuffer::new(256, 192),
+      font: font,
       shown: false,
     }
   }
 
   pub fn update(&mut self, nes: &mut NesState) {
-    draw_audio_samples(&mut self.buffer, &nes.apu);
+    draw_audio_samples(&mut self.buffer, &self.font, &nes.apu);
   }
 
   pub fn draw(&mut self) {
