@@ -27,7 +27,7 @@ impl MemoryWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> MemoryWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("Memory Viewer", 304, 360)
+    let window = video_subsystem.window("Memory Viewer", 304 * 2, 184 * 2)
         .position(570, 50)
         .hidden()
         .opengl()
@@ -43,7 +43,7 @@ impl MemoryWindow {
 
     return MemoryWindow {
       canvas: canvas,
-      buffer: SimpleBuffer::new(304, 360),
+      buffer: SimpleBuffer::new(304, 184),
       font: font,
       shown: false,
       view_ppu: false,
@@ -52,7 +52,7 @@ impl MemoryWindow {
   }
 
   pub fn draw_memory_page(&mut self, nes: &mut NesState, sx: u32, sy: u32) {
-  for y in 0 .. 32 {
+  for y in 0 .. 16 {
     for x in 0 .. 16 {
       let address = self.memory_page + (x as u16) + (y as u16 * 16);
       let byte: u8;
@@ -64,8 +64,27 @@ impl MemoryWindow {
         let masked_address = address & 0x3FFF;
         match masked_address {
           0x0000 ... 0x1FFF => byte = nes.mapper.debug_read_byte(masked_address),
-          _ => byte = nes.ppu._read_byte(&mut *nes.mapper, masked_address)
+          _ => byte = nes.ppu.passively_read_byte(&mut *nes.mapper, masked_address)
         };
+        if masked_address == (nes.ppu.current_vram_address & 0x3FFF) {
+          bg_color = [128, 32, 32, 255];
+        } else if nes.ppu.recent_reads.contains(&masked_address) {
+          for i in 0 .. nes.ppu.recent_reads.len() {
+            if nes.ppu.recent_reads[i] == masked_address {
+              let brightness = 192 - (5 * i as u8);
+              bg_color = [64, brightness, 64, 255];
+              break;
+            }
+          }
+        } else if nes.ppu.recent_writes.contains(&masked_address) {
+          for i in 0 .. nes.ppu.recent_writes.len() {
+            if nes.ppu.recent_writes[i] == masked_address {
+              let brightness = 192 - (5 * i as u8);
+              bg_color = [brightness, brightness, 32, 255];
+              break;
+            }
+          }
+        }
       } else {
         byte = memory::passively_read_byte(nes, address);
         if address == nes.registers.pc {
@@ -135,10 +154,10 @@ impl MemoryWindow {
       Event::KeyDown { keycode: Some(key), .. } => {
         match key {
           Keycode::Period => {
-            self.memory_page = self.memory_page.wrapping_add(0x200);
+            self.memory_page = self.memory_page.wrapping_add(0x100);
           },
           Keycode::Comma => {
-            self.memory_page = self.memory_page.wrapping_sub(0x200);
+            self.memory_page = self.memory_page.wrapping_sub(0x100);
           },
           Keycode::Slash => {
             self.view_ppu = !self.view_ppu;

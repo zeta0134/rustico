@@ -78,9 +78,9 @@ impl VramWindow {
         for px in 0 .. 8 {
           for py in 0 .. 8 {
             let bg_index = ppu::decode_chr_pixel(mapper, pattern_address, tile_index as u8, px as u8, py as u8);
-            let mut palette_color = ppu._read_byte(mapper, ((palette_index << 2) + bg_index) as u16 + 0x3F00) as usize * 3;
+            let mut palette_color = ppu.passively_read_byte(mapper, ((palette_index << 2) + bg_index) as u16 + 0x3F00) as usize * 3;
             if bg_index == 0 {
-              palette_color = ppu._read_byte(mapper, bg_index as u16 + 0x3F00) as usize * 3;
+              palette_color = ppu.passively_read_byte(mapper, bg_index as u16 + 0x3F00) as usize * 3;
             }
             buffer.put_pixel(tx as u32 * 8 + px as u32, ty as u32 * 8 + py as u32, &[
               NTSC_PAL[palette_color + 0],
