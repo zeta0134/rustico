@@ -108,3 +108,19 @@ pub fn text(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, s: &str
         char(destination, font, x + ((i as u32) * font.glyph_width), y, s.chars().nth(i).unwrap(), color);
     }
 }
+
+pub fn hex(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, value: u32, nybbles: u32, color: &[u8]) {
+    let char_map = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+    for i in 0 .. nybbles {
+        let c = char_map[((value & (0xF << (i * 4))) >> (i * 4)) as usize];
+        char(destination, font, x + (nybbles - 1 - (i as u32)) * font.glyph_width, y, c, color);
+    }
+}
+
+pub fn rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: u32, color: &[u8]) {
+    for dx in x .. (x + width) {
+        for dy in y .. (y + height) {
+            destination.put_pixel(dx, dy, &color);
+        }
+    }
+}
