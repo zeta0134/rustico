@@ -72,25 +72,39 @@ impl Font {
     }
 }
 
-pub fn blit(destination: &mut SimpleBuffer, source: &SimpleBuffer, dx: u32, dy: u32) {
+pub fn blit(destination: &mut SimpleBuffer, source: &SimpleBuffer, dx: u32, dy: u32, color: &[u8]) {
     for x in 0 .. source.width {
         for y in 0 .. source.height {
-            destination.put_pixel(dx + x, dy + y, &source.get_pixel(x, y));
+            let mut source_color = source.get_pixel(x, y);
+            let destination_color = destination.get_pixel(dx + x, dy + y);
+            // Multiply by target color
+            for i in 0 .. 4 {
+                source_color[i] = ((source_color[i] as u16 * color[i] as u16) / 255) as u8;
+            }
+            // Blend to apply alpha transparency
+            let source_alpha = source_color[3] as u16;
+            let destination_alpha = 255 - source_alpha;
+            let final_color = [
+                ((destination_color[0] as u16 * destination_alpha + source_color[0] as u16 * source_alpha) / 255) as u8,
+                ((destination_color[1] as u16 * destination_alpha + source_color[1] as u16 * source_alpha) / 255) as u8,
+                ((destination_color[2] as u16 * destination_alpha + source_color[2] as u16 * source_alpha) / 255) as u8,
+                255];
+            destination.put_pixel(dx + x, dy + y, &final_color);
         }
     }
 }
 
-pub fn char(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, c: char) {
+pub fn char(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, c: char, color: &[u8]) {
     if c.is_ascii() {
         let ascii_code_point = c as u32;
         if ascii_code_point >= 32 && ascii_code_point < 127 {
-            blit(destination, &font.glyphs[(ascii_code_point - 32) as usize], x, y);
+            blit(destination, &font.glyphs[(ascii_code_point - 32) as usize], x, y, color);
         }
     }
 }
 
-pub fn text(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, s: &str) {
+pub fn text(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, s: &str, color: &[u8]) {
     for i in 0 .. s.len() {
-        char(destination, font, x + (i as u32) * font.glyph_width, y, s.chars().nth(i).unwrap());
+        char(destination, font, x + ((i as u32) * font.glyph_width), y, s.chars().nth(i).unwrap(), color);
     }
 }

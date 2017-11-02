@@ -81,8 +81,12 @@ pub fn draw_audio_samples(imagebuffer: &mut SimpleBuffer, font: &Font, apu: &Apu
   draw_waveform(imagebuffer, &apu.sample_buffer,
       apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 16384);
 
-  // TESTING THINGS!!
-  drawing::text(imagebuffer, font, 0, 0, "Hello World!");
+  drawing::text(imagebuffer, font, 0, 32  - 8, "Pulse 1",  &[192,  32,  32, 255]);
+  drawing::text(imagebuffer, font, 0, 64  - 8, "Pulse 2",  &[192,  96,  32, 255]);
+  drawing::text(imagebuffer, font, 0, 96  - 8, "Triangle", &[ 32, 192,  32, 255]);
+  drawing::text(imagebuffer, font, 0, 128 - 8, "Noise",    &[ 32,  96, 192, 255]);
+  drawing::text(imagebuffer, font, 0, 160 - 8, "DMC"   ,   &[ 96,  32, 192, 255]);
+  drawing::text(imagebuffer, font, 0, 192 - 8, "Final",    &[192, 192, 192, 255]);
 }
 
 pub struct AudioWindow {
