@@ -81,11 +81,44 @@ pub fn draw_audio_samples(imagebuffer: &mut SimpleBuffer, font: &Font, apu: &Apu
   draw_waveform(imagebuffer, &apu.sample_buffer,
       apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 16384);
 
-  drawing::text(imagebuffer, font, 0, 32  - 8, "Pulse 1",  &[192,  32,  32, 255]);
-  drawing::text(imagebuffer, font, 0, 64  - 8, "Pulse 2",  &[192,  96,  32, 255]);
-  drawing::text(imagebuffer, font, 0, 96  - 8, "Triangle", &[ 32, 192,  32, 255]);
-  drawing::text(imagebuffer, font, 0, 128 - 8, "Noise",    &[ 32,  96, 192, 255]);
-  drawing::text(imagebuffer, font, 0, 160 - 8, "DMC"   ,   &[ 96,  32, 192, 255]);
+  drawing::text(imagebuffer, font, 0, 32  - 8, 
+    &format!("Pulse 1 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
+    if apu.pulse_1.sweep_enabled {if apu.pulse_1.sweep_negate {"-"} else {"+"}} else {" "}, apu.pulse_1.period_initial,
+    if apu.pulse_1.envelope.looping {"L"} else {" "}, apu.pulse_1.envelope.current_volume(),
+    if apu.pulse_1.length_counter.length == 0 {"M"} else {" "}, apu.pulse_1.length_counter.length,
+    apu.pulse_1.duty),
+    &[192,  32,  32, 255]);
+
+  drawing::text(imagebuffer, font, 0, 64  - 8, 
+    &format!("Pulse 2 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
+    if apu.pulse_2.sweep_enabled {if apu.pulse_2.sweep_negate {"-"} else {"+"}} else {" "}, apu.pulse_2.period_initial,
+    if apu.pulse_2.envelope.looping {"L"} else {" "}, apu.pulse_2.envelope.current_volume(),
+    if apu.pulse_2.length_counter.length == 0 {"M"} else {" "}, apu.pulse_2.length_counter.length,
+    apu.pulse_2.duty),
+    &[192,  96,  32, 255]);
+
+  drawing::text(imagebuffer, font, 0, 96  - 8, 
+    &format!("Triangle - {:03X}     {}{:02X}        {:02X}", 
+    apu.triangle.period_initial,
+    if apu.triangle.length_counter.length == 0 {"M"} else {" "}, apu.triangle.length_counter.length,
+    apu.triangle.sequence_counter), 
+    &[ 32, 192,  32, 255]);
+
+  drawing::text(imagebuffer, font, 0, 128 - 8, 
+    &format!("Noise -    {:03X} {}{:02X} {}{:02X}        {:02X}",
+    apu.noise.period_initial,
+    if apu.noise.envelope.looping {"L"} else {" "}, apu.noise.envelope.current_volume(),
+    if apu.noise.length_counter.length == 0 {"M"} else {" "}, apu.noise.length_counter.length,
+    apu.noise.mode),
+    &[ 32,  96, 192, 255]);
+
+  drawing::text(imagebuffer, font, 0, 160 - 8, 
+    &format!("DMC -      {:03X}     {}{:02X}  {:04X}  {:02X}",
+    apu.dmc.period_initial,
+    if apu.triangle.length_counter.length == 0 {"M"} else {" "}, apu.triangle.length_counter.length,
+    apu.dmc.starting_address, apu.dmc.output_level),
+    &[ 96,  32, 192, 255]);
+  
   drawing::text(imagebuffer, font, 0, 192 - 8, "Final",    &[192, 192, 192, 255]);
 }
 
@@ -101,7 +134,7 @@ impl AudioWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("Audio Debugger", 512, 384)
-        .position(50, 565)
+        .position(570, 50)
         .hidden()
         .opengl()
         .build()
