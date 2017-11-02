@@ -27,7 +27,7 @@ impl MemoryWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> MemoryWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("Memory Viewer", 304 * 2, 184 * 2)
+    let window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
         .position(570, 50)
         .hidden()
         .opengl()
@@ -43,7 +43,7 @@ impl MemoryWindow {
 
     return MemoryWindow {
       canvas: canvas,
-      buffer: SimpleBuffer::new(304, 184),
+      buffer: SimpleBuffer::new(360, 220),
       font: font,
       shown: false,
       view_ppu: false,
@@ -126,11 +126,45 @@ impl MemoryWindow {
 
   pub fn update(&mut self, nes: &mut NesState) {
     let width = self.buffer.width;
-    drawing::rect(&mut self.buffer, 0, 0, width, 8, &[0,0,0,255]);
-    drawing::text(&mut self.buffer, &self.font, 0, 0, &format!("{} - 0x{:04X}",
+    let height = self.buffer.height;
+    
+    drawing::rect(&mut self.buffer, 0, 0, width, 33, &[0,0,0,255]);
+    drawing::rect(&mut self.buffer, 0, 0, 56, height, &[0,0,0,255]);
+    drawing::text(&mut self.buffer, &self.font, 0, 0, &format!("{} Page: 0x{:04X}",
       if self.view_ppu {"PPU"} else {"CPU"}, self.memory_page), 
       &[255, 255, 255, 255]);
-    self.draw_memory_page(nes, 0, 8);
+
+    // Draw memory region selector
+    for i in 0x0 .. 0x10 {
+      // Highest Nybble
+      let cell_x = 56  + (i as u32 * 19);
+      let mut cell_y = 11;
+      let mut text_color = [255, 255, 255, 64];
+      if ((self.memory_page & 0xF000) >> 12) == i {
+        drawing::rect(&mut self.buffer, cell_x, cell_y, 19, 11, &[64, 64, 64,255]);
+        text_color = [255, 255, 255, 192];
+      }
+      drawing::hex(&mut self.buffer, &self.font, cell_x + 2, cell_y + 2, i as u32, 1, &text_color);
+      drawing::char(&mut self.buffer, &self.font, cell_x + 2 + 8, cell_y + 2, 'X', &text_color);
+
+      // Second-highest Nybble
+      text_color = [255, 255, 255, 64];
+      cell_y = 22;
+      if ((self.memory_page & 0x0F00) >> 8) == i {
+        drawing::rect(&mut self.buffer, cell_x, cell_y, 19, 11, &[64, 64, 64,255]);
+        text_color = [255, 255, 255, 192];
+      }
+      drawing::char(&mut self.buffer, &self.font, cell_x + 2, cell_y + 2, 'X', &text_color);
+      drawing::hex(&mut self.buffer, &self.font, cell_x + 2 + 8, cell_y + 2, i as u32, 1, &text_color);
+    }
+
+    // Draw row labels
+    for i in 0 .. 0x10 {
+      drawing::text(&mut self.buffer, &self.font, 0, 44 + 2 + (i as u32 * 11), &format!("0x{:04X}",
+        self.memory_page + (i as u16 * 0x10)), 
+        &[255, 255, 255, 64]);
+    }
+    self.draw_memory_page(nes, 56, 44);
   }
 
   pub fn draw(&mut self) {
