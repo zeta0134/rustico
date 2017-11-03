@@ -6,6 +6,7 @@ use rusticnes_core::memory;
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
@@ -184,6 +185,21 @@ impl MemoryWindow {
       Event::Window { window_id: id, win_event: WindowEvent::Close, .. } if id == self_id => {
         self.shown = false;
         self.canvas.window_mut().hide();
+      },
+      Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } if id == self_id => {
+        let mx = omx / 2;
+        let my = omy / 2;
+        if my < 11 && mx < 32 {
+          self.view_ppu = !self.view_ppu;
+        }
+        if my >= 11 && my < 22 && mx > 56 && mx < 360 {
+          let high_nybble = ((mx - 56) / 19) as u16;
+          self.memory_page = (self.memory_page & 0x0FFF) | (high_nybble << 12);
+        }
+        if my >= 22 && my < 33 && mx > 56 && mx < 360 {
+          let low_nybble = ((mx - 56) / 19) as u16;
+          self.memory_page = (self.memory_page & 0xF0FF) | (low_nybble << 8);
+        }
       },
       Event::KeyDown { keycode: Some(key), .. } => {
         match key {
