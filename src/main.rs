@@ -5,6 +5,7 @@ extern crate sdl2;
 extern crate rusticnes_core;
 
 mod audio_window;
+mod debugger_window;
 mod drawing;
 mod game_window;
 mod memory_window;
@@ -24,6 +25,7 @@ pub fn main() {
     let audio_subsystem = sdl_context.audio().unwrap();
 
     let mut audio_window = audio_window::AudioWindow::new(&sdl_context);
+    let mut debugger_window = debugger_window::DebuggerWindow::new(&sdl_context);
     let mut game_window = game_window::GameWindow::new(&sdl_context);
     let mut memory_window = memory_window::MemoryWindow::new(&sdl_context);
     let mut vram_window = vram_window::VramWindow::new(&sdl_context);
@@ -58,12 +60,14 @@ pub fn main() {
                         let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
                         let any_window_focused = 
                             audio_window.canvas.window().id() == focused_window_id || 
+                            debugger_window.canvas.window().id() == focused_window_id || 
                             game_window.canvas.window().id() == focused_window_id || 
                             memory_window.canvas.window().id() == focused_window_id || 
                             vram_window.canvas.window().id() == focused_window_id;
 
                         if any_window_focused {
                             audio_window.handle_event(&mut nes, &event);
+                            debugger_window.handle_event(&mut nes, &event);
                             game_window.handle_event(&mut nes, &event);
                             memory_window.handle_event(&mut nes, &event);
                             vram_window.handle_event(&mut nes, &event);
@@ -102,6 +106,12 @@ pub fn main() {
                                             memory_window.canvas.window_mut().show();
                                         }
                                     },
+                                    Keycode::F4 => {
+                                        if !debugger_window.shown {
+                                            debugger_window.shown = true;
+                                            debugger_window.canvas.window_mut().show();
+                                        }
+                                    },
                                     _ => ()
                                 }
                             }
@@ -120,6 +130,9 @@ pub fn main() {
         // Update all windows
         if audio_window.shown {
             audio_window.update(&mut nes);
+        }
+        if debugger_window.shown {
+            debugger_window.update(&mut nes);
         }
         if game_window.shown {
             game_window.update(&mut nes);
@@ -144,6 +157,9 @@ pub fn main() {
         // Draw all windows
         if audio_window.shown {
             audio_window.draw();
+        }
+        if debugger_window.shown {
+            debugger_window.draw();
         }
         if game_window.shown {
             game_window.draw();

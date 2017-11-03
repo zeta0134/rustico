@@ -133,7 +133,7 @@ impl AudioWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> AudioWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("Audio Debugger", 512, 384)
+    let window = video_subsystem.window("Audio Visualizer", 512, 384)
         .position(570, 50)
         .hidden()
         .opengl()
