@@ -38,7 +38,7 @@ impl GameWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("RusticNES", (256 - 16) * 2, (240 - 16) * 2)
-        .position(50, 50)
+        .position(10, 40)
         .opengl()
         .build()
         .unwrap();

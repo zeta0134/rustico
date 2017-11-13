@@ -76,7 +76,7 @@ impl VramWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("VRAM Debugger", 768, 512)
-        .position(570, 50)
+        .position(500, 40)
         .hidden()
         .opengl()
         .build()
