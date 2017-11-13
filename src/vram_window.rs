@@ -9,7 +9,6 @@ use sdl2::event::Event;
 use sdl2::event::WindowEvent;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
-use sdl2::rect::Rect;
 use sdl2::render::TextureAccess;
 
 use drawing::SimpleBuffer;
@@ -45,6 +44,22 @@ pub fn generate_chr_pattern(mapper: &mut Mapper, pattern_address: u16, buffer: &
       let tile_index = y * 16 + x;
       draw_tile(mapper, pattern_address, tile_index as u16, buffer, 
         dx + x * 8, dy + y * 8, &debug_palette);
+    }
+  }
+}
+
+pub fn draw_color_box(buffer: &mut SimpleBuffer, dx: u32, dy: u32, color: &[u8]) {
+  // First, draw a white outline
+  for x in 0 .. 16 {
+    for y in 0 .. 16 {
+      buffer.put_pixel(dx + x, dy + y, 
+        &[255, 255, 255, 255]);
+    }
+  }
+  // Then draw the palette color itself in the center of the outline
+  for x in 1 .. 15 {
+    for y in 1 .. 15 {
+      buffer.put_pixel(dx + x, dy + y, color);          
     }
   }
 }
@@ -117,10 +132,39 @@ impl VramWindow {
     }
   }
 
+  pub fn draw_palettes(&mut self, dx: u32, dy: u32) {
+    // Global Background (just once)
+    let color = &self.palette_cache[0][0 .. 4];
+    draw_color_box(&mut self.buffer, dx, dy, color);
+
+    // Backgrounds
+    for p in 0 .. 4 {
+      for i in 1 .. 4 {
+        let x = dx + p * 64 + i * 15;
+        let y = dy;
+        let color = &self.palette_cache[p as usize][(i * 4) as usize .. (i * 4 + 4) as usize];
+        draw_color_box(&mut self.buffer, x, y, color);
+      }
+    }
+
+    // Sprites
+    for p in 0 .. 4 {
+      for i in 1 .. 4 {
+        let x = dx + p * 64 + i * 15;
+        let y = dy + 18;
+        let color = &self.palette_cache[(p + 4) as usize][(i * 4) as usize .. (i * 4 + 4) as usize];
+        draw_color_box(&mut self.buffer, x, y, color);
+      }
+    }
+  }
+
   pub fn update(&mut self, nes: &mut NesState) {
     self.update_palette_cache(nes);
+    // Left Pane: CHR memory, Palette Colors
     generate_chr_pattern(&mut *nes.mapper, 0x0000, &mut self.buffer,   0, 0);
     generate_chr_pattern(&mut *nes.mapper, 0x1000, &mut self.buffer, 128, 0);
+    self.draw_palettes(0, 128);
+    // Right Panel: Entire nametable
     self.generate_nametables(&mut *nes.mapper, &mut nes.ppu, 256, 0);
   }
   
