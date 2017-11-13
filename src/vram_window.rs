@@ -130,6 +130,31 @@ impl VramWindow {
           dx + tx as u32 * 8, dy + ty as u32 * 8, &self.palette_cache[palette_index as usize]);
       }
     }
+
+    // Draw a red border around the present scroll viewport
+    let vram_address = ppu.current_vram_address;
+    let coarse_x =  vram_address & 0b000_00_00000_11111;
+    let coarse_y = (vram_address & 0b000_00_11111_00000) >> 5;
+    let fine_x = ppu.fine_x;
+    let fine_y =   (vram_address & 0b111_00_00000_00000) >> 12;
+    let scroll_x = (coarse_x << 3 | fine_x as u16) as u32;
+    let scroll_y = (coarse_y << 3 | fine_y as u16) as u32;
+
+    for x in scroll_x .. scroll_x + 256 {
+      let px = x % 512;
+      let mut py = (scroll_y) % 480;
+      self.buffer.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+      py = (scroll_y + 239) % 480;
+      self.buffer.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+    }
+
+    for y in scroll_y .. scroll_y + 240 {
+      let py = y % 480;
+      let mut px = scroll_x % 512;
+      self.buffer.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+      px = (scroll_x + 255) % 512;
+      self.buffer.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+    }
   }
 
   pub fn draw_palettes(&mut self, dx: u32, dy: u32) {
@@ -191,4 +216,3 @@ impl VramWindow {
     }
   }
 }
-
