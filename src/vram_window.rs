@@ -33,6 +33,30 @@ pub fn draw_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buf
   }
 }
 
+pub fn draw_2x_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
+  for py in 0 .. 8 {
+    let tile_address = pattern_address + tile_index * 16 + py;
+    let mut tile_low  = mapper.debug_read_byte(tile_address);
+    let mut tile_high = mapper.debug_read_byte(tile_address + 8);
+    for px in 0 .. 8 {
+      let palette_index = (tile_low & 0x1) + ((tile_high & 0x1) << 1);
+      tile_low = tile_low >> 1;
+      tile_high = tile_high >> 1;
+      for sx in 0 .. 2 {
+        for sy in 0 .. 2 {
+          buffer.put_pixel(
+            dx + (7 - px as u32) * 2 + sx, 
+            dy + (py as u32) * 2 + sy, &[
+              palette[(palette_index * 4 + 0) as usize],
+              palette[(palette_index * 4 + 1) as usize],
+              palette[(palette_index * 4 + 2) as usize],
+              255]);
+        }
+      }
+    }
+  }
+}
+
 pub fn generate_chr_pattern(mapper: &mut Mapper, pattern_address: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32) {
   let debug_palette: [u8; 4*4] = [
     255, 255, 255, 255,
@@ -183,12 +207,54 @@ impl VramWindow {
     }
   }
 
+  pub fn draw_sprites(&mut self, nes: &mut NesState, dx: u32, dy: u32) {
+    let mut sprite_size = 8;
+    if (nes.ppu.control & 0b0010_0000) != 0 {
+        sprite_size = 16;
+    }
+
+    for x in 0 .. 8 {
+      for y in 0 .. 8 {
+        let sprite_index = y * 8 + x;
+        let sprite_y =     nes.ppu.oam[sprite_index * 4 + 0];
+        let mut sprite_tile =  nes.ppu.oam[sprite_index * 4 + 1];
+        let sprite_flags = nes.ppu.oam[sprite_index * 4 + 2];
+        let sprite_x =     nes.ppu.oam[sprite_index * 4 + 3];
+
+        let palette_index = sprite_flags & 0b0000_0011;
+
+        let mut pattern_address: u16 = 0x0000;
+        // If we're using 8x16 sprites, set the pattern based on the sprite's tile index
+        if sprite_size == 16 {
+            if (sprite_tile & 0b1) != 0 {
+                pattern_address = 0x1000;
+            }
+            sprite_tile &= 0b1111_1110;
+
+            draw_2x_tile(&mut *nes.mapper, pattern_address, sprite_tile as u16, &mut self.buffer, 
+              dx + x as u32 * 32, dy + y as u32 * 32, &self.palette_cache[(palette_index + 4) as usize]);
+            draw_2x_tile(&mut *nes.mapper, pattern_address, (sprite_tile + 1) as u16, &mut self.buffer, 
+              dx + x as u32 * 32, dy + y as u32 * 32 + 16, &self.palette_cache[(palette_index + 4) as usize]);
+        } else {
+            // Otherwise, the pattern is selected by PPUCTL
+            if (nes.ppu.control & 0b0000_1000) != 0 {
+                pattern_address = 0x1000;
+            }
+
+            draw_2x_tile(&mut *nes.mapper, pattern_address, sprite_tile as u16, &mut self.buffer, 
+              dx + x as u32 * 32, dy + y as u32 * 32, &self.palette_cache[(palette_index + 4) as usize]);
+        }
+      }
+    }
+  }
+
   pub fn update(&mut self, nes: &mut NesState) {
     self.update_palette_cache(nes);
     // Left Pane: CHR memory, Palette Colors
     generate_chr_pattern(&mut *nes.mapper, 0x0000, &mut self.buffer,   0, 0);
     generate_chr_pattern(&mut *nes.mapper, 0x1000, &mut self.buffer, 128, 0);
     self.draw_palettes(0, 128);
+    self.draw_sprites(nes, 0, 170);
     // Right Panel: Entire nametable
     self.generate_nametables(&mut *nes.mapper, &mut nes.ppu, 256, 0);
   }
