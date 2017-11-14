@@ -134,7 +134,7 @@ impl AudioWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("Audio Visualizer", 512, 384)
-        .position(500, 40)
+        .position(490, 40)
         .hidden()
         .opengl()
         .build()

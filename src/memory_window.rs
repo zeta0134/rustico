@@ -29,7 +29,7 @@ impl MemoryWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
-        .position(500, 40)
+        .position(490, 40)
         .hidden()
         .opengl()
         .build()

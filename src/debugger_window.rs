@@ -27,7 +27,7 @@ impl DebuggerWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem.window("Debugger", 512, 600)
-        .position(500, 40)
+        .position(490, 40)
         .hidden()
         .opengl()
         .build()

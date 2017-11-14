@@ -102,8 +102,8 @@ impl VramWindow {
   pub fn new(sdl_context: &sdl2::Sdl) -> VramWindow {
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("VRAM Debugger", 768, 512)
-        .position(500, 40)
+    let window = video_subsystem.window("VRAM Debugger", 792, 512)
+        .position(490, 40)
         .hidden()
         .opengl()
         .build()
@@ -118,7 +118,7 @@ impl VramWindow {
 
     return VramWindow {
       canvas: canvas,
-      buffer: SimpleBuffer::new(768, 512),
+      buffer: SimpleBuffer::new(792, 512),
       shown: false,
       palette_cache: [[0u8; 4*4]; 4*2],
       font: font,
@@ -228,8 +228,13 @@ impl VramWindow {
         let sprite_x =     nes.ppu.oam[sprite_index * 4 + 3];
 
         let palette_index = sprite_flags & 0b0000_0011;
-
         let mut pattern_address: u16 = 0x0000;
+
+        let cell_width = 35;
+        let cell_height = 40;
+        let cell_x = dx + x as u32 * cell_width;
+        let cell_y = dy + y as u32 * cell_height;
+
         // If we're using 8x16 sprites, set the pattern based on the sprite's tile index
         if sprite_size == 16 {
             if (sprite_tile & 0b1) != 0 {
@@ -237,31 +242,44 @@ impl VramWindow {
             }
             sprite_tile &= 0b1111_1110;
 
+            drawing::rect(&mut self.buffer, 
+              cell_x, cell_y,
+              18, 34, 
+              &[255, 255, 255, 255]);
             draw_2x_tile(&mut *nes.mapper, pattern_address, sprite_tile as u16, &mut self.buffer, 
-              dx + x as u32 * 32, dy + y as u32 * 40, &self.palette_cache[(palette_index + 4) as usize]);
+              cell_x + 1, cell_y + 1,
+              &self.palette_cache[(palette_index + 4) as usize]);
             draw_2x_tile(&mut *nes.mapper, pattern_address, (sprite_tile + 1) as u16, &mut self.buffer, 
-              dx + x as u32 * 32, dy + y as u32 * 32 + 16, &self.palette_cache[(palette_index + 4) as usize]);
+              cell_x + 1, cell_y + 1 + 16,
+              &self.palette_cache[(palette_index + 4) as usize]);
         } else {
             // Otherwise, the pattern is selected by PPUCTL
             if (nes.ppu.control & 0b0000_1000) != 0 {
                 pattern_address = 0x1000;
             }
 
+            drawing::rect(&mut self.buffer, 
+              cell_x, cell_y,
+              18, 18, 
+              &[255, 255, 255, 255]);
             draw_2x_tile(&mut *nes.mapper, pattern_address, sprite_tile as u16, &mut self.buffer, 
-              dx + x as u32 * 32, dy + y as u32 * 40, &self.palette_cache[(palette_index + 4) as usize]);
+              cell_x + 1, cell_y + 1,
+              &self.palette_cache[(palette_index + 4) as usize]);
         }
 
         let text_color = [255, 255, 255, 255];
         let bg_color =   [  0,   0,   0, 255];
 
-        drawing::rect(&mut self.buffer, dx + x as u32 * 32 + 16, dy + y as u32 * 40, 16, 32, &bg_color);
-        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40,
+        drawing::rect(&mut self.buffer, 
+          cell_x + 19, cell_y, 
+          16, 32, &bg_color);
+        drawing::hex(&mut self.buffer, &self.font, cell_x + 19, cell_y,
           sprite_x as u32, 2, &text_color);
-        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40 + 8,
+        drawing::hex(&mut self.buffer, &self.font, cell_x + 19, cell_y + 8,
           sprite_y as u32, 2, &text_color);
-        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40 + 16,
+        drawing::hex(&mut self.buffer, &self.font, cell_x + 19, cell_y + 16,
           sprite_tile as u32, 2, &text_color);
-        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40 + 24,
+        drawing::hex(&mut self.buffer, &self.font, cell_x + 19, cell_y + 24,
           sprite_flags as u32, 2, &text_color);
       }
     }
@@ -270,12 +288,12 @@ impl VramWindow {
   pub fn update(&mut self, nes: &mut NesState) {
     self.update_palette_cache(nes);
     // Left Pane: CHR memory, Palette Colors
-    generate_chr_pattern(&mut *nes.mapper, 0x0000, &mut self.buffer,   0, 0);
-    generate_chr_pattern(&mut *nes.mapper, 0x1000, &mut self.buffer, 128, 0);
-    self.draw_palettes(2, 130);
+    generate_chr_pattern(&mut *nes.mapper, 0x0000, &mut self.buffer,   8, 0);
+    generate_chr_pattern(&mut *nes.mapper, 0x1000, &mut self.buffer, 144, 0);
+    self.draw_palettes(14, 130);
     self.draw_sprites(nes, 0, 170);
     // Right Panel: Entire nametable
-    self.generate_nametables(&mut *nes.mapper, &mut nes.ppu, 256, 0);
+    self.generate_nametables(&mut *nes.mapper, &mut nes.ppu, 280, 0);
   }
   
 
