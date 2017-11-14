@@ -11,6 +11,8 @@ use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureAccess;
 
+use drawing;
+use drawing::Font;
 use drawing::SimpleBuffer;
 
 pub fn draw_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
@@ -93,6 +95,7 @@ pub struct VramWindow {
   pub buffer: SimpleBuffer,
   pub shown: bool,
   pub palette_cache: [[u8; 4*4]; 4*2],
+  pub font: Font,
 }
 
 impl VramWindow {
@@ -111,11 +114,14 @@ impl VramWindow {
     canvas.clear();
     canvas.present();
 
+    let font = Font::new("assets/8x8_font.png", 8);
+
     return VramWindow {
       canvas: canvas,
       buffer: SimpleBuffer::new(768, 512),
       shown: false,
-      palette_cache: [[0u8; 4*4]; 4*2]
+      palette_cache: [[0u8; 4*4]; 4*2],
+      font: font,
     }
   }
 
@@ -232,7 +238,7 @@ impl VramWindow {
             sprite_tile &= 0b1111_1110;
 
             draw_2x_tile(&mut *nes.mapper, pattern_address, sprite_tile as u16, &mut self.buffer, 
-              dx + x as u32 * 32, dy + y as u32 * 32, &self.palette_cache[(palette_index + 4) as usize]);
+              dx + x as u32 * 32, dy + y as u32 * 40, &self.palette_cache[(palette_index + 4) as usize]);
             draw_2x_tile(&mut *nes.mapper, pattern_address, (sprite_tile + 1) as u16, &mut self.buffer, 
               dx + x as u32 * 32, dy + y as u32 * 32 + 16, &self.palette_cache[(palette_index + 4) as usize]);
         } else {
@@ -242,8 +248,21 @@ impl VramWindow {
             }
 
             draw_2x_tile(&mut *nes.mapper, pattern_address, sprite_tile as u16, &mut self.buffer, 
-              dx + x as u32 * 32, dy + y as u32 * 32, &self.palette_cache[(palette_index + 4) as usize]);
+              dx + x as u32 * 32, dy + y as u32 * 40, &self.palette_cache[(palette_index + 4) as usize]);
         }
+
+        let text_color = [255, 255, 255, 255];
+        let bg_color =   [  0,   0,   0, 255];
+
+        drawing::rect(&mut self.buffer, dx + x as u32 * 32 + 16, dy + y as u32 * 40, 16, 32, &bg_color);
+        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40,
+          sprite_x as u32, 2, &text_color);
+        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40 + 8,
+          sprite_y as u32, 2, &text_color);
+        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40 + 16,
+          sprite_tile as u32, 2, &text_color);
+        drawing::hex(&mut self.buffer, &self.font, dx + x as u32 * 32 + 16, dy + y as u32 * 40 + 24,
+          sprite_flags as u32, 2, &text_color);
       }
     }
   }
@@ -253,7 +272,7 @@ impl VramWindow {
     // Left Pane: CHR memory, Palette Colors
     generate_chr_pattern(&mut *nes.mapper, 0x0000, &mut self.buffer,   0, 0);
     generate_chr_pattern(&mut *nes.mapper, 0x1000, &mut self.buffer, 128, 0);
-    self.draw_palettes(0, 128);
+    self.draw_palettes(2, 130);
     self.draw_sprites(nes, 0, 170);
     // Right Panel: Entire nametable
     self.generate_nametables(&mut *nes.mapper, &mut nes.ppu, 256, 0);
