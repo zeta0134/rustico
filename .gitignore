@@ -1,0 +1,7 @@
+/target/
+**/*.rs.bk
+
+*.nes
+*.png
+*.txt
+Cargo.lock
