@@ -18,8 +18,7 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   let file = File::open(cartridge_path);
   match file {
     Err(why) => {
-      println!("Couldn't open {}: {}", cartridge_path, why.description());
-      return;
+      panic!("Couldn't open {}: {}", cartridge_path, why.description());
     },
     Ok(_) => (),
   };
@@ -28,19 +27,16 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   let mut cartridge = Vec::new();
   match file.unwrap().read_to_end(&mut cartridge) {
     Err(why) => {
-      println!("Couldn't read from {}: {}", cartridge_path, why.description());
-      return;
+      panic!("Couldn't read from {}: {}", cartridge_path, why.description());
     },
-    Ok(bytes_read) => {
-      println!("Data read successfully: {}", bytes_read);
+    Ok(_) => {
       let maybe_nes = NesState::from_rom(&cartridge);
       match maybe_nes {
         Ok(nes_state) => {
           *nes = nes_state;
         },
         Err(why) => {
-          println!("{}", why);
-          return;
+          panic!("{}", why);
         }
       }
     },
@@ -80,41 +76,40 @@ fn save_blargg(nes: &mut NesState, output_filename: &str) {
     let magic_2 = sram[3];
 
     if magic_0 == 0xDE && magic_1 == 0xB0 && magic_2 == 0x61 {
-      println!("blargg wizardry detected!");
+      let test_status_string = match test_status {
+        0x80 => format!("Running"),
+        0x81 => format!("Needs RESET"),
+        _ => format!("0x{:02X}", test_status),
+      };
+
+
+      // Starting at 0x6004, read all of NES memory up to the next null terminator (or 0x8000) as ASCII
+      let begin = 4;
+      // Locate the next null terminator
+      let mut end = 4;
+      while sram[end] != 0  && end < sram.len() {
+        end+=1;
+      }
+
+      let test_text = str::from_utf8(&sram[begin .. end]).unwrap();
+      let output = format!("Test Status: {}\n\n{}", test_status_string, test_text);
+
+      // Output!
+      let ref mut file = File::create(output_filename).unwrap();
+      let _ = file.write_all(output.as_ref());
     } else {
-      println!("Not enough blargg magic, found 0x{:02X} 0x{:02X} 0x{:02X} instead.", magic_0, magic_1, magic_2);
-    }
-
-    let test_status_string = match test_status {
-      0x80 => format!("Running"),
-      0x81 => format!("Needs RESET"),
-      _ => format!("0x{:02X}", test_status),
-    };
-
-    // Starting at 0x6004, read all of NES memory up to the next null terminator (or 0x8000) as ASCII
-    let begin = 4;
-    // Locate the next null terminator
-    let mut end = 4;
-    while sram[end] != 0  && end < sram.len() {
-      end+=1;
-    }
-
-    let test_text = str::from_utf8(&sram[begin .. end]).unwrap();
-    let output = format!("Test Status: {}\n\n{}", test_status_string, test_text);
-
-    // Output!
-    let ref mut file = File::create(output_filename).unwrap();
-    let _ = file.write_all(output.as_ref());
+      let ref mut file = File::create(output_filename).unwrap();
+      let _ = file.write_all(format!("Invalid blargg magic header, found 0x{:02X} 0x{:02X} 0x{:02X} instead.", magic_0, magic_1, magic_2).as_ref());
+    }    
   } else {
-    println!("Cannot output blargg data, ROM has no SRAM!");
+    panic!("Cannot output blargg data, ROM has no SRAM!");
   }
 }
 
 fn main() {
 	let mut args: Vec<_> = env::args().collect();
   if args.len() < 2 {
-    println!("Usage: rusticnes-cli <commands>");
-    return;
+    panic!("Usage: rusticnes-cli <commands>");
   }
 
   let mut nes = NesState::new(Box::new(NoneMapper::new()));
@@ -142,8 +137,7 @@ fn main() {
         save_blargg(&mut nes, output_path.as_ref());
       },
       _ => {
-        println!("Unrecognized command: {}\n\nChaos reigns within\nReflect, repent, and retry\nOrder shall return\n", command);
-        return;
+        panic!("Unrecognized command: {}\n\nChaos reigns within\nReflect, repent, and retry\nOrder shall return\n", command);
       }
     }
   }    
