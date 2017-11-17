@@ -122,7 +122,7 @@ fn command_file(nes: &mut NesState, command_path: &str) {
   };
 
   let unwrapped_file = file.unwrap();
-  let mut file_reader = BufReader::new(&unwrapped_file);
+  let file_reader = BufReader::new(&unwrapped_file);
   for l in file_reader.lines() {
     let line = l.unwrap();
     let command_list = line.split(" ").map(|s| s.to_string()).collect();
@@ -153,6 +153,10 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
       "fromfile" => {
         let command_file_path = command_list.remove(0);
         command_file(nes, command_file_path.as_ref());
+      },
+      "#" => {
+        // A comment! Everything on this line is discarded
+        return;
       }
       _ => {
         panic!("Unrecognized command: {}\n\nChaos reigns within\nReflect, repent, and retry\nOrder shall return\n", command);
