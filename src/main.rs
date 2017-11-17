@@ -12,6 +12,8 @@ use std::str;
 use std::error::Error;
 use std::io::Read;
 use std::io::Write;
+use std::io::BufReader;
+use std::io::BufRead;
 
 fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   // Read in the ROM file and attempt to create a new NesState:
@@ -30,6 +32,7 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
       panic!("Couldn't read from {}: {}", cartridge_path, why.description());
     },
     Ok(_) => {
+      println!("Loading {}...", cartridge_path);
       let maybe_nes = NesState::from_rom(&cartridge);
       match maybe_nes {
         Ok(nes_state) => {
@@ -64,6 +67,8 @@ fn save_screenshot(nes: &NesState, output_path: &str) {
 
   let ref mut fout = File::create(output_path).unwrap();
   image::ImageRgba8(img).save(fout, image::PNG).unwrap();
+
+  println!("Saved screenshot to {}", output_path);
 }
 
 fn save_blargg(nes: &mut NesState, output_filename: &str) {
@@ -97,6 +102,7 @@ fn save_blargg(nes: &mut NesState, output_filename: &str) {
       // Output!
       let ref mut file = File::create(output_filename).unwrap();
       let _ = file.write_all(output.as_ref());
+      println!("Saved blargg data to {}", output_filename);
     } else {
       let ref mut file = File::create(output_filename).unwrap();
       let _ = file.write_all(format!("Invalid blargg magic header, found 0x{:02X} 0x{:02X} 0x{:02X} instead.", magic_0, magic_1, magic_2).as_ref());
@@ -104,6 +110,55 @@ fn save_blargg(nes: &mut NesState, output_filename: &str) {
   } else {
     panic!("Cannot output blargg data, ROM has no SRAM!");
   }
+}
+
+fn command_file(nes: &mut NesState, command_path: &str) {
+  let file = File::open(command_path);
+  match file {
+    Err(why) => {
+      panic!("Couldn't open {}: {}", command_path, why.description());
+    },
+    Ok(_) => (),
+  };
+
+  let unwrapped_file = file.unwrap();
+  let mut file_reader = BufReader::new(&unwrapped_file);
+  for l in file_reader.lines() {
+    let line = l.unwrap();
+    let command_list = line.split(" ").map(|s| s.to_string()).collect();
+    process_command_list(nes, command_list);
+  }
+}
+
+fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
+  while command_list.len() > 0 {
+    let command = command_list.remove(0);
+    match command.as_ref() {
+      "cart" | "cartridge" | "rom" => {
+        let cartridge_path = command_list.remove(0);
+        load_cartridge(nes, cartridge_path.as_ref());
+      },
+      "run" | "frames" => {
+        let frames: u64 = command_list.remove(0).parse().unwrap();
+        run(nes, frames);
+      },
+      "screenshot" => {
+        let cartridge_path = command_list.remove(0);
+        save_screenshot(nes, cartridge_path.as_ref());
+      },
+      "blargg" => {
+        let output_path = command_list.remove(0);
+        save_blargg(nes, output_path.as_ref());
+      },
+      "fromfile" => {
+        let command_file_path = command_list.remove(0);
+        command_file(nes, command_file_path.as_ref());
+      }
+      _ => {
+        panic!("Unrecognized command: {}\n\nChaos reigns within\nReflect, repent, and retry\nOrder shall return\n", command);
+      }
+    }
+  }    
 }
 
 fn main() {
@@ -117,28 +172,5 @@ fn main() {
   // Pop off the name of the program
   let _ = args.remove(0);
 
-  while args.len() > 0 {
-    let command = args.remove(0);
-    match command.as_ref() {
-      "cart" | "cartridge" | "rom" => {
-        let cartridge_path = args.remove(0);
-        load_cartridge(&mut nes, cartridge_path.as_ref());
-      },
-      "run" | "frames" => {
-        let frames: u64 = args.remove(0).parse().unwrap();
-        run(&mut nes, frames);
-      },
-      "screenshot" => {
-        let cartridge_path = args.remove(0);
-        save_screenshot(&nes, cartridge_path.as_ref());
-      },
-      "blargg" => {
-        let output_path = args.remove(0);
-        save_blargg(&mut nes, output_path.as_ref());
-      },
-      _ => {
-        panic!("Unrecognized command: {}\n\nChaos reigns within\nReflect, repent, and retry\nOrder shall return\n", command);
-      }
-    }
-  }    
+  process_command_list(&mut nes, args);
 }
