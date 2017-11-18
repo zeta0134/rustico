@@ -158,6 +158,9 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
         // A comment! Everything on this line is discarded
         return;
       }
+      "" => {
+        // Do nothing. This allows blank lines to exist.
+      }
       _ => {
         panic!("Unrecognized command: {}\n\nChaos reigns within\nReflect, repent, and retry\nOrder shall return\n", command);
       }
