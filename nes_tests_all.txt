@@ -1,0 +1,319 @@
+APU tests
+apu_mixer/dmc
+apu_mixer/noise
+apu_mixer/square
+apu_mixer/triangle
+apu_reset/4015_cleared
+apu_reset/4017_timing
+apu_reset/4017_written
+apu_reset/irq_flag_cleared
+apu_reset/len_ctrs_enabled
+apu_reset/works_immediately
+apu_test/rom_singles/1-len_ctr
+apu_test/rom_singles/2-len_table
+apu_test/rom_singles/3-irq_flag
+apu_test/rom_singles/4-jitter
+apu_test/rom_singles/5-len_timing
+apu_test/rom_singles/6-irq_flag_timing
+apu_test/rom_singles/7-dmc_basics
+apu_test/rom_singles/8-dmc_rates
+blargg_apu_2005.07.30/01.len_ctr
+blargg_apu_2005.07.30/02.len_table
+blargg_apu_2005.07.30/03.irq_flag
+blargg_apu_2005.07.30/04.clock_jitter
+blargg_apu_2005.07.30/05.len_timing_mode0
+blargg_apu_2005.07.30/06.len_timing_mode1
+blargg_apu_2005.07.30/07.irq_flag_timing
+blargg_apu_2005.07.30/08.irq_timing
+blargg_apu_2005.07.30/09.reset_timing
+blargg_apu_2005.07.30/10.len_halt_timing
+blargg_apu_2005.07.30/11.len_reload_timing
+dmc_dma_during_read4/dma_2007_read
+dmc_dma_during_read4/dma_2007_write
+dmc_dma_during_read4/dma_4016_read
+dmc_dma_during_read4/double_2007_read
+dmc_dma_during_read4/read_write_2007
+dmc_tests/buffer_retained
+dmc_tests/latency
+dmc_tests/status_irq
+dmc_tests/status
+dpcmletterbox/dpcmletterbox
+volume_tests/volumes
+
+# ######### #
+# CPU tests #
+# ######### #
+cart ../nes-test-roms/blargg_nes_cpu_test5/cpu.nes
+frames 5000
+screenshot blargg_nes_cpu_test5/cpu.png
+
+cart ../nes-test-roms/blargg_nes_cpu_test5/official.nes
+frames 5000
+screenshot blargg_nes_cpu_test5/official.png
+
+cart ../nes-test-roms/branch_timing_tests/1.Branch_Basics.nes
+frames 5000
+screenshot branch_timing_tests/1.Branch_Basics.png
+
+cart ../nes-test-roms/branch_timing_tests/2.Backward_Branch.nes
+frames 5000
+screenshot branch_timing_tests/2.Backward_Branch.png
+
+cart ../nes-test-roms/branch_timing_tests/3.Forward_Branch.nes
+frames 5000
+screenshot branch_timing_tests/3.Forward_Branch.png
+
+cart ../nes-test-roms/cpu_dummy_reads/cpu_dummy_reads	Fail.nes
+frames 5000
+screenshot cpu_dummy_reads/cpu_dummy_reads	Fail.png
+
+cart ../nes-test-roms/cpu_dummy_writes/cpu_dummy_writes_oam.nes
+frames 5000
+screenshot cpu_dummy_writes/cpu_dummy_writes_oam.png
+
+cart ../nes-test-roms/cpu_dummy_writes/cpu_dummy_writes_ppumem.nes
+frames 5000
+screenshot cpu_dummy_writes/cpu_dummy_writes_ppumem.png
+
+cart ../nes-test-roms/cpu_exec_space/test_cpu_exec_space_apu.nes
+frames 5000
+screenshot cpu_exec_space/test_cpu_exec_space_apu.png
+
+cart ../nes-test-roms/cpu_exec_space/test_cpu_exec_space_ppuio.nes
+frames 5000
+screenshot cpu_exec_space/test_cpu_exec_space_ppuio.png
+
+cart ../nes-test-roms/cpu_interrupts_v2/cpu_interrupts	Fail.nes
+frames 5000
+screenshot cpu_interrupts_v2/cpu_interrupts	Fail.png
+
+cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/1-cli_latency.nes
+frames 5000
+screenshot cpu_interrupts_v2/rom_singles/1-cli_latency.png
+
+cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/2-nmi_and_brk.nes
+frames 5000
+screenshot cpu_interrupts_v2/rom_singles/2-nmi_and_brk.png
+
+cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/3-nmi_and_irq.nes
+frames 5000
+screenshot cpu_interrupts_v2/rom_singles/3-nmi_and_irq.png
+
+cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/4-irq_and_dma.nes
+frames 5000
+screenshot cpu_interrupts_v2/rom_singles/4-irq_and_dma.png
+
+cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/5-branch_delays_irq.nes
+frames 5000
+screenshot cpu_interrupts_v2/rom_singles/5-branch_delays_irq.png
+
+cart ../nes-test-roms/cpu_reset/ram_after_reset.nes
+frames 5000
+screenshot cpu_reset/ram_after_reset.png
+
+cart ../nes-test-roms/cpu_reset/registers	Fail.nes
+frames 5000
+screenshot cpu_reset/registers	Fail.png
+
+cart ../nes-test-roms/cpu_timing_test6/cpu_timing_test.nes
+frames 5000
+screenshot cpu_timing_test6/cpu_timing_test.png
+
+cart ../nes-test-roms/instr_misc/instr_misc.nes
+frames 5000
+screenshot instr_misc/instr_misc.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/01-implied.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/01-implied.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/02-immediate.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/02-immediate.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/03-zero_page.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/03-zero_page.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/04-zp_xy.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/04-zp_xy.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/05-absolute	Fail.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/05-absolute	Fail.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/06-abs_xy.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/06-abs_xy.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/07-ind_x.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/07-ind_x.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/08-ind_y.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/08-ind_y.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/09-branches.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/09-branches.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/10-stack.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/10-stack.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/11-jmp_jsr.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/11-jmp_jsr.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/12-rts.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/12-rts.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/13-rti.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/13-rti.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/14-brk.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/14-brk.png
+
+cart ../nes-test-roms/instr_test-v3/rom_singles/15-special.nes
+frames 5000
+screenshot instr_test-v3/rom_singles/15-special.png
+
+cart ../nes-test-roms/instr_test-v3/all_instrs.nes
+frames 5000
+screenshot instr_test-v3/all_instrs.png
+
+cart ../nes-test-roms/instr_test-v3/official_only.nes
+frames 5000
+screenshot instr_test-v3/official_only.png
+
+cart ../nes-test-roms/instr_timing/instr_timing.nes
+frames 5000
+screenshot instr_timing/instr_timing.png
+
+cart ../nes-test-roms/other/nestest	Fail	Fail (unofficials).nes
+frames 5000
+screenshot other/nestest	Fail	Fail (unofficials).png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/01-implied.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/01-implied.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/02-immediate.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/02-immediate.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/03-zero_page.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/03-zero_page.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/04-zp_xy.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/04-zp_xy.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/05-absolute.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/05-absolute.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/06-abs_xy.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/06-abs_xy.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/07-ind_x.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/07-ind_x.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/08-ind_y.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/08-ind_y.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/09-branches.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/09-branches.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/10-stack.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/10-stack.png
+
+cart ../nes-test-roms/nes_instr_test/rom_singles/11-special.nes
+frames 5000
+screenshot nes_instr_test/rom_singles/11-special.png
+
+
+Mapper-specific tests
+exram/mmc5exram
+mmc3_irq_tests/1.Clocking
+mmc3_irq_tests/2.Details
+mmc3_irq_tests/3.A12_clocking
+mmc3_irq_tests/4.Scanline_timing
+mmc3_irq_tests/5.MMC3_rev_A
+mmc3_irq_tests/6.MMC3_rev_B
+mmc3_test/1-clocking
+mmc3_test/2-details
+mmc3_test/3-A12_clocking
+mmc3_test/4-scanline_timing
+mmc3_test/5-MMC3
+mmc3_test/6-MMC6
+
+PPU/graphics tests
+blargg_ppu_tests_2005.09.15b/palette_ram
+blargg_ppu_tests_2005.09.15b/power_up_palette
+blargg_ppu_tests_2005.09.15b/sprite_ram
+blargg_ppu_tests_2005.09.15b/vbl_clear_time
+blargg_ppu_tests_2005.09.15b/vram_access
+nmi_sync/demo_ntsc
+oam_read/oam_read
+oam_stress/oam_stress
+ppu_open_bus/ppu_open_bus
+ppu_vbl_nmi/rom_singles/01-vbl_basics
+ppu_vbl_nmi/rom_singles/02-vbl_set_time
+ppu_vbl_nmi/rom_singles/03-vbl_clear_time
+ppu_vbl_nmi/rom_singles/04-nmi_control
+ppu_vbl_nmi/rom_singles/05-nmi_timing
+ppu_vbl_nmi/rom_singles/06-suppression
+ppu_vbl_nmi/rom_singles/07-nmi_on_timing
+ppu_vbl_nmi/rom_singles/08-nmi_off_timing
+ppu_vbl_nmi/rom_singles/09-even_odd_frames
+ppu_vbl_nmi/rom_singles/10-even_odd_timing
+scanline/scanline
+scrolltest/scroll
+sprdma_and_dmc_dma/sprdma_and_dmc_dma_512
+sprdma_and_dmc_dma/sprdma_and_dmc_dma
+sprite_hit_tests_2005.10.05/01.basics
+sprite_hit_tests_2005.10.05/02.alignment
+sprite_hit_tests_2005.10.05/03.corners
+sprite_hit_tests_2005.10.05/04.flip
+sprite_hit_tests_2005.10.05/05.left_clip
+sprite_hit_tests_2005.10.05/06.right_edge
+sprite_hit_tests_2005.10.05/07.screen_bottom
+sprite_hit_tests_2005.10.05/08.double_height
+sprite_hit_tests_2005.10.05/09.timing_basics
+sprite_hit_tests_2005.10.05/10.timing_order
+sprite_hit_tests_2005.10.05/11.edge_timing
+sprite_overflow_tests/1.Basics
+sprite_overflow_tests/2.Details
+sprite_overflow_tests/3.Timing
+sprite_overflow_tests/4.Obscure
+sprite_overflow_tests/5.Emulator
+tvpassfail/tv
+vbl_nmi_timing/1.frame_basics
+vbl_nmi_timing/2.vbl_timing
+vbl_nmi_timing/3.even_odd_frames
+vbl_nmi_timing/4.vbl_clear_timing
+vbl_nmi_timing/5.nmi_suppression
+vbl_nmi_timing/6.nmi_disable
+vbl_nmi_timing/7.nmi_timing
+
+Miscellaneous tests
+PaddleTest3/PaddleTest
+read_joy3/test_buttons
+read_joy3/thorough_test
+
+Demos that require accuracy
+full_palette/flowing_palette
+full_palette/full_palette_smooth
+full_nes_palette
