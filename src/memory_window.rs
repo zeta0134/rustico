@@ -64,7 +64,7 @@ impl MemoryWindow {
       if self.view_ppu {
         let masked_address = address & 0x3FFF;
         match masked_address {
-          0x0000 ... 0x1FFF => byte = nes.mapper.debug_read_byte(masked_address),
+          0x0000 ... 0x1FFF => byte = nes.mapper.debug_read_byte(masked_address).unwrap_or(0),
           _ => byte = nes.ppu.passively_read_byte(&mut *nes.mapper, masked_address)
         };
         if masked_address == (nes.ppu.current_vram_address & 0x3FFF) {
