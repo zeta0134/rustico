@@ -143,11 +143,11 @@ frames 500
 screenshot tests/instr_test-v3_rom_singles_15-special.png
 
 cart ../nes-test-roms/instr_test-v3/all_instrs.nes
-frames 200
+frames 3000
 screenshot tests/instr_test-v3_all_instrs.png
 
 cart ../nes-test-roms/instr_test-v3/official_only.nes
-frames 200
+frames 2000
 screenshot tests/instr_test-v3_official_only.png
 
 cart ../nes-test-roms/instr_timing/instr_timing.nes
