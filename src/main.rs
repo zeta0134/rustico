@@ -52,6 +52,27 @@ fn run(nes: &mut NesState, frames: u64) {
   }
 }
 
+fn reset(nes: &mut NesState) {
+  nes.reset();
+}
+
+fn tap(nes: &mut NesState, button: &str, frames: u64) {
+  let button_index: u8 = match button {
+    "a" => 0,
+    "b" => 1,
+    "select" => 2,
+    "start" => 3,
+    "up" => 4,
+    "down" => 5,
+    "left" => 6,
+    "right" => 7,
+    _ => panic!("Invalid button to tap: {}", button)
+  };
+  nes.p1_input |= 0x1 << button_index;
+  run(nes, frames);
+  nes.p1_input ^= 0x1 << button_index;
+}
+
 fn save_screenshot(nes: &NesState, output_path: &str) {
   let mut img = image::ImageBuffer::new(256, 240);
   for x in 0 .. 256 {
@@ -142,6 +163,14 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
         let frames: u64 = command_list.remove(0).parse().unwrap();
         run(nes, frames);
       },
+      "reset" => {
+        reset(nes);
+      }
+      "tap" => {
+        let button = command_list.remove(0);
+        let frames: u64 = command_list.remove(0).parse().unwrap();
+        tap(nes, button.as_ref(), frames);
+      }
       "screenshot" => {
         let cartridge_path = command_list.remove(0);
         save_screenshot(nes, cartridge_path.as_ref());
