@@ -68,9 +68,13 @@ screenshot tests/cpu_interrupts_v2_rom_singles_5-branch_delays_irq.png
 
 cart ../nes-test-roms/cpu_reset/ram_after_reset.nes
 frames 500
+reset
+frames 500
 screenshot tests/cpu_reset_ram_after_reset.png
 
 cart ../nes-test-roms/cpu_reset/registers.nes
+frames 500
+reset
 frames 500
 screenshot tests/cpu_reset_registers.png
 
@@ -155,8 +159,14 @@ frames 500
 screenshot tests/instr_timing_instr_timing.png
 
 cart ../nes-test-roms/other/nestest.nes
+frames 100
+tap start 5
 frames 500
-screenshot tests/other_nestest.png
+screenshot tests/other_nestest_official.png
+tap select 5
+tap start 5
+frames 500
+screenshot tests/other_nestest_unofficial.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/01-implied.nes
 frames 500
