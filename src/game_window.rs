@@ -225,7 +225,7 @@ impl GameWindow {
           }
         }
         match key {
-          Keycode::R => {
+          Keycode::P => {
             if self.file_loaded {
               self.running = !self.running;
             }
@@ -283,6 +283,13 @@ impl GameWindow {
             // Clear the corresponding bit
             nes.p1_input &= (0x1 << i) ^ 0xFF;
           }
+        }
+        match key {
+          Keycode::R => {
+            println!("Resetting NES");
+            nes.reset();
+          },
+          _ => ()
         }
       },
       _ => {}
