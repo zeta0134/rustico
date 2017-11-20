@@ -1,0 +1,175 @@
+# ######### #
+# APU tests #
+# ######### #
+
+# cart ../nes-test-roms/apu_mixer/dmc.nes
+# frames 500
+# screenshot tests/apu_mixer_dmc.png
+
+# cart ../nes-test-roms/apu_mixer/noise.nes
+# frames 500
+# screenshot tests/apu_mixer_noise.png
+
+# cart ../nes-test-roms/apu_mixer/square.nes
+# frames 500
+# screenshot tests/apu_mixer_square.png
+
+# cart ../nes-test-roms/apu_mixer/triangle.nes
+# frames 500
+# screenshot tests/apu_mixer_triangle.png
+
+cart ../nes-test-roms/apu_reset/4015_cleared.nes
+frames 500
+reset
+frames 500
+screenshot tests/apu_reset_4015_cleared.png
+
+cart ../nes-test-roms/apu_reset/4017_timing.nes
+frames 500
+reset
+frames 500
+screenshot tests/apu_reset_4017_timing.png
+
+cart ../nes-test-roms/apu_reset/4017_written.nes
+frames 500
+reset
+frames 500
+screenshot tests/apu_reset_4017_written.png
+
+cart ../nes-test-roms/apu_reset/irq_flag_cleared.nes
+frames 500
+reset
+frames 500
+screenshot tests/apu_reset_irq_flag_cleared.png
+
+cart ../nes-test-roms/apu_reset/len_ctrs_enabled.nes
+frames 500
+reset
+frames 500
+screenshot tests/apu_reset_len_ctrs_enabled.png
+
+cart ../nes-test-roms/apu_reset/works_immediately.nes
+frames 500
+reset
+frames 500
+screenshot tests/apu_reset_works_immediately.png
+
+cart ../nes-test-roms/apu_test/rom_singles/1-len_ctr.nes
+frames 500
+screenshot tests/apu_test_rom_singles_1-len_ctr.png
+
+cart ../nes-test-roms/apu_test/rom_singles/2-len_table.nes
+frames 500
+screenshot tests/apu_test_rom_singles_2-len_table.png
+
+cart ../nes-test-roms/apu_test/rom_singles/3-irq_flag.nes
+frames 500
+screenshot tests/apu_test_rom_singles_3-irq_flag.png
+
+cart ../nes-test-roms/apu_test/rom_singles/4-jitter.nes
+frames 500
+screenshot tests/apu_test_rom_singles_4-jitter.png
+
+cart ../nes-test-roms/apu_test/rom_singles/5-len_timing.nes
+frames 500
+screenshot tests/apu_test_rom_singles_5-len_timing.png
+
+cart ../nes-test-roms/apu_test/rom_singles/6-irq_flag_timing.nes
+frames 500
+screenshot tests/apu_test_rom_singles_6-irq_flag_timing.png
+
+cart ../nes-test-roms/apu_test/rom_singles/7-dmc_basics.nes
+frames 500
+screenshot tests/apu_test_rom_singles_7-dmc_basics.png
+
+cart ../nes-test-roms/apu_test/rom_singles/8-dmc_rates.nes
+frames 500
+screenshot tests/apu_test_rom_singles_8-dmc_rates.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/01.len_ctr.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_01.len_ctr.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/02.len_table.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_02.len_table.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/03.irq_flag.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_03.irq_flag.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/04.clock_jitter.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_04.clock_jitter.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/05.len_timing_mode0.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_05.len_timing_mode0.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/06.len_timing_mode1.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_06.len_timing_mode1.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/07.irq_flag_timing.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_07.irq_flag_timing.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/08.irq_timing.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_08.irq_timing.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/09.reset_timing.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_09.reset_timing.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/10.len_halt_timing.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_10.len_halt_timing.png
+
+cart ../nes-test-roms/blargg_apu_2005.07.30/11.len_reload_timing.nes
+frames 500
+screenshot tests/blargg_apu_2005.07.30_11.len_reload_timing.png
+
+cart ../nes-test-roms/dmc_dma_during_read4/dma_2007_read.nes
+frames 500
+screenshot tests/dmc_dma_during_read4_dma_2007_read.png
+
+cart ../nes-test-roms/dmc_dma_during_read4/dma_2007_write.nes
+frames 500
+screenshot tests/dmc_dma_during_read4_dma_2007_write.png
+
+cart ../nes-test-roms/dmc_dma_during_read4/dma_4016_read.nes
+frames 500
+screenshot tests/dmc_dma_during_read4_dma_4016_read.png
+
+cart ../nes-test-roms/dmc_dma_during_read4/double_2007_read.nes
+frames 500
+screenshot tests/dmc_dma_during_read4_double_2007_read.png
+
+cart ../nes-test-roms/dmc_dma_during_read4/read_write_2007.nes
+frames 500
+screenshot tests/dmc_dma_during_read4_read_write_2007.png
+
+cart ../nes-test-roms/dmc_tests/buffer_retained.nes
+frames 500
+screenshot tests/dmc_tests_buffer_retained.png
+
+cart ../nes-test-roms/dmc_tests/latency.nes
+frames 500
+screenshot tests/dmc_tests_latency.png
+
+cart ../nes-test-roms/dmc_tests/status_irq.nes
+frames 500
+screenshot tests/dmc_tests_status_irq.png
+
+cart ../nes-test-roms/dmc_tests/status.nes
+frames 500
+screenshot tests/dmc_tests_status.png
+
+cart ../nes-test-roms/dpcmletterbox/dpcmletterbox.nes
+frames 500
+screenshot tests/dpcmletterbox_dpcmletterbox.png
+
+cart ../nes-test-roms/volume_tests/volumes.nes
+frames 500
+screenshot tests/volume_tests_volumes.png
