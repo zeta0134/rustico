@@ -4,210 +4,210 @@
 
 cart ../nes-test-roms/blargg_nes_cpu_test5/cpu.nes
 frames 2000
-screenshot tests/blargg_nes_cpu_test5_cpu.png
+screenshot tests/cpu/blargg_nes_cpu_test5_cpu.png
 
 cart ../nes-test-roms/blargg_nes_cpu_test5/official.nes
 frames 1000
-screenshot tests/blargg_nes_cpu_test5_official.png
+screenshot tests/cpu/blargg_nes_cpu_test5_official.png
 
 cart ../nes-test-roms/branch_timing_tests/1.Branch_Basics.nes
 frames 500
-screenshot tests/branch_timing_tests_1.Branch_Basics.png
+screenshot tests/cpu/branch_timing_tests_1.Branch_Basics.png
 
 cart ../nes-test-roms/branch_timing_tests/2.Backward_Branch.nes
 frames 500
-screenshot tests/branch_timing_tests_2.Backward_Branch.png
+screenshot tests/cpu/branch_timing_tests_2.Backward_Branch.png
 
 cart ../nes-test-roms/branch_timing_tests/3.Forward_Branch.nes
 frames 500
-screenshot tests/branch_timing_tests_3.Forward_Branch.png
+screenshot tests/cpu/branch_timing_tests_3.Forward_Branch.png
 
 cart ../nes-test-roms/cpu_dummy_reads/cpu_dummy_reads.nes
 frames 500
-screenshot tests/cpu_dummy_reads_cpu_dummy_reads.png
+screenshot tests/cpu/cpu_dummy_reads_cpu_dummy_reads.png
 
 # cart ../nes-test-roms/cpu_dummy_writes/cpu_dummy_writes_oam.nes
 # frames 500
-# screenshot tests/cpu_dummy_writes_cpu_dummy_writes_oam.png
+# screenshot tests/cpu/cpu_dummy_writes_cpu_dummy_writes_oam.png
 
 # cart ../nes-test-roms/cpu_dummy_writes/cpu_dummy_writes_ppumem.nes
 # frames 500
-# screenshot tests/cpu_dummy_writes_cpu_dummy_writes_ppumem.png
+# screenshot tests/cpu/cpu_dummy_writes_cpu_dummy_writes_ppumem.png
 
 cart ../nes-test-roms/cpu_exec_space/test_cpu_exec_space_apu.nes
 frames 500
-screenshot tests/cpu_exec_space_test_cpu_exec_space_apu.png
+screenshot tests/cpu/cpu_exec_space_test_cpu_exec_space_apu.png
 
 cart ../nes-test-roms/cpu_exec_space/test_cpu_exec_space_ppuio.nes
 frames 500
-screenshot tests/cpu_exec_space_test_cpu_exec_space_ppuio.png
+screenshot tests/cpu/cpu_exec_space_test_cpu_exec_space_ppuio.png
 
 cart ../nes-test-roms/cpu_interrupts_v2/cpu_interrupts.nes
 frames 500
-screenshot tests/cpu_interrupts_v2_cpu_interrupts.png
+screenshot tests/cpu/cpu_interrupts_v2_cpu_interrupts.png
 
 cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/1-cli_latency.nes
 frames 500
-screenshot tests/cpu_interrupts_v2_rom_singles_1-cli_latency.png
+screenshot tests/cpu/cpu_interrupts_v2_rom_singles_1-cli_latency.png
 
 cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/2-nmi_and_brk.nes
 frames 500
-screenshot tests/cpu_interrupts_v2_rom_singles_2-nmi_and_brk.png
+screenshot tests/cpu/cpu_interrupts_v2_rom_singles_2-nmi_and_brk.png
 
 cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/3-nmi_and_irq.nes
 frames 500
-screenshot tests/cpu_interrupts_v2_rom_singles_3-nmi_and_irq.png
+screenshot tests/cpu/cpu_interrupts_v2_rom_singles_3-nmi_and_irq.png
 
 cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/4-irq_and_dma.nes
 frames 500
-screenshot tests/cpu_interrupts_v2_rom_singles_4-irq_and_dma.png
+screenshot tests/cpu/cpu_interrupts_v2_rom_singles_4-irq_and_dma.png
 
 cart ../nes-test-roms/cpu_interrupts_v2/rom_singles/5-branch_delays_irq.nes
 frames 500
-screenshot tests/cpu_interrupts_v2_rom_singles_5-branch_delays_irq.png
+screenshot tests/cpu/cpu_interrupts_v2_rom_singles_5-branch_delays_irq.png
 
 cart ../nes-test-roms/cpu_reset/ram_after_reset.nes
 frames 500
 reset
 frames 500
-screenshot tests/cpu_reset_ram_after_reset.png
+screenshot tests/cpu/cpu_reset_ram_after_reset.png
 
 cart ../nes-test-roms/cpu_reset/registers.nes
 frames 500
 reset
 frames 500
-screenshot tests/cpu_reset_registers.png
+screenshot tests/cpu/cpu_reset_registers.png
 
 cart ../nes-test-roms/cpu_timing_test6/cpu_timing_test.nes
 frames 2000
-screenshot tests/cpu_timing_test6_cpu_timing_test.png
+screenshot tests/cpu/cpu_timing_test6_cpu_timing_test.png
 
 cart ../nes-test-roms/instr_misc/instr_misc.nes
 frames 500
-screenshot tests/instr_misc_instr_misc.png
+screenshot tests/cpu/instr_misc_instr_misc.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/01-implied.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_01-implied.png
+screenshot tests/cpu/instr_test-v3_rom_singles_01-implied.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/02-immediate.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_02-immediate.png
+screenshot tests/cpu/instr_test-v3_rom_singles_02-immediate.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/03-zero_page.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_03-zero_page.png
+screenshot tests/cpu/instr_test-v3_rom_singles_03-zero_page.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/04-zp_xy.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_04-zp_xy.png
+screenshot tests/cpu/instr_test-v3_rom_singles_04-zp_xy.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/05-absolute.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_05-absolute.png
+screenshot tests/cpu/instr_test-v3_rom_singles_05-absolute.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/06-abs_xy.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_06-abs_xy.png
+screenshot tests/cpu/instr_test-v3_rom_singles_06-abs_xy.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/07-ind_x.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_07-ind_x.png
+screenshot tests/cpu/instr_test-v3_rom_singles_07-ind_x.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/08-ind_y.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_08-ind_y.png
+screenshot tests/cpu/instr_test-v3_rom_singles_08-ind_y.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/09-branches.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_09-branches.png
+screenshot tests/cpu/instr_test-v3_rom_singles_09-branches.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/10-stack.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_10-stack.png
+screenshot tests/cpu/instr_test-v3_rom_singles_10-stack.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/11-jmp_jsr.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_11-jmp_jsr.png
+screenshot tests/cpu/instr_test-v3_rom_singles_11-jmp_jsr.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/12-rts.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_12-rts.png
+screenshot tests/cpu/instr_test-v3_rom_singles_12-rts.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/13-rti.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_13-rti.png
+screenshot tests/cpu/instr_test-v3_rom_singles_13-rti.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/14-brk.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_14-brk.png
+screenshot tests/cpu/instr_test-v3_rom_singles_14-brk.png
 
 cart ../nes-test-roms/instr_test-v3/rom_singles/15-special.nes
 frames 500
-screenshot tests/instr_test-v3_rom_singles_15-special.png
+screenshot tests/cpu/instr_test-v3_rom_singles_15-special.png
 
 cart ../nes-test-roms/instr_test-v3/all_instrs.nes
 frames 3000
-screenshot tests/instr_test-v3_all_instrs.png
+screenshot tests/cpu/instr_test-v3_all_instrs.png
 
 cart ../nes-test-roms/instr_test-v3/official_only.nes
 frames 2000
-screenshot tests/instr_test-v3_official_only.png
+screenshot tests/cpu/instr_test-v3_official_only.png
 
 cart ../nes-test-roms/instr_timing/instr_timing.nes
 frames 500
-screenshot tests/instr_timing_instr_timing.png
+screenshot tests/cpu/instr_timing_instr_timing.png
 
 cart ../nes-test-roms/other/nestest.nes
 frames 100
 tap start 5
 frames 500
-screenshot tests/other_nestest_official.png
+screenshot tests/cpu/other_nestest_official.png
 tap select 5
 tap start 5
 frames 500
-screenshot tests/other_nestest_unofficial.png
+screenshot tests/cpu/other_nestest_unofficial.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/01-implied.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_01-implied.png
+screenshot tests/cpu/nes_instr_test_rom_singles_01-implied.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/02-immediate.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_02-immediate.png
+screenshot tests/cpu/nes_instr_test_rom_singles_02-immediate.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/03-zero_page.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_03-zero_page.png
+screenshot tests/cpu/nes_instr_test_rom_singles_03-zero_page.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/04-zp_xy.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_04-zp_xy.png
+screenshot tests/cpu/nes_instr_test_rom_singles_04-zp_xy.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/05-absolute.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_05-absolute.png
+screenshot tests/cpu/nes_instr_test_rom_singles_05-absolute.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/06-abs_xy.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_06-abs_xy.png
+screenshot tests/cpu/nes_instr_test_rom_singles_06-abs_xy.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/07-ind_x.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_07-ind_x.png
+screenshot tests/cpu/nes_instr_test_rom_singles_07-ind_x.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/08-ind_y.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_08-ind_y.png
+screenshot tests/cpu/nes_instr_test_rom_singles_08-ind_y.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/09-branches.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_09-branches.png
+screenshot tests/cpu/nes_instr_test_rom_singles_09-branches.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/10-stack.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_10-stack.png
+screenshot tests/cpu/nes_instr_test_rom_singles_10-stack.png
 
 cart ../nes-test-roms/nes_instr_test/rom_singles/11-special.nes
 frames 500
-screenshot tests/nes_instr_test_rom_singles_11-special.png
+screenshot tests/cpu/nes_instr_test_rom_singles_11-special.png
