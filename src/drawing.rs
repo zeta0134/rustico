@@ -2,7 +2,6 @@ use image;
 use image::Pixel;
 
 use std::path::Path;
-use std::ascii::AsciiExt;
 
 #[derive(Clone)]
 pub struct SimpleBuffer {
@@ -60,7 +59,7 @@ impl Font {
         for i in 0 .. (128 - 32) {
             for y in 0 .. img_height {
                 for x in 0 .. glyph_width {
-                    glyphs[i].put_pixel(x, y, &raw_buffer.get_pixel((i as u32) * glyph_width + (x as u32), (y as u32)));
+                    glyphs[i].put_pixel(x, y, &raw_buffer.get_pixel((i as u32) * glyph_width + (x as u32), y as u32));
                 }
             }
         }
