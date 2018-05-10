@@ -179,19 +179,19 @@ impl AudioWindow {
       },
       Event::KeyDown { keycode: Some(key), .. } => {
         match key {
-          Keycode::F5 => {
+          Keycode::Num5 => {
             nes.apu.pulse_1.debug_disable = !nes.apu.pulse_1.debug_disable;
           },
-          Keycode::F6 => {
+          Keycode::Num6 => {
             nes.apu.pulse_2.debug_disable = !nes.apu.pulse_2.debug_disable;
           },
-          Keycode::F7 => {
+          Keycode::Num7 => {
             nes.apu.triangle.debug_disable = !nes.apu.triangle.debug_disable;
           },
-          Keycode::F8 => {
+          Keycode::Num8 => {
             nes.apu.noise.debug_disable = !nes.apu.noise.debug_disable;
           },
-          Keycode::F9 => {
+          Keycode::Num9 => {
             nes.apu.dmc.debug_disable = !nes.apu.dmc.debug_disable;
           },
           _ => ()
