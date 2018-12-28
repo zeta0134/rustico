@@ -5,12 +5,6 @@ use rusticnes_core::nes::NesState;
 use rusticnes_core::ppu;
 use rusticnes_core::palettes::NTSC_PAL;
 
-use sdl2::event::Event;
-use sdl2::event::WindowEvent;
-use sdl2::pixels::Color;
-use sdl2::pixels::PixelFormatEnum;
-use sdl2::render::TextureAccess;
-
 use drawing;
 use drawing::Font;
 use drawing::SimpleBuffer;
@@ -91,7 +85,6 @@ pub fn draw_color_box(buffer: &mut SimpleBuffer, dx: u32, dy: u32, color: &[u8])
 }
 
 pub struct VramWindow {
-  pub canvas: sdl2::render::WindowCanvas,
   pub buffer: SimpleBuffer,
   pub shown: bool,
   pub palette_cache: [[u8; 4*4]; 4*2],
@@ -99,25 +92,10 @@ pub struct VramWindow {
 }
 
 impl VramWindow {
-  pub fn new(sdl_context: &sdl2::Sdl) -> VramWindow {
-    let video_subsystem = sdl_context.video().unwrap();
-
-    let window = video_subsystem.window("VRAM Debugger", 792, 512)
-        .position(490, 40)
-        .hidden()
-        .opengl()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
-
+  pub fn new() -> VramWindow {
     let font = Font::new("assets/8x8_font.png", 8);
 
     return VramWindow {
-      canvas: canvas,
       buffer: SimpleBuffer::new(792, 512),
       shown: false,
       palette_cache: [[0u8; 4*4]; 4*2],
@@ -294,28 +272,5 @@ impl VramWindow {
     self.draw_sprites(nes, 0, 170);
     // Right Panel: Entire nametable
     self.generate_nametables(&mut *nes.mapper, &mut nes.ppu, 280, 0);
-  }
-  
-
-  pub fn draw(&mut self) {
-    let texture_creator = self.canvas.texture_creator();
-    let mut texture = texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, self.buffer.width, self.buffer.height).unwrap();
-      
-    self.canvas.set_draw_color(Color::RGB(255, 255, 255));
-    let _ = texture.update(None, &self.buffer.buffer, (self.buffer.width * 4) as usize);
-    let _ = self.canvas.copy(&texture, None, None);
-
-    self.canvas.present();
-  }
-
-  pub fn handle_event(&mut self, _: &mut NesState, event: &sdl2::event::Event) {
-    let self_id = self.canvas.window().id();
-    match *event {
-      Event::Window { window_id: id, win_event: WindowEvent::Close, .. } if id == self_id => {
-        self.shown = false;
-        self.canvas.window_mut().hide();
-      },
-      _ => ()
-    }
   }
 }

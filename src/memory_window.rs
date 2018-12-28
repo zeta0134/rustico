@@ -3,20 +3,13 @@ extern crate sdl2;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::memory;
 
-use sdl2::event::Event;
-use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseButton;
-use sdl2::pixels::Color;
-use sdl2::pixels::PixelFormatEnum;
-use sdl2::render::TextureAccess;
 
 use drawing;
 use drawing::Font;
 use drawing::SimpleBuffer;
 
-pub struct MemoryWindow {
-  pub canvas: sdl2::render::WindowCanvas,
+pub struct MemoryWindow {  
   pub buffer: SimpleBuffer,
   pub shown: bool,
   pub font: Font,
@@ -25,25 +18,10 @@ pub struct MemoryWindow {
 }
 
 impl MemoryWindow {
-  pub fn new(sdl_context: &sdl2::Sdl) -> MemoryWindow {
-    let video_subsystem = sdl_context.video().unwrap();
-
-    let window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
-        .position(490, 40)
-        .hidden()
-        .opengl()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
-
+  pub fn new() -> MemoryWindow {
     let font = Font::new("assets/8x8_font.png", 8);
 
     return MemoryWindow {
-      canvas: canvas,
       buffer: SimpleBuffer::new(360, 220),
       font: font,
       shown: false,
@@ -168,17 +146,36 @@ impl MemoryWindow {
     self.draw_memory_page(nes, 56, 44);
   }
 
-  pub fn draw(&mut self) {
-    let texture_creator = self.canvas.texture_creator();
-    let mut texture = texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, self.buffer.width, self.buffer.height).unwrap();
-      
-    self.canvas.set_draw_color(Color::RGB(255, 255, 255));
-    let _ = texture.update(None, &self.buffer.buffer, (self.buffer.width * 4) as usize);
-    let _ = self.canvas.copy(&texture, None, None);
-
-    self.canvas.present();
+  pub fn handle_key_up(&mut self, _nes: &mut NesState, key: Keycode) {
+    match key {
+      Keycode::Period => {
+        self.memory_page = self.memory_page.wrapping_add(0x100);
+      },
+      Keycode::Comma => {
+        self.memory_page = self.memory_page.wrapping_sub(0x100);
+      },
+      Keycode::Slash => {
+        self.view_ppu = !self.view_ppu;
+      },
+      _ => ()
+    }
   }
 
+  pub fn handle_click(&mut self, _nes: &mut NesState, mx: i32, my: i32) {
+    if my < 11 && mx < 32 {
+      self.view_ppu = !self.view_ppu;
+    }
+    if my >= 11 && my < 22 && mx > 56 && mx < 360 {
+      let high_nybble = ((mx - 56) / 19) as u16;
+      self.memory_page = (self.memory_page & 0x0FFF) | (high_nybble << 12);
+    }
+    if my >= 22 && my < 33 && mx > 56 && mx < 360 {
+      let low_nybble = ((mx - 56) / 19) as u16;
+      self.memory_page = (self.memory_page & 0xF0FF) | (low_nybble << 8);
+    }
+  }
+
+  /*
   pub fn handle_event(&mut self, _: &mut NesState, event: &sdl2::event::Event) {
     let self_id = self.canvas.window().id();
     match *event {
@@ -217,6 +214,6 @@ impl MemoryWindow {
       },
       _ => ()
     }
-  }
+  }*/
 }
 
