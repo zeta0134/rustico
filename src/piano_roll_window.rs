@@ -4,6 +4,7 @@ use rusticnes_core::apu::ApuState;
 use rusticnes_core::apu::PulseChannelState;
 use rusticnes_core::apu::TriangleChannelState;
 use rusticnes_core::apu::NoiseChannelState;
+use rusticnes_core::apu::DmcState;
 use rusticnes_core::nes::NesState;
 
 use drawing;
@@ -26,6 +27,7 @@ pub struct PianoRollWindow {
   pub last_pulse_2: ChannelState,
   pub last_triangle: ChannelState,
   pub last_noise: ChannelState,
+  pub last_dmc: ChannelState,
 }
 
 // Given a note frequency, returns the y-coordinate within the specified height on a piano
@@ -115,6 +117,42 @@ pub fn noise_channel_state(noise: &NoiseChannelState) -> ChannelState {
   };
 }
 
+pub fn dmc_channel_state(dmc: &DmcState) -> ChannelState {
+  let volume = 15;
+  let playing = !dmc.silence_flag;
+  // DMC "frequency" is equally funky, since the resulting frequency depends on the sample
+  // being played. Again for visualization purposes, we're just going to take the value 
+  // set in hardware and use it directly:
+  let frequency = match dmc.period_initial {
+    54 => 0,
+    72 => 1, 
+    84 => 2, 
+    106 => 3,
+
+    128 => 4,
+    142 => 5,
+    160 => 6,
+    190 => 7,
+
+    214 => 8,
+    226 => 9,
+    254 => 10,
+    286 => 11,
+
+    320 => 12,
+    340 => 13,
+    380 => 14,
+    428 => 15,
+    _ => 0
+  };
+
+  return ChannelState {
+    playing: playing,
+    frequency: frequency as f32,
+    volume: volume as f32
+  };
+}
+
 pub fn draw_note(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
   let current_py = frequency_to_coordinate(current.frequency, 380);
   let old_py = frequency_to_coordinate(old.frequency, 380);
@@ -153,7 +191,7 @@ pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: Ch
   let old_py = (old.frequency * 5.0) as u32;
   let note_head = current.playing && !old.playing;
   let note_tail = old.playing && !current.playing;
-  if current_py >= 0 && current_py <= 75 {
+  if current_py <= 75 {
     if note_head {
       // Draw the first bit of an outline *before* the note
       drawing::rect(buffer, 
@@ -171,7 +209,7 @@ pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: Ch
         &apply_brightness(color, current.volume / 23.0 + 0.25));
     }
   }
-  if old_py >= 0 && old_py <= 75 {
+  if old_py <= 75 {
     if note_tail {
       // Final Outline
       drawing::rect(buffer, 
@@ -194,6 +232,7 @@ impl PianoRollWindow {
       last_pulse_2: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
       last_triangle: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
       last_noise: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
+      last_dmc: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
     }
   }
 
@@ -267,6 +306,11 @@ impl PianoRollWindow {
     draw_note(&mut self.buffer, current_triangle, self.last_triangle, &[128, 255, 128, 255]);
     self.last_triangle = current_triangle;
 
+    // DMC ("underneath" noise, so we draw it first)
+    let current_dmc = dmc_channel_state(&apu.dmc);
+    draw_percussion(&mut self.buffer, current_dmc, self.last_dmc, &[128, 64, 255, 255]);
+    self.last_dmc = current_dmc;
+
     // Noise
     let current_noise = noise_channel_state(&apu.noise);
     if apu.noise.mode == 0 {
@@ -275,6 +319,7 @@ impl PianoRollWindow {
       draw_percussion(&mut self.buffer, current_noise, self.last_noise, &[128, 255, 255, 255]);
     }
     self.last_noise = current_noise;
+  
   }
 
   pub fn draw_headers(&mut self) {
