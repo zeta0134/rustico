@@ -121,7 +121,7 @@ pub fn main() {
   let debugger_texture_creator = debugger_canvas.texture_creator();
   let mut debugger_screen_texture = debugger_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, debugger_window.buffer.width, debugger_window.buffer.height).unwrap();
 
-  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", 512, 824)
+  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", 512, 1024)
     .position(490, 40)
     .hidden()
     .opengl()

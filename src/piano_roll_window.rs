@@ -3,6 +3,7 @@ extern crate sdl2;
 use rusticnes_core::apu::ApuState;
 use rusticnes_core::apu::PulseChannelState;
 use rusticnes_core::apu::TriangleChannelState;
+use rusticnes_core::apu::NoiseChannelState;
 use rusticnes_core::nes::NesState;
 
 use drawing;
@@ -24,6 +25,7 @@ pub struct PianoRollWindow {
   pub last_pulse_1: ChannelState,
   pub last_pulse_2: ChannelState,
   pub last_triangle: ChannelState,
+  pub last_noise: ChannelState,
 }
 
 // Given a note frequency, returns the y-coordinate within the specified height on a piano
@@ -81,6 +83,38 @@ pub fn triangle_channel_state(triangle: &TriangleChannelState) -> ChannelState {
   };
 }
 
+pub fn noise_channel_state(noise: &NoiseChannelState) -> ChannelState {
+  let volume = noise.envelope.current_volume();
+  let playing = volume != 0 && noise.length_counter.length > 0;
+  // Noise "frequency" is a little funky. For visualization purposes, we're just
+  // going to take the value set in hardware and use it directly:
+  let frequency = match noise.period_initial {
+    4 => 0,
+    8 => 1, 
+    16 => 2, 
+    32 => 3,
+    64 => 4,
+    96 => 5,
+    128 => 6,
+    160 => 7,
+    202 => 8,
+    254 => 9,
+    380 => 10,
+    508 => 11,
+    762 => 12,
+    1016 => 13,
+    2034 => 14,
+    4068 => 15,
+    _ => 0
+  };
+
+  return ChannelState {
+    playing: playing,
+    frequency: frequency as f32,
+    volume: volume as f32
+  };
+}
+
 pub fn draw_note(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
   let current_py = frequency_to_coordinate(current.frequency, 380);
   let old_py = frequency_to_coordinate(old.frequency, 380);
@@ -114,18 +148,52 @@ pub fn draw_note(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelS
   }
 }
 
+pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
+  let current_py = (current.frequency * 5.0) as u32;
+  let old_py = (old.frequency * 5.0) as u32;
+  let note_head = current.playing && !old.playing;
+  let note_tail = old.playing && !current.playing;
+  if current_py >= 0 && current_py <= 75 {
+    if note_head {
+      // Draw the first bit of an outline *before* the note
+      drawing::rect(buffer, 
+        254, current_py + 32 + 380 + 10 - 1, 1, 7,
+        &[0, 0, 0, 255]);
+    }
+    if current.playing {
+      // Outline
+      drawing::rect(buffer, 
+        255, current_py + 32 + 380 + 10 - 1, 1, 7,
+        &[0, 0, 0, 255]); 
+      // Note color
+      drawing::rect(buffer, 
+        255, current_py + 32 + 380 + 10, 1, 5,
+        &apply_brightness(color, current.volume / 23.0 + 0.25));
+    }
+  }
+  if old_py >= 0 && old_py <= 75 {
+    if note_tail {
+      // Final Outline
+      drawing::rect(buffer, 
+        255, old_py + 32 + 380 + 10 - 1, 1, 7,
+        &[0, 0, 0, 255]);
+    }
+  }
+}
+
 impl PianoRollWindow {
   pub fn new() -> PianoRollWindow {
     let font = Font::new("assets/8x8_font.png", 8);
 
     return PianoRollWindow {
-      buffer: SimpleBuffer::new(256, 412),
+      buffer: SimpleBuffer::new(256, 512),
       font: font,
       shown: false,
       last_frame: 0,
       last_pulse_1: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
       last_pulse_2: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
       last_triangle: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
+      last_noise: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
     }
   }
 
@@ -167,6 +235,22 @@ impl PianoRollWindow {
     }
   }
 
+  pub fn draw_percussion_keys(&mut self) {
+    let percussion_key_colors = [
+      [112, 128, 128, 255],
+      [ 56,  64,  64, 255]];
+
+
+    for key in 0 .. 16 {
+      let key_color = percussion_key_colors[key % 2];
+      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 0, &apply_brightness(&key_color, 0.28));
+      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 1, &apply_brightness(&key_color, 0.26));
+      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 2, &apply_brightness(&key_color, 0.24));
+      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 3, &apply_brightness(&key_color, 0.22));
+      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 4, &apply_brightness(&key_color, 0.20));
+    }
+  }
+
   pub fn draw_channels(&mut self, apu: &ApuState) {
     // Pulse 1
     let current_pulse_1 = pulse_channel_state(&apu.pulse_1);
@@ -182,6 +266,15 @@ impl PianoRollWindow {
     let current_triangle = triangle_channel_state(&apu.triangle);
     draw_note(&mut self.buffer, current_triangle, self.last_triangle, &[128, 255, 128, 255]);
     self.last_triangle = current_triangle;
+
+    // Noise
+    let current_noise = noise_channel_state(&apu.noise);
+    if apu.noise.mode == 0 {
+      draw_percussion(&mut self.buffer, current_noise, self.last_noise, &[128, 128, 255, 255]);
+    } else {
+      draw_percussion(&mut self.buffer, current_noise, self.last_noise, &[128, 255, 255, 255]);
+    }
+    self.last_noise = current_noise;
   }
 
   pub fn draw_headers(&mut self) {
@@ -202,12 +295,13 @@ impl PianoRollWindow {
     }
     self.last_frame = nes.ppu.current_frame;
 
-    self.shift_playfield_left(0, 32, 256, 380);
+    self.shift_playfield_left(0, 32, 256, 480);
     // Clear the header area
     let width = self.buffer.width;
     drawing::rect(&mut self.buffer,   0, 0, width,  32, &[0,0,0,255]);
 
     self.draw_piano_keys();
+    self.draw_percussion_keys();
     self.draw_channels(&nes.apu);
     self.draw_headers();
   }
