@@ -9,6 +9,7 @@ mod audio_window;
 mod debugger_window;
 mod game_window;
 mod memory_window;
+mod piano_roll_window;
 mod vram_window;
 
 use sdl2::audio::AudioSpecDesired;
@@ -120,6 +121,20 @@ pub fn main() {
   let debugger_texture_creator = debugger_canvas.texture_creator();
   let mut debugger_screen_texture = debugger_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, debugger_window.buffer.width, debugger_window.buffer.height).unwrap();
 
+  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", 512, 824)
+    .position(490, 40)
+    .hidden()
+    .opengl()
+    .build()
+    .unwrap();
+  let mut piano_roll_canvas = sdl_piano_roll_window.into_canvas().build().unwrap();
+  piano_roll_canvas.set_draw_color(Color::RGB(0, 0, 0));
+  piano_roll_canvas.clear();
+  piano_roll_canvas.present();
+  let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
+  let piano_roll_texture_creator = piano_roll_canvas.texture_creator();
+  let mut piano_roll_screen_texture = piano_roll_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, piano_roll_window.buffer.width, piano_roll_window.buffer.height).unwrap();
+
   let mut ctrl_mod = false;
   let mut trigger_resize = false;
 
@@ -141,6 +156,7 @@ pub fn main() {
               debugger_canvas.window().id() == focused_window_id ||
               game_canvas.window().id() == focused_window_id ||
               memory_canvas.window().id() == focused_window_id ||
+              piano_roll_canvas.window().id() == focused_window_id ||
               vram_canvas.window().id() == focused_window_id;
 
             if application_focused {
@@ -205,6 +221,15 @@ pub fn main() {
                         } else {
                           debugger_window.shown = false;
                           debugger_canvas.window_mut().hide();
+                        }
+                      },
+                      Keycode::F5 => {
+                        if !piano_roll_window.shown {
+                          piano_roll_window.shown = true;
+                          piano_roll_canvas.window_mut().show();
+                        } else {
+                          piano_roll_window.shown = false;
+                          piano_roll_canvas.window_mut().hide();
                         }
                       },
                       Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {
@@ -285,6 +310,9 @@ pub fn main() {
     if memory_window.shown {
       memory_window.update(&mut nes);
     }
+    if piano_roll_window.shown {
+      piano_roll_window.update(&mut nes);
+    }
     if vram_window.shown {
       vram_window.update(&mut nes);
     }
@@ -312,6 +340,13 @@ pub fn main() {
       let _ = debugger_screen_texture.update(None, &debugger_window.buffer.buffer, (debugger_window.buffer.width * 4) as usize);
       let _ = debugger_canvas.copy(&debugger_screen_texture, None, None);
       debugger_canvas.present();
+    }
+
+    if piano_roll_window.shown {
+      piano_roll_canvas.set_draw_color(Color::RGB(255, 255, 255));
+      let _ = piano_roll_screen_texture.update(None, &piano_roll_window.buffer.buffer, (piano_roll_window.buffer.width * 4) as usize);
+      let _ = piano_roll_canvas.copy(&piano_roll_screen_texture, None, None);
+      piano_roll_canvas.present();
     }
 
     if memory_window.shown {
