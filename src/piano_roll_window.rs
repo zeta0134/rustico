@@ -11,6 +11,20 @@ use drawing;
 use drawing::Font;
 use drawing::SimpleBuffer;
 
+const NTSC_CPU_FREQUENCY: f32 = 1.789773 * 1024.0 * 1024.0;
+const HEADER_HEIGHT: u32 = 32;
+const NOTE_FIELD_X: u32 = 0;
+const NOTE_FIELD_Y: u32 = HEADER_HEIGHT;
+const NOTE_FIELD_SPACING: u32 = 5;
+const KEY_HEIGHT: u32 = 5;
+const NOTE_COUNT: u32 = 76;
+const PERCUSSION_COUNT: u32 = 16;
+const NOTE_FIELD_WIDTH: u32 = 512;
+const NOTE_FIELD_HEIGHT: u32 = KEY_HEIGHT * NOTE_COUNT;
+const PERCUSSION_FIELD_HEIGHT: u32 = KEY_HEIGHT * PERCUSSION_COUNT;
+const LOWEST_NOTE_FREQ: f32 = 55.0; // A0
+const HIGHEST_NOTE_FREQ: f32 = 4434.922; // C#8
+
 #[derive(Clone, Copy)]
 pub struct ChannelState {
   pub playing: bool,
@@ -30,23 +44,18 @@ pub struct PianoRollWindow {
   pub last_dmc: ChannelState,
 }
 
-// Given a note frequency, returns the y-coordinate within the specified height on a piano
-// roll. Assumes the range of a standard 88-key piano.
+// Given a note frequency, returns the y-coordinate within the specified height on a piano roll.
 pub fn frequency_to_coordinate(frequency: f32, height: u32) -> u32 {
-  let a1 = (55.0 as f32).ln();
-  let c_sharp_8 = (4434.922 as f32).ln();
-  let range = c_sharp_8 - a1;
-  return ((frequency.ln() - a1) * (height as f32) / range).ceil() as u32;
+  let range = HIGHEST_NOTE_FREQ.ln() - LOWEST_NOTE_FREQ.ln();
+  return ((frequency.ln() - LOWEST_NOTE_FREQ.ln()) * (height as f32) / range).ceil() as u32;
 }
 
 pub fn pulse_frequency(pulse_period: f32) -> f32 {
-  let cpu_frequency = 1.789773 * 1024.0 * 1024.0;
-  return cpu_frequency / (16.0 * (pulse_period + 1.0));
+  return NTSC_CPU_FREQUENCY / (16.0 * (pulse_period + 1.0));
 }
 
 pub fn triangle_frequency(triangle_period: f32) -> f32 {
-  let cpu_frequency = 1.789773 * 1024.0 * 1024.0;
-  return cpu_frequency / (32.0 * (triangle_period + 1.0));
+  return NTSC_CPU_FREQUENCY / (32.0 * (triangle_period + 1.0));
 }
 
 pub fn apply_brightness(color: &[u8], brightness: f32) -> [u8; 4] {
@@ -154,58 +163,79 @@ pub fn dmc_channel_state(dmc: &DmcState) -> ChannelState {
 }
 
 pub fn draw_note(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
-  let current_py = frequency_to_coordinate(current.frequency, 380);
-  let old_py = frequency_to_coordinate(old.frequency, 380);
+  let current_py = frequency_to_coordinate(current.frequency, NOTE_FIELD_HEIGHT);
+  let old_py = frequency_to_coordinate(old.frequency, NOTE_FIELD_HEIGHT);
   let note_head = current.playing && !old.playing;
   let note_tail = old.playing && !current.playing;
-  if current_py >= 5 && current_py < 374 {
+  if current_py >= KEY_HEIGHT && current_py < (NOTE_FIELD_HEIGHT - KEY_HEIGHT) {
     if note_head {
       // Draw the first bit of an outline *before* the note
       drawing::rect(buffer, 
-        254, (379 - current_py) + 32 - 1, 1, 7,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 2, 
+        NOTE_FIELD_HEIGHT - current_py - 1 + NOTE_FIELD_Y - 1, 
+        1, 
+        KEY_HEIGHT + 2,
         &[0, 0, 0, 255]);
     }
     if current.playing {
       // Outline
       drawing::rect(buffer, 
-        255, (379 - current_py) + 32 - 1, 1, 7,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        NOTE_FIELD_HEIGHT - current_py - 1 + NOTE_FIELD_Y - 1, 
+        1, 
+        KEY_HEIGHT + 2,
         &[0, 0, 0, 255]); 
       // Note color
       drawing::rect(buffer, 
-        255, (379 - current_py) + 32, 1, 5,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        NOTE_FIELD_HEIGHT - current_py - 1 + NOTE_FIELD_Y, 
+        1, 
+        KEY_HEIGHT,
         &apply_brightness(color, current.volume / 23.0 + 0.25));
     }
   }
-  if old_py >= 5 && old_py < 374 {
+  if old_py >= KEY_HEIGHT && old_py < (NOTE_FIELD_HEIGHT - KEY_HEIGHT) {
     if note_tail {
       // Final Outline
       drawing::rect(buffer, 
-        255, (379 - old_py) + 32 - 1, 1, 7,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        NOTE_FIELD_HEIGHT - old_py - 1 + NOTE_FIELD_Y - 1, 
+        1, 
+        KEY_HEIGHT + 2,
         &[0, 0, 0, 255]);
     }
   }
 }
 
 pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
-  let current_py = (current.frequency * 5.0) as u32;
-  let old_py = (old.frequency * 5.0) as u32;
+  let current_py = (current.frequency * (KEY_HEIGHT as f32)) as u32;
+  let old_py = (old.frequency * (KEY_HEIGHT as f32)) as u32;
   let note_head = current.playing && !old.playing;
   let note_tail = old.playing && !current.playing;
-  if current_py <= 75 {
+  if current_py <= (PERCUSSION_FIELD_HEIGHT - KEY_HEIGHT) {
     if note_head {
       // Draw the first bit of an outline *before* the note
       drawing::rect(buffer, 
-        254, current_py + 32 + 380 + 10 - 1, 1, 7,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 2, 
+        current_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING - 1, 
+        1, 
+        KEY_HEIGHT + 2,
         &[0, 0, 0, 255]);
     }
     if current.playing {
       // Outline
       drawing::rect(buffer, 
-        255, current_py + 32 + 380 + 10 - 1, 1, 7,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        current_py + NOTE_FIELD_Y + 380 + NOTE_FIELD_SPACING - 1, 
+        1, 
+        KEY_HEIGHT + 2,
         &[0, 0, 0, 255]); 
       // Note color
       drawing::rect(buffer, 
-        255, current_py + 32 + 380 + 10, 1, 5,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        current_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING, 
+        1, 
+        KEY_HEIGHT,
         &apply_brightness(color, current.volume / 23.0 + 0.25));
     }
   }
@@ -213,7 +243,10 @@ pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: Ch
     if note_tail {
       // Final Outline
       drawing::rect(buffer, 
-        255, old_py + 32 + 380 + 10 - 1, 1, 7,
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        old_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING - 1, 
+        1, 
+        KEY_HEIGHT + 2,
         &[0, 0, 0, 255]);
     }
   }
@@ -224,7 +257,9 @@ impl PianoRollWindow {
     let font = Font::new("assets/8x8_font.png", 8);
 
     return PianoRollWindow {
-      buffer: SimpleBuffer::new(256, 512),
+      buffer: SimpleBuffer::new(
+        NOTE_FIELD_WIDTH, 
+        HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + PERCUSSION_FIELD_HEIGHT + NOTE_FIELD_SPACING),
       font: font,
       shown: false,
       last_frame: 0,
@@ -262,15 +297,16 @@ impl PianoRollWindow {
       [112, 112, 128, 255],
       [ 56,  56,  64, 255]];
 
-    for key in 0 .. 76 {
-      let key_color = octave_key_colors[key % 12];
+    for key in 0 .. NOTE_COUNT {
+      let key_color = octave_key_colors[(key % 12) as usize];
       let octave = ((key - 1) / 12) % 2;
       let octave_brightness = (octave as f32) * 0.075;
-      self.buffer.put_pixel(255, 32 + (key as u32) * 5 + 0, &apply_brightness(&key_color, 0.28 + octave_brightness));
-      self.buffer.put_pixel(255, 32 + (key as u32) * 5 + 1, &apply_brightness(&key_color, 0.26 + octave_brightness));
-      self.buffer.put_pixel(255, 32 + (key as u32) * 5 + 2, &apply_brightness(&key_color, 0.24 + octave_brightness));
-      self.buffer.put_pixel(255, 32 + (key as u32) * 5 + 3, &apply_brightness(&key_color, 0.22 + octave_brightness));
-      self.buffer.put_pixel(255, 32 + (key as u32) * 5 + 4, &apply_brightness(&key_color, 0.20 + octave_brightness));
+      for i in 0 .. KEY_HEIGHT {
+        self.buffer.put_pixel(
+          NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1,
+          HEADER_HEIGHT + (key as u32) * KEY_HEIGHT + i,
+          &apply_brightness(&key_color, 0.30 - ((i as f32) * 0.02) + octave_brightness));
+      }
     }
   }
 
@@ -279,14 +315,14 @@ impl PianoRollWindow {
       [112, 128, 128, 255],
       [ 56,  64,  64, 255]];
 
-
-    for key in 0 .. 16 {
-      let key_color = percussion_key_colors[key % 2];
-      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 0, &apply_brightness(&key_color, 0.28));
-      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 1, &apply_brightness(&key_color, 0.26));
-      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 2, &apply_brightness(&key_color, 0.24));
-      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 3, &apply_brightness(&key_color, 0.22));
-      self.buffer.put_pixel(255, 32 + 380 + 10 + (key as u32) * 5 + 4, &apply_brightness(&key_color, 0.20));
+    for key in 0 .. PERCUSSION_COUNT {
+      let key_color = percussion_key_colors[(key % 2) as usize];
+      for i in 0 .. KEY_HEIGHT {
+        self.buffer.put_pixel(
+          NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+          HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT + i, 
+          &apply_brightness(&key_color, 0.30 - ((i as f32) * 0.02)));
+      }
     }
   }
 
@@ -340,10 +376,10 @@ impl PianoRollWindow {
     }
     self.last_frame = nes.ppu.current_frame;
 
-    self.shift_playfield_left(0, 32, 256, 480);
+    self.shift_playfield_left(NOTE_FIELD_X, NOTE_FIELD_Y, NOTE_FIELD_WIDTH, NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + PERCUSSION_FIELD_HEIGHT);
     // Clear the header area
     let width = self.buffer.width;
-    drawing::rect(&mut self.buffer,   0, 0, width,  32, &[0,0,0,255]);
+    drawing::rect(&mut self.buffer,   0, 0, width,  HEADER_HEIGHT, &[0,0,0,255]);
 
     self.draw_piano_keys();
     self.draw_percussion_keys();

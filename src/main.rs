@@ -121,7 +121,8 @@ pub fn main() {
   let debugger_texture_creator = debugger_canvas.texture_creator();
   let mut debugger_screen_texture = debugger_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, debugger_window.buffer.width, debugger_window.buffer.height).unwrap();
 
-  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", 512, 1024)
+  let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
+  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", piano_roll_window.buffer.width * 2, piano_roll_window.buffer.height * 2)
     .position(490, 40)
     .hidden()
     .opengl()
@@ -131,7 +132,6 @@ pub fn main() {
   piano_roll_canvas.set_draw_color(Color::RGB(0, 0, 0));
   piano_roll_canvas.clear();
   piano_roll_canvas.present();
-  let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
   let piano_roll_texture_creator = piano_roll_canvas.texture_creator();
   let mut piano_roll_screen_texture = piano_roll_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, piano_roll_window.buffer.width, piano_roll_window.buffer.height).unwrap();
 
