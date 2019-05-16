@@ -21,6 +21,7 @@ use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 use sdl2::render::TextureAccess;
+use std::env;
 
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
@@ -137,6 +138,11 @@ pub fn main() {
 
   let mut ctrl_mod = false;
   let mut trigger_resize = false;
+
+  let args: Vec<_> = env::args().collect();
+  if args.len() > 1 {
+      game_window.open_file(&mut nes, &args[1]);
+  }
 
   'running: loop {
     if !game_window.shown {

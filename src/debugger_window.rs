@@ -16,7 +16,7 @@ pub struct DebuggerWindow {
 
 impl DebuggerWindow {
   pub fn new() -> DebuggerWindow {
-    let font = Font::new("assets/8x8_font.png", 8);
+    let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
     return DebuggerWindow {
       buffer: SimpleBuffer::new(256, 300),

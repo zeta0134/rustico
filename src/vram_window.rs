@@ -93,7 +93,7 @@ pub struct VramWindow {
 
 impl VramWindow {
   pub fn new() -> VramWindow {
-    let font = Font::new("assets/8x8_font.png", 8);
+    let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
     return VramWindow {
       buffer: SimpleBuffer::new(792, 512),

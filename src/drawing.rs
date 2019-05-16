@@ -1,7 +1,6 @@
 use image;
 use image::Pixel;
-
-use std::path::Path;
+use image::RgbaImage;
 
 #[derive(Clone)]
 pub struct SimpleBuffer {
@@ -40,8 +39,7 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn new(bitmap_filename: &str, glyph_width: u32, ) -> Font {
-        let img = image::open(&Path::new(bitmap_filename)).unwrap().to_rgba();
+    pub fn from_image(img: RgbaImage, glyph_width: u32) -> Font {
         let (img_width, img_height) = img.dimensions();
 
         // First, read everything into a raw buffer
@@ -68,6 +66,10 @@ impl Font {
             glyph_width: glyph_width,
             glyphs: glyphs,
         }
+    }
+    pub fn from_raw(bitmap_data: &[u8], glyph_width: u32) -> Font {
+        let img = image::load_from_memory(bitmap_data).unwrap().to_rgba();
+        return Font::from_image(img, glyph_width);
     }
 }
 

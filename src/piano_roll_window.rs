@@ -254,7 +254,7 @@ pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: Ch
 
 impl PianoRollWindow {
   pub fn new() -> PianoRollWindow {
-    let font = Font::new("assets/8x8_font.png", 8);
+    let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
     return PianoRollWindow {
       buffer: SimpleBuffer::new(

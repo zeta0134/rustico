@@ -19,7 +19,7 @@ pub struct MemoryWindow {
 
 impl MemoryWindow {
   pub fn new() -> MemoryWindow {
-    let font = Font::new("assets/8x8_font.png", 8);
+    let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
     return MemoryWindow {
       buffer: SimpleBuffer::new(360, 220),

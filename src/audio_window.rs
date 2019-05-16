@@ -125,7 +125,7 @@ pub struct AudioWindow {
 
 impl AudioWindow {
   pub fn new() -> AudioWindow {
-    let font = Font::new("assets/8x8_font.png", 8);
+    let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
     return AudioWindow {
       buffer: SimpleBuffer::new(256, 192),
