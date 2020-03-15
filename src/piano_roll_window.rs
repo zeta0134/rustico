@@ -248,14 +248,24 @@ impl PianoRollWindow {
 
     for key in 0 .. NOTE_COUNT {
       let key_color = octave_key_colors[(key % 12) as usize];
-      let octave = ((key - 1) / 12) % 2;
-      let octave_brightness = (octave as f32) * 0.075;
-      for i in 0 .. KEY_HEIGHT {
-        self.buffer.put_pixel(
-          NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1,
-          HEADER_HEIGHT + (key as u32) * KEY_HEIGHT + i,
-          &apply_brightness(&key_color, 0.30 - ((i as f32) * 0.02) + octave_brightness));
-      }
+
+      // Fill
+      drawing::rect(&mut self.buffer, 
+      NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+      HEADER_HEIGHT + (key as u32) * KEY_HEIGHT,
+      1, 
+      KEY_HEIGHT,
+      &apply_brightness(&key_color, 0.2));
+
+      // Bevel
+      self.buffer.put_pixel(
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1,
+        HEADER_HEIGHT + (key as u32) * KEY_HEIGHT,
+        &apply_brightness(&key_color, 0.25));
+      self.buffer.put_pixel(
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1,
+        HEADER_HEIGHT + (key as u32) * KEY_HEIGHT + KEY_HEIGHT - 1,
+        &apply_brightness(&key_color, 0.15));
     }
   }
 
@@ -266,18 +276,31 @@ impl PianoRollWindow {
 
     for key in 0 .. PERCUSSION_COUNT {
       let key_color = percussion_key_colors[(key % 2) as usize];
-      for i in 0 .. KEY_HEIGHT {
-        self.buffer.put_pixel(
-          NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-          HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT + i, 
-          &apply_brightness(&key_color, 0.30 - ((i as f32) * 0.02)));
-      }
+
+      // Fill
+      drawing::rect(&mut self.buffer, 
+      NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+      HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT, 
+      1, 
+      KEY_HEIGHT,
+      &apply_brightness(&key_color, 0.2));
+
+      // Bevel
+      self.buffer.put_pixel(
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+        HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT, 
+        &apply_brightness(&key_color, 0.25));
+      self.buffer.put_pixel(
+        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+          HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT + KEY_HEIGHT - 1, 
+        &apply_brightness(&key_color, 0.15));
     }
   }
 
   pub fn draw_channels(&mut self, apu: &ApuState) {
     // Pulse 1
     let pulse_1_state = pulse_channel_state(&apu.pulse_1);
+
     draw_note(&mut self.buffer, pulse_1_state, &[255, 64, 64, 255]);
 
     // Pulse 2
