@@ -15,11 +15,11 @@ const NTSC_CPU_FREQUENCY: f32 = 1.789773 * 1024.0 * 1024.0;
 const HEADER_HEIGHT: u32 = 32;
 const NOTE_FIELD_X: u32 = 0;
 const NOTE_FIELD_Y: u32 = HEADER_HEIGHT;
-const NOTE_FIELD_SPACING: u32 = 5;
-const KEY_HEIGHT: u32 = 5;
+const NOTE_FIELD_SPACING: u32 = 9;
+const KEY_HEIGHT: u32 = 9;
 const NOTE_COUNT: u32 = 76;
 const PERCUSSION_COUNT: u32 = 16;
-const NOTE_FIELD_WIDTH: u32 = 512;
+const NOTE_FIELD_WIDTH: u32 = 768;
 const NOTE_FIELD_HEIGHT: u32 = KEY_HEIGHT * NOTE_COUNT;
 const PERCUSSION_FIELD_HEIGHT: u32 = KEY_HEIGHT * PERCUSSION_COUNT;
 const LOWEST_NOTE_FREQ: f32 = 55.0; // A0
@@ -37,9 +37,6 @@ pub struct PianoRollWindow {
   pub shown: bool,
   pub font: Font,
   pub last_frame: u32,
-  pub last_pulse_1: ChannelState,
-  pub last_pulse_2: ChannelState,
-  pub last_triangle: ChannelState,
   pub last_noise: ChannelState,
   pub last_dmc: ChannelState,
 }
@@ -80,8 +77,9 @@ pub fn pulse_channel_state(pulse: &PulseChannelState) -> ChannelState {
 
 pub fn triangle_channel_state(triangle: &TriangleChannelState) -> ChannelState {
   // Note: The triangle channel doesn't have volume control in hardware, it's either
-  // on or off. We set 15 here as it's the maximum volume for a pulse channel, for consistency.
-  let volume = 15.0;
+  // on or off. We set 10 here. Technically 15 would be "max" for consistency, but due
+  // to the waveform, the triangle always sounds a bit quieter.
+  let volume = 8.0;
   let playing = 
       triangle.length_counter.length > 0 && 
       triangle.linear_counter_current != 0 &&
@@ -162,92 +160,50 @@ pub fn dmc_channel_state(dmc: &DmcState) -> ChannelState {
   };
 }
 
-pub fn draw_note(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
-  let current_py = frequency_to_coordinate(current.frequency, NOTE_FIELD_HEIGHT);
-  let old_py = frequency_to_coordinate(old.frequency, NOTE_FIELD_HEIGHT);
-  let note_head = current.playing && !old.playing;
-  let note_tail = old.playing && !current.playing;
-  if current_py >= KEY_HEIGHT && current_py < (NOTE_FIELD_HEIGHT - KEY_HEIGHT) {
-    if note_head {
-      // Draw the first bit of an outline *before* the note
-      drawing::rect(buffer, 
-        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 2, 
-        NOTE_FIELD_HEIGHT - current_py - 1 + NOTE_FIELD_Y - 1, 
-        1, 
-        KEY_HEIGHT + 2,
-        &[0, 0, 0, 255]);
-    }
-    if current.playing {
+pub fn draw_note(buffer: &mut SimpleBuffer, channel: ChannelState, color: &[u8]) {
+  if channel.playing {
+    let note_height = (((channel.volume as u32 * KEY_HEIGHT) / 15) & 0xFE) + 1;
+    let outline_py = frequency_to_coordinate(channel.frequency, NOTE_FIELD_HEIGHT);
+    let note_py = outline_py - ((KEY_HEIGHT - note_height) / 2);
+    if outline_py >= KEY_HEIGHT && outline_py < (NOTE_FIELD_HEIGHT - KEY_HEIGHT) {
       // Outline
       drawing::rect(buffer, 
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        NOTE_FIELD_HEIGHT - current_py - 1 + NOTE_FIELD_Y - 1, 
+        NOTE_FIELD_HEIGHT - outline_py + NOTE_FIELD_Y - 1, 
         1, 
-        KEY_HEIGHT + 2,
-        &[0, 0, 0, 255]); 
+        KEY_HEIGHT,
+        &apply_brightness(color, 0.4));
       // Note color
       drawing::rect(buffer, 
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        NOTE_FIELD_HEIGHT - current_py - 1 + NOTE_FIELD_Y, 
+        NOTE_FIELD_HEIGHT - note_py + NOTE_FIELD_Y - 1,
         1, 
-        KEY_HEIGHT,
-        &apply_brightness(color, current.volume / 23.0 + 0.25));
-    }
-  }
-  if old_py >= KEY_HEIGHT && old_py < (NOTE_FIELD_HEIGHT - KEY_HEIGHT) {
-    if note_tail {
-      // Final Outline
-      drawing::rect(buffer, 
-        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        NOTE_FIELD_HEIGHT - old_py - 1 + NOTE_FIELD_Y - 1, 
-        1, 
-        KEY_HEIGHT + 2,
-        &[0, 0, 0, 255]);
+        note_height,
+        &apply_brightness(color, 1.0));
     }
   }
 }
 
-pub fn draw_percussion(buffer: &mut SimpleBuffer, current: ChannelState, old: ChannelState, color: &[u8]) {
-  let current_py = (current.frequency * (KEY_HEIGHT as f32)) as u32;
-  let old_py = (old.frequency * (KEY_HEIGHT as f32)) as u32;
-  let note_head = current.playing && !old.playing;
-  let note_tail = old.playing && !current.playing;
-  if current_py <= (PERCUSSION_FIELD_HEIGHT - KEY_HEIGHT) {
-    if note_head {
-      // Draw the first bit of an outline *before* the note
-      drawing::rect(buffer, 
-        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 2, 
-        current_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING - 1, 
-        1, 
-        KEY_HEIGHT + 2,
-        &[0, 0, 0, 255]);
-    }
-    if current.playing {
+pub fn draw_percussion(buffer: &mut SimpleBuffer, channel: ChannelState, color: &[u8]) {
+  if channel.playing {
+    let note_height = (((channel.volume as u32 * KEY_HEIGHT) / 15) & 0xFE) + 1;
+    let outline_py = (channel.frequency * (KEY_HEIGHT as f32)) as u32;
+    let note_py = outline_py + ((KEY_HEIGHT - note_height) / 2);
+    if outline_py <= (PERCUSSION_FIELD_HEIGHT - KEY_HEIGHT) {
       // Outline
       drawing::rect(buffer, 
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        current_py + NOTE_FIELD_Y + 380 + NOTE_FIELD_SPACING - 1, 
+        outline_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING,
         1, 
-        KEY_HEIGHT + 2,
-        &[0, 0, 0, 255]); 
+        KEY_HEIGHT,
+        &apply_brightness(color, 0.4));
       // Note color
       drawing::rect(buffer, 
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        current_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING, 
+        note_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING,
         1, 
-        KEY_HEIGHT,
-        &apply_brightness(color, current.volume / 23.0 + 0.25));
-    }
-  }
-  if old_py <= 75 {
-    if note_tail {
-      // Final Outline
-      drawing::rect(buffer, 
-        NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        old_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING - 1, 
-        1, 
-        KEY_HEIGHT + 2,
-        &[0, 0, 0, 255]);
+        note_height,
+        &apply_brightness(color, 1.0));
     }
   }
 }
@@ -263,9 +219,6 @@ impl PianoRollWindow {
       font: font,
       shown: false,
       last_frame: 0,
-      last_pulse_1: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
-      last_pulse_2: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
-      last_triangle: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
       last_noise: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
       last_dmc: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
     }
@@ -328,45 +281,46 @@ impl PianoRollWindow {
 
   pub fn draw_channels(&mut self, apu: &ApuState) {
     // Pulse 1
-    let current_pulse_1 = pulse_channel_state(&apu.pulse_1);
-    draw_note(&mut self.buffer, current_pulse_1, self.last_pulse_1, &[255, 128, 128, 255]);
-    self.last_pulse_1 = current_pulse_1;
+    let pulse_1_state = pulse_channel_state(&apu.pulse_1);
+    draw_note(&mut self.buffer, pulse_1_state, &[255, 64, 64, 255]);
 
     // Pulse 2
-    let current_pulse_2 = pulse_channel_state(&apu.pulse_2);
-    draw_note(&mut self.buffer, current_pulse_2, self.last_pulse_2, &[255, 192, 129, 255]);
-    self.last_pulse_2 = current_pulse_2;
+    let pulse_2_state = pulse_channel_state(&apu.pulse_2);
+    draw_note(&mut self.buffer, pulse_2_state, &[255, 144, 64, 255]);
 
     // Triangle
-    let current_triangle = triangle_channel_state(&apu.triangle);
-    draw_note(&mut self.buffer, current_triangle, self.last_triangle, &[128, 255, 128, 255]);
-    self.last_triangle = current_triangle;
+    let triangle_state = triangle_channel_state(&apu.triangle);
+    draw_note(&mut self.buffer, triangle_state, &[64, 255, 64, 255]);
 
     // DMC ("underneath" noise, so we draw it first)
     let current_dmc = dmc_channel_state(&apu.dmc);
-    draw_percussion(&mut self.buffer, current_dmc, self.last_dmc, &[128, 64, 255, 255]);
+    draw_percussion(&mut self.buffer, current_dmc, &[128, 64, 255, 255]);
     self.last_dmc = current_dmc;
 
     // Noise
     let current_noise = noise_channel_state(&apu.noise);
     if apu.noise.mode == 0 {
-      draw_percussion(&mut self.buffer, current_noise, self.last_noise, &[128, 128, 255, 255]);
+      draw_percussion(&mut self.buffer, current_noise, &[128, 128, 255, 255]);
     } else {
-      draw_percussion(&mut self.buffer, current_noise, self.last_noise, &[128, 255, 255, 255]);
+      draw_percussion(&mut self.buffer, current_noise, &[128, 255, 255, 255]);
     }
     self.last_noise = current_noise;
   
   }
 
-  pub fn draw_headers(&mut self) {
+  pub fn draw_headers(&mut self, apu: &ApuState) {
+    let pulse_1_state = pulse_channel_state(&apu.pulse_1);
+    let pulse_2_state = pulse_channel_state(&apu.pulse_2);
+    let triangle_state = triangle_channel_state(&apu.triangle);
+
     drawing::text(&mut self.buffer, &self.font, 0, 0,  "PULSE 1", &[192,  32,  32, 255]);
-    drawing::text(&mut self.buffer, &self.font, 0, 16, &format!("{:.2}", self.last_pulse_1.frequency), &[192,  32,  32, 255]);
+    drawing::text(&mut self.buffer, &self.font, 0, 16, &format!("{:.2}", pulse_1_state.frequency), &[192,  32,  32, 255]);
 
     drawing::text(&mut self.buffer, &self.font, 84, 0,  "PULSE 2", &[192,  128,  32, 255]);
-    drawing::text(&mut self.buffer, &self.font, 84, 16, &format!("{:.2}", self.last_pulse_2.frequency), &[192,  128,  32, 255]);
+    drawing::text(&mut self.buffer, &self.font, 84, 16, &format!("{:.2}", pulse_2_state.frequency), &[192,  128,  32, 255]);
 
     drawing::text(&mut self.buffer, &self.font, 168, 0,  "TRIANGLE", &[32,  192,  32, 255]);
-    drawing::text(&mut self.buffer, &self.font, 168, 16, &format!("{:.2}", self.last_triangle.frequency), &[32,  192,  32, 255]);
+    drawing::text(&mut self.buffer, &self.font, 168, 16, &format!("{:.2}", triangle_state.frequency), &[32,  192,  32, 255]);
   }
 
   pub fn update(&mut self, nes: &mut NesState) {
@@ -384,7 +338,7 @@ impl PianoRollWindow {
     self.draw_piano_keys();
     self.draw_percussion_keys();
     self.draw_channels(&nes.apu);
-    self.draw_headers();
+    self.draw_headers(&nes.apu);
   }
 }
 

@@ -123,7 +123,7 @@ pub fn main() {
   let mut debugger_screen_texture = debugger_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, debugger_window.buffer.width, debugger_window.buffer.height).unwrap();
 
   let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
-  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", piano_roll_window.buffer.width * 2, piano_roll_window.buffer.height * 2)
+  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", piano_roll_window.buffer.width, piano_roll_window.buffer.height)
     .position(490, 40)
     .hidden()
     .opengl()
