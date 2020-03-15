@@ -37,8 +37,6 @@ pub struct PianoRollWindow {
   pub shown: bool,
   pub font: Font,
   pub last_frame: u32,
-  pub last_noise: ChannelState,
-  pub last_dmc: ChannelState,
 }
 
 // Given a note frequency, returns the y-coordinate within the specified height on a piano roll.
@@ -219,8 +217,6 @@ impl PianoRollWindow {
       font: font,
       shown: false,
       last_frame: 0,
-      last_noise: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
-      last_dmc: ChannelState {playing: false, frequency: 0.0, volume: 0.0},
     }
   }
 
@@ -293,18 +289,16 @@ impl PianoRollWindow {
     draw_note(&mut self.buffer, triangle_state, &[64, 255, 64, 255]);
 
     // DMC ("underneath" noise, so we draw it first)
-    let current_dmc = dmc_channel_state(&apu.dmc);
-    draw_percussion(&mut self.buffer, current_dmc, &[128, 64, 255, 255]);
-    self.last_dmc = current_dmc;
+    let dmc_state = dmc_channel_state(&apu.dmc);
+    draw_percussion(&mut self.buffer, dmc_state, &[128, 64, 255, 255]);
 
     // Noise
-    let current_noise = noise_channel_state(&apu.noise);
+    let noise_state = noise_channel_state(&apu.noise);
     if apu.noise.mode == 0 {
-      draw_percussion(&mut self.buffer, current_noise, &[128, 128, 255, 255]);
+      draw_percussion(&mut self.buffer, noise_state, &[128, 128, 255, 255]);
     } else {
-      draw_percussion(&mut self.buffer, current_noise, &[128, 255, 255, 255]);
-    }
-    self.last_noise = current_noise;
+      draw_percussion(&mut self.buffer, noise_state, &[128, 255, 255, 255]);
+    }    
   
   }
 
