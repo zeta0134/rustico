@@ -15,7 +15,8 @@ const NTSC_CPU_FREQUENCY: f32 = 1.789773 * 1024.0 * 1024.0;
 const HEADER_HEIGHT: u32 = 32;
 const NOTE_FIELD_X: u32 = 0;
 const NOTE_FIELD_Y: u32 = HEADER_HEIGHT;
-const NOTE_FIELD_SPACING: u32 = 9;
+const NOTE_FIELD_SPACING: u32 = 8;
+const DMC_HEIGHT: u32 = 32;
 const KEY_HEIGHT: u32 = 9;
 const NOTE_COUNT: u32 = 76;
 const PERCUSSION_COUNT: u32 = 16;
@@ -37,6 +38,7 @@ pub struct PianoRollWindow {
   pub shown: bool,
   pub font: Font,
   pub last_frame: u32,
+  pub last_dmc_output: u32,
 }
 
 // Given a note frequency, returns the y-coordinate within the specified height on a piano roll.
@@ -191,19 +193,46 @@ pub fn draw_percussion(buffer: &mut SimpleBuffer, channel: ChannelState, color: 
       // Outline
       drawing::rect(buffer, 
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        outline_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING,
+        outline_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING * 2 + DMC_HEIGHT,
         1, 
         KEY_HEIGHT,
         &apply_brightness(color, 0.4));
       // Note color
       drawing::rect(buffer, 
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        note_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING,
+        note_py + NOTE_FIELD_Y + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING * 2 + DMC_HEIGHT,
         1, 
         note_height,
         &apply_brightness(color, 1.0));
     }
   }
+}
+
+pub fn draw_dmc(buffer: &mut SimpleBuffer, dmc: &DmcState, last_output: u32, color: &[u8]) {
+  let playing = !dmc.silence_flag;
+  let background_py = HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING;
+  let sample_height = ((dmc.output_level as i32 - last_output as i32).abs() as u32 * DMC_HEIGHT) / 128 + 1;
+  let sample_py = (DMC_HEIGHT / 2) - (sample_height / 2);
+  let mut background_color = apply_brightness(color, 0.1);
+  let mut sample_color = apply_brightness(color, 0.5);
+  if playing {
+    background_color = apply_brightness(color, 0.15);
+    sample_color = apply_brightness(color, 1.0);
+  }
+  // Outline
+  drawing::rect(buffer, 
+    NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+    background_py,
+    1, 
+    DMC_HEIGHT,
+    &background_color);
+  // Sample
+  drawing::rect(buffer,
+    NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
+    background_py + sample_py, 
+    1,
+    sample_height,
+    &sample_color);
 }
 
 impl PianoRollWindow {
@@ -213,10 +242,11 @@ impl PianoRollWindow {
     return PianoRollWindow {
       buffer: SimpleBuffer::new(
         NOTE_FIELD_WIDTH, 
-        HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + PERCUSSION_FIELD_HEIGHT + NOTE_FIELD_SPACING),
+        HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + DMC_HEIGHT + NOTE_FIELD_SPACING + PERCUSSION_FIELD_HEIGHT + NOTE_FIELD_SPACING),
       font: font,
       shown: false,
       last_frame: 0,
+      last_dmc_output: 0,
     }
   }
 
@@ -280,7 +310,7 @@ impl PianoRollWindow {
       // Fill
       drawing::rect(&mut self.buffer, 
       NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-      HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT, 
+      HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING * 2 + DMC_HEIGHT + (key as u32) * KEY_HEIGHT, 
       1, 
       KEY_HEIGHT,
       &apply_brightness(&key_color, 0.2));
@@ -288,11 +318,11 @@ impl PianoRollWindow {
       // Bevel
       self.buffer.put_pixel(
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-        HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT, 
+        HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING * 2 + DMC_HEIGHT + (key as u32) * KEY_HEIGHT, 
         &apply_brightness(&key_color, 0.25));
       self.buffer.put_pixel(
         NOTE_FIELD_X + NOTE_FIELD_WIDTH - 1, 
-          HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + (key as u32) * KEY_HEIGHT + KEY_HEIGHT - 1, 
+          HEADER_HEIGHT + NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING * 2 + DMC_HEIGHT + (key as u32) * KEY_HEIGHT + KEY_HEIGHT - 1, 
         &apply_brightness(&key_color, 0.15));
     }
   }
@@ -312,15 +342,15 @@ impl PianoRollWindow {
     draw_note(&mut self.buffer, triangle_state, &[64, 255, 64, 255]);
 
     // DMC ("underneath" noise, so we draw it first)
-    let dmc_state = dmc_channel_state(&apu.dmc);
-    draw_percussion(&mut self.buffer, dmc_state, &[128, 64, 255, 255]);
+    draw_dmc(&mut self.buffer, &apu.dmc, self.last_dmc_output, &[128, 64, 255, 255]);
+    self.last_dmc_output = apu.dmc.output_level as u32;
 
     // Noise
     let noise_state = noise_channel_state(&apu.noise);
     if apu.noise.mode == 0 {
-      draw_percussion(&mut self.buffer, noise_state, &[128, 128, 255, 255]);
+      draw_percussion(&mut self.buffer, noise_state, &[64, 64, 255, 255]);
     } else {
-      draw_percussion(&mut self.buffer, noise_state, &[128, 255, 255, 255]);
+      draw_percussion(&mut self.buffer, noise_state, &[64, 255, 255, 255]);
     }    
   
   }
@@ -347,7 +377,7 @@ impl PianoRollWindow {
     }
     self.last_frame = nes.ppu.current_frame;
 
-    self.shift_playfield_left(NOTE_FIELD_X, NOTE_FIELD_Y, NOTE_FIELD_WIDTH, NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + PERCUSSION_FIELD_HEIGHT);
+    self.shift_playfield_left(NOTE_FIELD_X, NOTE_FIELD_Y, NOTE_FIELD_WIDTH, NOTE_FIELD_HEIGHT + NOTE_FIELD_SPACING + DMC_HEIGHT + NOTE_FIELD_SPACING + PERCUSSION_FIELD_HEIGHT);
     // Clear the header area
     let width = self.buffer.width;
     drawing::rect(&mut self.buffer,   0, 0, width,  HEADER_HEIGHT, &[0,0,0,255]);
