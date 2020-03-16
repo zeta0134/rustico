@@ -124,42 +124,6 @@ pub fn noise_channel_state(noise: &NoiseChannelState) -> ChannelState {
   };
 }
 
-pub fn dmc_channel_state(dmc: &DmcState) -> ChannelState {
-  let volume = 15;
-  let playing = !dmc.silence_flag;
-  // DMC "frequency" is equally funky, since the resulting frequency depends on the sample
-  // being played. Again for visualization purposes, we're just going to take the value 
-  // set in hardware and use it directly:
-  let frequency = match dmc.period_initial {
-    54 => 0,
-    72 => 1, 
-    84 => 2, 
-    106 => 3,
-
-    128 => 4,
-    142 => 5,
-    160 => 6,
-    190 => 7,
-
-    214 => 8,
-    226 => 9,
-    254 => 10,
-    286 => 11,
-
-    320 => 12,
-    340 => 13,
-    380 => 14,
-    428 => 15,
-    _ => 0
-  };
-
-  return ChannelState {
-    playing: playing,
-    frequency: frequency as f32,
-    volume: volume as f32
-  };
-}
-
 pub fn draw_note(buffer: &mut SimpleBuffer, channel: ChannelState, color: &[u8]) {
   if channel.playing {
     let note_height = (((channel.volume as u32 * KEY_HEIGHT) / 15) & 0xFE) + 1;
