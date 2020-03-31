@@ -12,8 +12,8 @@ use drawing::SimpleBuffer;
 pub fn draw_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
   for py in 0 .. 8 {
     let tile_address = pattern_address + tile_index * 16 + py;
-    let mut tile_low  = mapper.debug_read_byte(tile_address).unwrap_or(0);
-    let mut tile_high = mapper.debug_read_byte(tile_address + 8).unwrap_or(0);
+    let mut tile_low  = mapper.debug_read_ppu(tile_address).unwrap_or(0);
+    let mut tile_high = mapper.debug_read_ppu(tile_address + 8).unwrap_or(0);
     for px in 0 .. 8 {
       let palette_index = (tile_low & 0x1) + ((tile_high & 0x1) << 1);
       tile_low = tile_low >> 1;
@@ -32,8 +32,8 @@ pub fn draw_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buf
 pub fn draw_2x_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
   for py in 0 .. 8 {
     let tile_address = pattern_address + tile_index * 16 + py;
-    let mut tile_low  = mapper.debug_read_byte(tile_address).unwrap_or(0);
-    let mut tile_high = mapper.debug_read_byte(tile_address + 8).unwrap_or(0);
+    let mut tile_low  = mapper.debug_read_ppu(tile_address).unwrap_or(0);
+    let mut tile_high = mapper.debug_read_ppu(tile_address + 8).unwrap_or(0);
     for px in 0 .. 8 {
       let palette_index = (tile_low & 0x1) + ((tile_high & 0x1) << 1);
       tile_low = tile_low >> 1;
