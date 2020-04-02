@@ -141,6 +141,9 @@ impl GameWindow {
       Keycode::Space => {
         nes.step();
       },
+      Keycode::D => {
+        nes.mapper.print_debug_status();
+      },
       Keycode::C => {
         nes.cycle();
       },
