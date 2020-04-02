@@ -125,6 +125,20 @@ impl GameWindow {
         // Set the corresponding bit
         nes.p1_input |= 0x1 << i;
       }
+      // Prevent impossible combinations on a real D-Pad
+      // TODO Later: make this an option?
+      if key == Keycode::Up {
+        nes.p1_input &= 0b1101_1111;
+      }
+      if key == Keycode::Down {
+        nes.p1_input &= 0b1110_1111;
+      }
+      if key == Keycode::Left {
+        nes.p1_input &= 0b0111_1111;
+      }
+      if key == Keycode::Right {
+        nes.p1_input &= 0b1011_1111;
+      }
     }
     match key {
       Keycode::P => {
