@@ -9,13 +9,34 @@ use drawing;
 use drawing::Font;
 use drawing::SimpleBuffer;
 
-pub fn draw_waveform(imagebuffer: &mut SimpleBuffer, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
+pub fn draw_channel_waveform(imagebuffer: &mut SimpleBuffer, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
   let mut last_y = 0;
   for dx in x .. (x + width) {
     let sample_index = (start_index + dx as usize) % audiobuffer.len();
     let sample = audiobuffer[sample_index];
     let current_x = dx as u32;
-    let mut current_y = ((sample as u32 * height) / scale) as u32;
+    let mut current_y = ((sample as u64 * height as u64) / scale as u64) as u32;
+    if current_y >= height {
+        current_y = height - 1;
+    }
+    for dy in current_y .. last_y {
+      imagebuffer.put_pixel(current_x, y + dy, color);
+    }
+    for dy in last_y .. current_y {
+      imagebuffer.put_pixel(current_x, y + dy, color);
+    }
+    last_y = current_y;
+    imagebuffer.put_pixel(dx, y + current_y, color);
+  }
+}
+
+pub fn draw_final_waveform(imagebuffer: &mut SimpleBuffer, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
+  let mut last_y = 0;
+  for dx in x .. (x + width) {
+    let sample_index = (start_index + dx as usize) % audiobuffer.len();
+    let sample = audiobuffer[sample_index];
+    let current_x = dx as u32;
+    let mut current_y = (((sample as i64 + (scale as i64 / 2)) * height as i64) / scale as i64) as u32;
     if current_y >= height {
         current_y = height - 1;
     }
@@ -54,27 +75,27 @@ pub fn draw_audio_samples(imagebuffer: &mut SimpleBuffer, font: &Font, apu: &Apu
   }
 
   if !(apu.pulse_1.debug_disable) {
-      draw_waveform(imagebuffer, &apu.pulse_1.debug_buffer,
+      draw_channel_waveform(imagebuffer, &apu.pulse_1.debug_buffer,
           apu.buffer_index, &[192,  32,  32, 255], 0,   0, 256,  32, 16);
   }
   if !(apu.pulse_2.debug_disable) {
-      draw_waveform(imagebuffer, &apu.pulse_2.debug_buffer,
+      draw_channel_waveform(imagebuffer, &apu.pulse_2.debug_buffer,
           apu.buffer_index, &[192,  96,  32, 255], 0,  32, 256,  32, 16);
   }
   if !(apu.triangle.debug_disable) {
-      draw_waveform(imagebuffer, &apu.triangle.debug_buffer,
+      draw_channel_waveform(imagebuffer, &apu.triangle.debug_buffer,
           apu.buffer_index, &[32, 192,  32, 255], 0,  64, 256,  32, 16);
   }
   if !(apu.noise.debug_disable) {
-      draw_waveform(imagebuffer, &apu.noise.debug_buffer,
+      draw_channel_waveform(imagebuffer, &apu.noise.debug_buffer,
           apu.buffer_index, &[32,  96, 192, 255], 0,  96, 256,  32, 16);
   }
   if !(apu.dmc.debug_disable) {
-      draw_waveform(imagebuffer, &apu.dmc.debug_buffer,
+      draw_channel_waveform(imagebuffer, &apu.dmc.debug_buffer,
           apu.buffer_index, &[96,  32, 192, 255], 0, 128, 256,  32, 128);
   }
-  draw_waveform(imagebuffer, &apu.sample_buffer,
-      apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 16384);
+  draw_final_waveform(imagebuffer, &apu.sample_buffer,
+      apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 65536);
 
   drawing::text(imagebuffer, font, 0, 32  - 8, 
     &format!("Pulse 1 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
