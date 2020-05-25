@@ -30,7 +30,8 @@ const HIGHEST_NOTE_FREQ: f32 = 4434.922; // C#8
 pub struct ChannelState {
   pub playing: bool,
   pub frequency: f32,
-  pub volume: f32
+  pub volume: f32,
+  pub duty: u8,
 }
 
 pub struct PianoRollWindow {
@@ -72,6 +73,7 @@ pub fn pulse_channel_state(pulse: &PulseChannelState) -> ChannelState {
     playing: playing,
     frequency: frequency,
     volume: volume as f32,
+    duty: pulse.duty,
   };
 }
 
@@ -88,7 +90,8 @@ pub fn triangle_channel_state(triangle: &TriangleChannelState) -> ChannelState {
   return ChannelState {
     playing: playing,
     frequency: frequency,
-    volume: volume
+    volume: volume,
+    duty: 0
   };
 }
 
@@ -120,7 +123,8 @@ pub fn noise_channel_state(noise: &NoiseChannelState) -> ChannelState {
   return ChannelState {
     playing: playing,
     frequency: frequency as f32,
-    volume: volume as f32
+    volume: volume as f32,
+    duty: 0
   };
 }
 
@@ -294,16 +298,27 @@ impl PianoRollWindow {
   pub fn draw_channels(&mut self, apu: &ApuState) {
     // Pulse 1
     let pulse_1_state = pulse_channel_state(&apu.pulse_1);
-
-    draw_note(&mut self.buffer, pulse_1_state, &[255, 64, 64, 255]);
+    match pulse_1_state.duty {
+      0b1000_0000 => {draw_note(&mut self.buffer, pulse_1_state, &[255, 64, 255, 255]);},
+      0b1100_0000 => {draw_note(&mut self.buffer, pulse_1_state, &[255, 64, 128, 255]);},
+      0b1111_0000 => {draw_note(&mut self.buffer, pulse_1_state, &[255, 64,  64, 255]);},
+      0b0011_1111 => {draw_note(&mut self.buffer, pulse_1_state, &[255, 64, 128, 255]);},
+      _ => {} // should be unreachable; only the above 4 duty cycles are present on a real NES
+    };
 
     // Pulse 2
     let pulse_2_state = pulse_channel_state(&apu.pulse_2);
-    draw_note(&mut self.buffer, pulse_2_state, &[255, 144, 64, 255]);
+    match pulse_2_state.duty {
+      0b1000_0000 => {draw_note(&mut self.buffer, pulse_2_state, &[255, 128, 64, 255]);},
+      0b1100_0000 => {draw_note(&mut self.buffer, pulse_2_state, &[128, 255, 64, 255]);},
+      0b1111_0000 => {draw_note(&mut self.buffer, pulse_2_state, &[255, 255, 64, 255]);},
+      0b0011_1111 => {draw_note(&mut self.buffer, pulse_2_state, &[128, 255, 64, 255]);},
+      _ => {} // should be unreachable; only the above 4 duty cycles are present on a real NES
+    };
 
     // Triangle
     let triangle_state = triangle_channel_state(&apu.triangle);
-    draw_note(&mut self.buffer, triangle_state, &[64, 255, 64, 255]);
+    draw_note(&mut self.buffer, triangle_state, &[64, 255, 255, 255]);
 
     // DMC ("underneath" noise, so we draw it first)
     draw_dmc(&mut self.buffer, &apu.dmc, self.last_dmc_output, &[128, 64, 255, 255]);
