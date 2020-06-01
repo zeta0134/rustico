@@ -22,6 +22,7 @@ use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 use sdl2::render::TextureAccess;
 use std::env;
+use std::fs::remove_file;
 
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
@@ -138,6 +139,7 @@ pub fn main() {
 
   let mut ctrl_mod = false;
   let mut trigger_resize = false;
+  let mut dump_audio = false;
 
   let args: Vec<_> = env::args().collect();
   if args.len() > 1 {
@@ -254,6 +256,16 @@ pub fn main() {
                         game_window.display_overscan = !game_window.display_overscan;
                         trigger_resize = true;
                       },
+                      Keycode::A => {
+                        dump_audio = !dump_audio;
+                        if dump_audio {
+                          let _ = remove_file("audiodump.raw");
+                          println!("Beginning audio dump...");
+                        } else {
+                          println!("Audio dump stopped.");
+                        }
+                      },
+                      
                       _ => ()
                     }
                   }
@@ -331,6 +343,9 @@ pub fn main() {
       }
       device.queue(&buffer);
       nes.apu.buffer_full = false;
+      if dump_audio {
+        nes.apu.dump_sample_buffer();
+      }
     }
 
     // Draw all windows
