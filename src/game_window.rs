@@ -5,7 +5,6 @@ use rusticnes_core::palettes::NTSC_PAL;
 
 use nfd::Response;
 
-use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
