@@ -9,7 +9,7 @@ use drawing;
 use drawing::Font;
 use drawing::SimpleBuffer;
 
-pub fn draw_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
+pub fn draw_tile(mapper: &mut dyn Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
   for py in 0 .. 8 {
     let tile_address = pattern_address + tile_index * 16 + py;
     let mut tile_low  = mapper.debug_read_ppu(tile_address).unwrap_or(0);
@@ -29,7 +29,7 @@ pub fn draw_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buf
   }
 }
 
-pub fn draw_2x_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
+pub fn draw_2x_tile(mapper: &mut dyn Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
   for py in 0 .. 8 {
     let tile_address = pattern_address + tile_index * 16 + py;
     let mut tile_low  = mapper.debug_read_ppu(tile_address).unwrap_or(0);
@@ -53,7 +53,7 @@ pub fn draw_2x_tile(mapper: &mut Mapper, pattern_address: u16, tile_index: u16, 
   }
 }
 
-pub fn generate_chr_pattern(mapper: &mut Mapper, pattern_address: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32) {
+pub fn generate_chr_pattern(mapper: &mut dyn Mapper, pattern_address: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32) {
   let debug_palette: [u8; 4*4] = [
     255, 255, 255, 255,
     192, 192, 192, 255,
@@ -124,7 +124,7 @@ impl VramWindow {
     }
   }
 
-  pub fn generate_nametables(&mut self, mapper: &mut Mapper, ppu: &mut ppu::PpuState, dx: u32, dy: u32) {
+  pub fn generate_nametables(&mut self, mapper: &mut dyn Mapper, ppu: &mut ppu::PpuState, dx: u32, dy: u32) {
     let mut pattern_address = 0x0000;
     if (ppu.control & 0x10) != 0 {
       pattern_address = 0x1000;
