@@ -58,7 +58,7 @@ impl GameWindow {
     let file = File::open(file_path);
     match file {
         Err(why) => {
-            println!("Couldn't open {}: {}", file_path, why.description());
+            println!("Couldn't open {}: {}", file_path, why.to_string());
             return;
         },
         Ok(_) => (),
@@ -67,7 +67,7 @@ impl GameWindow {
     let mut cartridge = Vec::new();
     match file.unwrap().read_to_end(&mut cartridge) {
         Err(why) => {
-            println!("Couldn't read from {}: {}", file_path, why.description());
+            println!("Couldn't read from {}: {}", file_path, why.to_string());
         },
         Ok(bytes_read) => {
             println!("Data read successfully: {}", bytes_read);
@@ -208,7 +208,7 @@ fn read_sram(nes: &mut NesState, file_path: &str) {
     let file = File::open(file_path);
     match file {
         Err(why) => {
-            println!("Couldn't open {}: {}", file_path, why.description());
+            println!("Couldn't open {}: {}", file_path, why.to_string());
             return;
         },
         Ok(_) => (),
@@ -217,7 +217,7 @@ fn read_sram(nes: &mut NesState, file_path: &str) {
     let mut sram_data = Vec::new();
     match file.unwrap().read_to_end(&mut sram_data) {
         Err(why) => {
-            println!("Couldn't read data: {}", why.description());
+            println!("Couldn't read data: {}", why.to_string());
             return;
         },
         Ok(_) => {
@@ -231,7 +231,7 @@ fn write_sram(nes: &mut NesState, file_path: &str) {
         let file = File::create(file_path);
         match file {
             Err(why) => {
-                println!("Couldn't open {}: {}", file_path, why.description());
+                println!("Couldn't open {}: {}", file_path, why.to_string());
             },
             Ok(mut file) => {
                 let _ = file.write_all(&nes.sram());
