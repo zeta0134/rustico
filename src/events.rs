@@ -1,4 +1,4 @@
-enum Event {
+pub enum Event {
     Update,
     RequestFrame,
-};
+}
