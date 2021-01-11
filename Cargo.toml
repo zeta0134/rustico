@@ -2,3 +2,6 @@
 name = "rusticnes-ui-common"
 version = "0.0.1"
 authors = ["Nicholas Flynt <zeta0134@reploid.cafe>"]
+
+[dependencies]
+image = "0.19"
