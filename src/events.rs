@@ -1,0 +1,4 @@
+enum Event {
+    Update,
+    RequestFrame,
+};
