@@ -12,3 +12,4 @@ Cargo.lock
 SDL2.dll
 *.nes
 *.sav
+audiodump.raw
