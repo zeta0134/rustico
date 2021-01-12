@@ -3,8 +3,8 @@ extern crate nfd;
 extern crate sdl2;
 
 extern crate rusticnes_core;
+extern crate rusticnes_ui_common;
 
-mod drawing;
 mod audio_window;
 mod debugger_window;
 mod game_window;

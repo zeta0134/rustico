@@ -5,9 +5,9 @@ use rusticnes_core::memory;
 
 use sdl2::keyboard::Keycode;
 
-use drawing;
-use drawing::Font;
-use drawing::SimpleBuffer;
+use rusticnes_ui_common::drawing;
+use rusticnes_ui_common::drawing::Font;
+use rusticnes_ui_common::drawing::SimpleBuffer;
 
 pub struct MemoryWindow {  
   pub buffer: SimpleBuffer,

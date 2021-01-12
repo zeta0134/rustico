@@ -5,9 +5,9 @@ use rusticnes_core::nes::NesState;
 use rusticnes_core::ppu;
 use rusticnes_core::palettes::NTSC_PAL;
 
-use drawing;
-use drawing::Font;
-use drawing::SimpleBuffer;
+use rusticnes_ui_common::drawing;
+use rusticnes_ui_common::drawing::Font;
+use rusticnes_ui_common::drawing::SimpleBuffer;
 
 pub fn draw_tile(mapper: &mut dyn Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
   for py in 0 .. 8 {

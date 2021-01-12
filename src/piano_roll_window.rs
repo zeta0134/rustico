@@ -7,9 +7,9 @@ use rusticnes_core::apu::NoiseChannelState;
 use rusticnes_core::apu::DmcState;
 use rusticnes_core::nes::NesState;
 
-use drawing;
-use drawing::Font;
-use drawing::SimpleBuffer;
+use rusticnes_ui_common::drawing;
+use rusticnes_ui_common::drawing::Font;
+use rusticnes_ui_common::drawing::SimpleBuffer;
 
 const NTSC_CPU_FREQUENCY: f32 = 1.789773 * 1024.0 * 1024.0;
 const HEADER_HEIGHT: u32 = 32;

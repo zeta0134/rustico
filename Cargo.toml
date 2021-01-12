@@ -9,3 +9,4 @@ image = "0.19"
 sdl2 = "0.30.0"
 nfd = "0.0.4"
 rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core" }
+rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common" }

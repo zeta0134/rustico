@@ -5,9 +5,9 @@ use rusticnes_core::nes::NesState;
 
 use sdl2::keyboard::Keycode;
 
-use drawing;
-use drawing::Font;
-use drawing::SimpleBuffer;
+use rusticnes_ui_common::drawing;
+use rusticnes_ui_common::drawing::Font;
+use rusticnes_ui_common::drawing::SimpleBuffer;
 
 pub fn draw_channel_waveform(imagebuffer: &mut SimpleBuffer, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
   let mut last_y = 0;

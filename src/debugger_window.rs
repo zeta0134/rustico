@@ -4,9 +4,9 @@ use rusticnes_core::nes::NesState;
 use rusticnes_core::opcode_info::disassemble_instruction;
 use rusticnes_core::memory;
 
-use drawing;
-use drawing::Font;
-use drawing::SimpleBuffer;
+use rusticnes_ui_common::drawing;
+use rusticnes_ui_common::drawing::Font;
+use rusticnes_ui_common::drawing::SimpleBuffer;
 
 pub struct DebuggerWindow {
   pub buffer: SimpleBuffer,
