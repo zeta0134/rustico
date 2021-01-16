@@ -27,6 +27,10 @@ use std::fs::remove_file;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
 
+use rusticnes_ui_common::events;
+use rusticnes_ui_common::panel::Panel;
+use rusticnes_ui_common::test_window::TestWindow;
+
 pub fn main() {
   let mut nes = NesState::new(Box::new(NoneMapper::new()));
 
@@ -136,6 +140,19 @@ pub fn main() {
   piano_roll_canvas.present();
   let piano_roll_texture_creator = piano_roll_canvas.texture_creator();
   let mut piano_roll_screen_texture = piano_roll_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, piano_roll_window.buffer.width, piano_roll_window.buffer.height).unwrap();
+
+  let mut test_window = TestWindow::new();
+  let sdl_test_window = video_subsystem.window(test_window.title(), test_window.active_canvas().width * 2, test_window.active_canvas().height * 2)
+    .position(490, 40)
+    .opengl()
+    .build()
+    .unwrap();
+  let mut test_canvas = sdl_test_window.into_canvas().build().unwrap();
+  test_canvas.set_draw_color(Color::RGB(0, 0, 0));
+  test_canvas.clear();
+  test_canvas.present();
+  let test_texture_creator = test_canvas.texture_creator();
+  let mut test_screen_texture = test_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, test_window.active_canvas().width, test_window.active_canvas().height).unwrap();
 
   let mut ctrl_mod = false;
   let mut trigger_resize = false;
@@ -335,6 +352,8 @@ pub fn main() {
       vram_window.update(&mut nes);
     }
 
+    test_window.handle_event(events::Event::Update);
+
     // Play Audio
     if nes.apu.buffer_full {
       let mut buffer = [0i16; 4096];
@@ -383,6 +402,12 @@ pub fn main() {
       let _ = vram_canvas.copy(&vram_screen_texture, None, None);
       vram_canvas.present();
     }
+
+    test_window.handle_event(events::Event::RequestFrame);
+    test_canvas.set_draw_color(Color::RGB(255, 255, 255));
+    let _ = test_screen_texture.update(None, &test_window.active_canvas().buffer, (test_window.active_canvas().width * 4) as usize);
+    let _ = test_canvas.copy(&test_screen_texture, None, None);
+    test_canvas.present();
 
     game_canvas.set_draw_color(Color::RGB(255, 255, 255));
     let _ = game_screen_texture.update(None, &game_window.screen_buffer, 256 * 4);
