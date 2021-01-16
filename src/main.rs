@@ -10,7 +10,6 @@ mod debugger_window;
 mod game_window;
 mod memory_window;
 mod piano_roll_window;
-mod vram_window;
 
 use sdl2::audio::AudioSpecDesired;
 use sdl2::event::Event;
@@ -28,6 +27,7 @@ use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::test_window::TestWindow;
+use rusticnes_ui_common::vram_window::VramWindow;
 
 pub fn main() {
   let mut runtime_state = RusticNesRuntimeState::new();
@@ -80,20 +80,18 @@ pub fn main() {
   let mut audio_screen_texture = audio_screen_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, 256, 192).unwrap();
   let mut audio_window = audio_window::AudioWindow::new();
 
-  let sdl_vram_window = video_subsystem.window("VRAM Debugger", 792, 512)
+  let mut vram_window = VramWindow::new();
+  let sdl_vram_window = video_subsystem.window(vram_window.title(), vram_window.active_canvas().width, vram_window.active_canvas().height)
     .position(490, 40)
-    .hidden()
     .opengl()
     .build()
     .unwrap();
-
   let mut vram_canvas = sdl_vram_window.into_canvas().build().unwrap();
   vram_canvas.set_draw_color(Color::RGB(0, 0, 0));
   vram_canvas.clear();
   vram_canvas.present();
-  let mut vram_window = vram_window::VramWindow::new();
   let vram_texture_creator = vram_canvas.texture_creator();
-  let mut vram_screen_texture = vram_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, vram_window.buffer.width, vram_window.buffer.height).unwrap();
+  let mut vram_screen_texture = vram_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, vram_window.active_canvas().width, vram_window.active_canvas().height).unwrap();
 
   let sdl_memory_window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
     .position(490, 40)
@@ -210,7 +208,7 @@ pub fn main() {
                   } else {
                     // Previous implementation handled debug window showing / hiding here
                     match key {
-                      Keycode::F1 => {
+                      /*Keycode::F1 => {
                         if !vram_window.shown {
                           vram_window.shown = true;
                           vram_canvas.window_mut().show();
@@ -218,7 +216,7 @@ pub fn main() {
                           vram_window.shown = false;
                           vram_canvas.window_mut().hide();
                         }
-                      },
+                      },*/
                       Keycode::F2 => {
                         if !audio_window.shown {
                           audio_window.shown = true;
@@ -305,10 +303,11 @@ pub fn main() {
                     memory_window.shown = false;
                     memory_canvas.window_mut().hide();
                   }
+                  /*
                   if id == vram_canvas.window().id() {
                     vram_window.shown = false;
                     vram_canvas.window_mut().hide();
-                  }
+                  }*/
                 },
                 _ => ()
               }
@@ -346,11 +345,12 @@ pub fn main() {
     if piano_roll_window.shown {
       piano_roll_window.update(&mut runtime_state.nes);
     }
-    if vram_window.shown {
-      vram_window.update(&mut runtime_state.nes);
-    }
+    //if vram_window.shown {
+      //vram_window.update(&mut runtime_state.nes);
+      vram_window.handle_event(&runtime_state, events::Event::Update);
+    //}
 
-    test_window.handle_event(events::Event::Update);
+    test_window.handle_event(&runtime_state, events::Event::Update);
 
     // Play Audio
     if runtime_state.nes.apu.buffer_full {
@@ -394,14 +394,15 @@ pub fn main() {
       memory_canvas.present();
     }
 
-    if vram_window.shown {
+    //if vram_window.shown {
+      vram_window.handle_event(&runtime_state, events::Event::RequestFrame);
       vram_canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = vram_screen_texture.update(None, &vram_window.buffer.buffer, (vram_window.buffer.width * 4) as usize);
+      let _ = vram_screen_texture.update(None, &vram_window.active_canvas().buffer, (vram_window.active_canvas().width * 4) as usize);
       let _ = vram_canvas.copy(&vram_screen_texture, None, None);
       vram_canvas.present();
-    }
+    //}
 
-    test_window.handle_event(events::Event::RequestFrame);
+    test_window.handle_event(&runtime_state, events::Event::RequestFrame);
     test_canvas.set_draw_color(Color::RGB(255, 255, 255));
     let _ = test_screen_texture.update(None, &test_window.active_canvas().buffer, (test_window.active_canvas().width * 4) as usize);
     let _ = test_canvas.copy(&test_screen_texture, None, None);
