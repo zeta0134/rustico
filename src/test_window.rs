@@ -1,7 +1,7 @@
-use panel::Panel;
+use application::RuntimeState;
 use drawing::SimpleBuffer;
-
 use events::Event;
+use panel::Panel;
 
 pub struct TestWindow {
     pub canvas: SimpleBuffer,
@@ -37,7 +37,7 @@ impl Panel for TestWindow {
         return "Hello World!";
     }
 
-    fn handle_event(&mut self, event: Event) -> Vec<Event> {
+    fn handle_event(&mut self, _: &RuntimeState, event: Event) -> Vec<Event> {
         match event {
             Event::Update => {self.update()},
             Event::RequestFrame => {self.draw()},
