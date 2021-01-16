@@ -24,15 +24,13 @@ use sdl2::render::TextureAccess;
 use std::env;
 use std::fs::remove_file;
 
-use rusticnes_core::nes::NesState;
-use rusticnes_core::mmc::none::NoneMapper;
-
+use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::test_window::TestWindow;
 
 pub fn main() {
-  let mut nes = NesState::new(Box::new(NoneMapper::new()));
+  let mut runtime_state = RusticNesRuntimeState::new();
 
   let sdl_context = sdl2::init().unwrap();
   let audio_subsystem = sdl_context.audio().unwrap();
@@ -160,7 +158,7 @@ pub fn main() {
 
   let args: Vec<_> = env::args().collect();
   if args.len() > 1 {
-      game_window.open_file(&mut nes, &args[1]);
+      game_window.open_file(&mut runtime_state.nes, &args[1]);
   }
 
   'running: loop {
@@ -188,7 +186,7 @@ pub fn main() {
               match event {
                 Event::KeyDown { keycode: Some(key), .. } => {
                   // Pass keydown events into sub-windows
-                  game_window.handle_key_down(&mut nes, key);
+                  game_window.handle_key_down(&mut runtime_state.nes, key);
                   // Handle global keydown events
                   if key == Keycode::LCtrl || key == Keycode::RCtrl {
                     ctrl_mod = true;
@@ -196,9 +194,9 @@ pub fn main() {
                 },
                 Event::KeyUp { keycode: Some(key), .. } => {
                   // Pass keyup events into sub-windows
-                  audio_window.handle_key_up(&mut nes, key);
-                  game_window.handle_key_up(&mut nes, key);
-                  memory_window.handle_key_up(&mut nes, key);
+                  audio_window.handle_key_up(&mut runtime_state.nes, key);
+                  game_window.handle_key_up(&mut runtime_state.nes, key);
+                  memory_window.handle_key_up(&mut runtime_state.nes, key);
                   // Handle global keydown events
                   if key == Keycode::LCtrl || key == Keycode::RCtrl {
                     ctrl_mod = false;
@@ -206,7 +204,7 @@ pub fn main() {
                   if ctrl_mod {
                     match key {
                       Keycode::Q => { break 'running },
-                      Keycode::O => { game_window.open_file_dialog(&mut nes); ctrl_mod = false; },
+                      Keycode::O => { game_window.open_file_dialog(&mut runtime_state.nes); ctrl_mod = false; },
                       _ => ()
                     }
                   } else {
@@ -288,7 +286,7 @@ pub fn main() {
                   }
                 },
                 Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } if id == memory_canvas.window().id() => {
-                    memory_window.handle_click(&mut nes, omx / 2, omy / 2);
+                    memory_window.handle_click(&mut runtime_state.nes, omx / 2, omy / 2);
                 },
                 Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
                   if id == game_canvas.window().id() {
@@ -322,7 +320,7 @@ pub fn main() {
 
     // Update windows
     if game_window.shown {
-      game_window.update(&mut nes);
+      game_window.update(&mut runtime_state.nes);
 
       if trigger_resize {
         trigger_resize = false;
@@ -337,33 +335,33 @@ pub fn main() {
       break 'running
     }
     if audio_window.shown {
-      audio_window.update(&mut nes);
+      audio_window.update(&mut runtime_state.nes);
     }
     if debugger_window.shown {
-      debugger_window.update(&mut nes);
+      debugger_window.update(&mut runtime_state.nes);
     }
     if memory_window.shown {
-      memory_window.update(&mut nes);
+      memory_window.update(&mut runtime_state.nes);
     }
     if piano_roll_window.shown {
-      piano_roll_window.update(&mut nes);
+      piano_roll_window.update(&mut runtime_state.nes);
     }
     if vram_window.shown {
-      vram_window.update(&mut nes);
+      vram_window.update(&mut runtime_state.nes);
     }
 
     test_window.handle_event(events::Event::Update);
 
     // Play Audio
-    if nes.apu.buffer_full {
+    if runtime_state.nes.apu.buffer_full {
       let mut buffer = [0i16; 4096];
       for i in 0 .. 4096 {
-        buffer[i] = nes.apu.output_buffer[i] as i16;
+        buffer[i] = runtime_state.nes.apu.output_buffer[i] as i16;
       }
       device.queue(&buffer);
-      nes.apu.buffer_full = false;
+      runtime_state.nes.apu.buffer_full = false;
       if dump_audio {
-        nes.apu.dump_sample_buffer();
+        runtime_state.nes.apu.dump_sample_buffer();
       }
     }
 
