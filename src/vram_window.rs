@@ -107,7 +107,7 @@ impl VramWindow {
     // Initialize all palette colors with a straight copy
     for p in 0 .. 8 {
       for i in 0 .. 4 {
-        let palette_color = nes.ppu.passively_read_byte(&mut *nes.mapper, 0x3F00 + p * 4 + i) as usize * 3;
+        let palette_color = nes.ppu.debug_read_byte(& *nes.mapper, 0x3F00 + p * 4 + i) as usize * 3;
         self.palette_cache[p as usize][i as usize * 4 + 0] = NTSC_PAL[palette_color + 0];
         self.palette_cache[p as usize][i as usize * 4 + 1] = NTSC_PAL[palette_color + 1];
         self.palette_cache[p as usize][i as usize * 4 + 2] = NTSC_PAL[palette_color + 2];
