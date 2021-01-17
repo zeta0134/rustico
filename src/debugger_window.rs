@@ -62,9 +62,9 @@ impl DebuggerWindow {
     let mut data_bytes_to_skip = 0;
     for i in 0 .. 30 {
       let pc = nes.registers.pc + (i as u16);
-      let opcode = memory::passively_read_byte(nes, pc);
-      let data1 = memory::passively_read_byte(nes, pc + 1);
-      let data2 = memory::passively_read_byte(nes, pc + 2);
+      let opcode = memory::debug_read_byte(nes, pc);
+      let data1 = memory::debug_read_byte(nes, pc + 1);
+      let data2 = memory::debug_read_byte(nes, pc + 2);
       let (instruction, data_bytes) = disassemble_instruction(opcode, data1, data2);
       let mut text_color = [255, 255, 255, 255];
       if data_bytes_to_skip > 0 {

@@ -62,7 +62,7 @@ impl MemoryWindow {
           }
         }
       } else {
-        byte = memory::passively_read_byte(nes, address);
+        byte = memory::debug_read_byte(nes, address);
         if address == nes.registers.pc {
           bg_color = [128, 32, 32, 255];
         } else if address == (nes.registers.s as u16 + 0x100) {
