@@ -33,7 +33,7 @@ use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::test_window::TestWindow;
-use rusticnes_ui_common::vram_window::VramWindow;
+use rusticnes_ui_common::ppu_window::PpuWindow;
 
 pub struct SdlAppWindow {
   pub panel: Box<dyn Panel>,
@@ -75,7 +75,7 @@ pub fn main() {
 
   let mut windows: Vec<SdlAppWindow> = Vec::new();
 
-  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(VramWindow::new())));
+  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
 
   let mut texture_creators: Vec<TextureCreator<WindowContext>> = Vec::new();
@@ -243,7 +243,7 @@ pub fn main() {
                   } else {
                     // Previous implementation handled debug window showing / hiding here
                     match key {
-                      Keycode::F1 => {application_events.push(events::Event::ShowVramWindow);},
+                      Keycode::F1 => {application_events.push(events::Event::ShowPpuWindow);},
                       Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
                       Keycode::F2 => {
                         if !audio_window.shown {
