@@ -18,10 +18,11 @@ pub fn find_rising_edge(audiobuffer: &[i16], start_index: usize) -> usize {
     let mut current_index = start_index;
     // look ahead 100 samples or so for an edge, from non-zero to zero. If we find one, return it
     for _ in 0 .. 1000 {
+        let last_index = current_index;
         current_index = (current_index + 1) % audiobuffer.len();
         let current_sample = audiobuffer[current_index];
         if current_sample != 0 && last_sample == 0 {
-            return current_index;
+            return last_index;
         }
         last_sample = current_sample;
     }
@@ -45,13 +46,13 @@ impl ApuWindow {
         if align {
             start_index = find_rising_edge(audiobuffer, playback_index);
         }
-
-        let mut last_y = 0;
+        
+        let range = (sample_max as u32) - (sample_min as u32);
+        let mut last_y = (((audiobuffer[start_index] - sample_min) as u64 * height as u64) / range as u64) as u32;
         for dx in x .. (x + width) {
             let sample_index = (start_index + dx as usize) % audiobuffer.len();
             let sample = audiobuffer[sample_index];
             let current_x = dx as u32;
-            let range = (sample_max as u32) - (sample_min as u32);
             let mut current_y = (((sample - sample_min) as u64 * height as u64) / range as u64) as u32;
             if current_y >= height {
                 current_y = height - 1;
