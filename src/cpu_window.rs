@@ -114,4 +114,8 @@ impl Panel for CpuWindow {
     fn active_canvas(&self) -> &SimpleBuffer {
         return &self.canvas;
     }
+
+    fn scale_factor(&self) -> u32 {
+        return 2;
+    }
 }
