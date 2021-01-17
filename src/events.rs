@@ -1,4 +1,8 @@
+#[derive(Copy, Clone)]
 pub enum Event {
-    Update,
+    CloseWindow,
     RequestFrame,
+    ShowVramWindow,
+    ShowTestWindow,
+    Update,
 }

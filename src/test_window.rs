@@ -41,7 +41,7 @@ impl Panel for TestWindow {
         match event {
             Event::Update => {self.update()},
             Event::RequestFrame => {self.draw()},
-            //_ => {}
+            _ => {}
         }
         return Vec::<Event>::new();
     }

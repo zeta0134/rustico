@@ -287,7 +287,7 @@ impl Panel for VramWindow {
         match event {
             Event::Update => {self.update(&runtime.nes)},
             Event::RequestFrame => {self.draw(&runtime.nes)},
-            //_ => {}
+            _ => {}
         }
         return Vec::<Event>::new();
     }
