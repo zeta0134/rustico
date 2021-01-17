@@ -18,7 +18,7 @@ impl ApuWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return ApuWindow {
-            canvas: SimpleBuffer::new(256, 300),
+            canvas: SimpleBuffer::new(256, 192),
             font: font,
             shown: false,
         };
@@ -172,7 +172,7 @@ impl Panel for ApuWindow {
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
         match event {
             Event::RequestFrame => {self.draw(&runtime.nes.apu)},
-            Event::ShowCpuWindow => {self.shown = true},
+            Event::ShowApuWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
         }

@@ -7,6 +7,7 @@ pub enum Event {
     ApuToggleNoise,
     ApuToggleDmc,
     RequestFrame,
+    ShowApuWindow,
     ShowCpuWindow,
     ShowPpuWindow,
     ShowTestWindow,
