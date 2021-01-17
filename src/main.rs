@@ -59,6 +59,12 @@ impl<'a> SdlAppWindow {
   }
 }
 
+pub fn dispatch_event(windows: &mut Vec<SdlAppWindow>, runtime_state: &RusticNesRuntimeState, event: events::Event) {
+  for i in 0 .. windows.len() {
+    windows[i].panel.handle_event(&runtime_state, event);
+  }
+}
+
 pub fn main() {
   let mut runtime_state = RusticNesRuntimeState::new();
 
@@ -82,6 +88,8 @@ pub fn main() {
     let height = windows[i].panel.active_canvas().height;
     textures.push(texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, width, height).unwrap());  
   }
+
+  let mut application_events: Vec<Event> = Vec::new();
 
   let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -352,9 +360,8 @@ pub fn main() {
       piano_roll_window.update(&mut runtime_state.nes);
     }
 
-    for i in 0 .. windows.len() {
-        windows[i].panel.handle_event(&runtime_state, events::Event::Update);
-    }
+    dispatch_event(&mut windows, &runtime_state, events::Event::Update);
+
 
     // Play Audio
     if runtime_state.nes.apu.buffer_full {
