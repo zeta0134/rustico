@@ -19,7 +19,13 @@ use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
+use sdl2::render::Texture;
 use sdl2::render::TextureAccess;
+use sdl2::render::TextureCreator;
+use sdl2::VideoSubsystem;
+use sdl2::video::WindowContext;
+use sdl2::render::WindowCanvas;
+
 use std::env;
 use std::fs::remove_file;
 
@@ -29,12 +35,53 @@ use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::vram_window::VramWindow;
 
+pub struct SdlAppWindow {
+  pub panel: Box<dyn Panel>,
+  pub canvas: WindowCanvas,
+}
+
+impl<'a> SdlAppWindow {
+  pub fn from_panel(video_subsystem: &'a VideoSubsystem, panel: Box<dyn Panel>) -> SdlAppWindow {
+    let sdl_window = video_subsystem.window(panel.title(), panel.active_canvas().width, panel.active_canvas().height)
+      .position(490, 40)
+      .opengl()
+      .build()
+      .unwrap();
+    let mut sdl_canvas = sdl_window.into_canvas().build().unwrap();
+    sdl_canvas.set_draw_color(Color::RGB(0, 0, 0));
+    sdl_canvas.clear();
+    sdl_canvas.present();
+
+    return SdlAppWindow {
+      panel: panel,
+      canvas: sdl_canvas,
+    }
+  }
+}
+
 pub fn main() {
   let mut runtime_state = RusticNesRuntimeState::new();
 
   let sdl_context = sdl2::init().unwrap();
   let audio_subsystem = sdl_context.audio().unwrap();
   let video_subsystem = sdl_context.video().unwrap();
+
+  let mut windows: Vec<SdlAppWindow> = Vec::new();
+
+  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(VramWindow::new())));
+  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
+
+  let mut texture_creators: Vec<TextureCreator<WindowContext>> = Vec::new();
+  for i in 0 .. windows.len() {
+    texture_creators.push(windows[i].canvas.texture_creator());
+  }
+
+  let mut textures: Vec<Texture> = Vec::new();
+  for i in 0 .. windows.len() {
+    let width = windows[i].panel.active_canvas().width;
+    let height = windows[i].panel.active_canvas().height;
+    textures.push(texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, width, height).unwrap());  
+  }
 
   let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -80,19 +127,6 @@ pub fn main() {
   let mut audio_screen_texture = audio_screen_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, 256, 192).unwrap();
   let mut audio_window = audio_window::AudioWindow::new();
 
-  let mut vram_window = VramWindow::new();
-  let sdl_vram_window = video_subsystem.window(vram_window.title(), vram_window.active_canvas().width, vram_window.active_canvas().height)
-    .position(490, 40)
-    .opengl()
-    .build()
-    .unwrap();
-  let mut vram_canvas = sdl_vram_window.into_canvas().build().unwrap();
-  vram_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  vram_canvas.clear();
-  vram_canvas.present();
-  let vram_texture_creator = vram_canvas.texture_creator();
-  let mut vram_screen_texture = vram_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, vram_window.active_canvas().width, vram_window.active_canvas().height).unwrap();
-
   let sdl_memory_window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
     .position(490, 40)
     .hidden()
@@ -137,19 +171,6 @@ pub fn main() {
   let piano_roll_texture_creator = piano_roll_canvas.texture_creator();
   let mut piano_roll_screen_texture = piano_roll_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, piano_roll_window.buffer.width, piano_roll_window.buffer.height).unwrap();
 
-  let mut test_window = TestWindow::new();
-  let sdl_test_window = video_subsystem.window(test_window.title(), test_window.active_canvas().width * 2, test_window.active_canvas().height * 2)
-    .position(490, 40)
-    .opengl()
-    .build()
-    .unwrap();
-  let mut test_canvas = sdl_test_window.into_canvas().build().unwrap();
-  test_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  test_canvas.clear();
-  test_canvas.present();
-  let test_texture_creator = test_canvas.texture_creator();
-  let mut test_screen_texture = test_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, test_window.active_canvas().width, test_window.active_canvas().height).unwrap();
-
   let mut ctrl_mod = false;
   let mut trigger_resize = false;
   let mut dump_audio = false;
@@ -177,8 +198,7 @@ pub fn main() {
               debugger_canvas.window().id() == focused_window_id ||
               game_canvas.window().id() == focused_window_id ||
               memory_canvas.window().id() == focused_window_id ||
-              piano_roll_canvas.window().id() == focused_window_id ||
-              vram_canvas.window().id() == focused_window_id;
+              piano_roll_canvas.window().id() == focused_window_id;
 
             if application_focused {
               match event {
@@ -208,15 +228,6 @@ pub fn main() {
                   } else {
                     // Previous implementation handled debug window showing / hiding here
                     match key {
-                      /*Keycode::F1 => {
-                        if !vram_window.shown {
-                          vram_window.shown = true;
-                          vram_canvas.window_mut().show();
-                        } else {
-                          vram_window.shown = false;
-                          vram_canvas.window_mut().hide();
-                        }
-                      },*/
                       Keycode::F2 => {
                         if !audio_window.shown {
                           audio_window.shown = true;
@@ -303,11 +314,6 @@ pub fn main() {
                     memory_window.shown = false;
                     memory_canvas.window_mut().hide();
                   }
-                  /*
-                  if id == vram_canvas.window().id() {
-                    vram_window.shown = false;
-                    vram_canvas.window_mut().hide();
-                  }*/
                 },
                 _ => ()
               }
@@ -345,12 +351,10 @@ pub fn main() {
     if piano_roll_window.shown {
       piano_roll_window.update(&mut runtime_state.nes);
     }
-    //if vram_window.shown {
-      //vram_window.update(&mut runtime_state.nes);
-      vram_window.handle_event(&runtime_state, events::Event::Update);
-    //}
 
-    test_window.handle_event(&runtime_state, events::Event::Update);
+    for i in 0 .. windows.len() {
+        windows[i].panel.handle_event(&runtime_state, events::Event::Update);
+    }
 
     // Play Audio
     if runtime_state.nes.apu.buffer_full {
@@ -394,19 +398,13 @@ pub fn main() {
       memory_canvas.present();
     }
 
-    //if vram_window.shown {
-      vram_window.handle_event(&runtime_state, events::Event::RequestFrame);
-      vram_canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = vram_screen_texture.update(None, &vram_window.active_canvas().buffer, (vram_window.active_canvas().width * 4) as usize);
-      let _ = vram_canvas.copy(&vram_screen_texture, None, None);
-      vram_canvas.present();
-    //}
-
-    test_window.handle_event(&runtime_state, events::Event::RequestFrame);
-    test_canvas.set_draw_color(Color::RGB(255, 255, 255));
-    let _ = test_screen_texture.update(None, &test_window.active_canvas().buffer, (test_window.active_canvas().width * 4) as usize);
-    let _ = test_canvas.copy(&test_screen_texture, None, None);
-    test_canvas.present();
+    for i in 0 .. windows.len() {
+      windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
+      windows[i].canvas.set_draw_color(Color::RGB(255, 255, 255));
+      let _ = textures[i].update(None, &windows[i].panel.active_canvas().buffer, (windows[i].panel.active_canvas().width * 4) as usize);
+      let _ = windows[i].canvas.copy(&textures[i], None, None);
+      windows[i].canvas.present();
+    }
 
     game_canvas.set_draw_color(Color::RGB(255, 255, 255));
     let _ = game_screen_texture.update(None, &game_window.screen_buffer, 256 * 4);
