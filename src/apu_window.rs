@@ -13,6 +13,22 @@ pub struct ApuWindow {
     pub shown: bool,
 }
 
+pub fn find_rising_edge(audiobuffer: &[i16], start_index: usize) -> usize {
+    let mut last_sample = audiobuffer[start_index];
+    let mut current_index = start_index;
+    // look ahead 100 samples or so for an edge, from non-zero to zero. If we find one, return it
+    for _ in 0 .. 1000 {
+        current_index = (current_index + 1) % audiobuffer.len();
+        let current_sample = audiobuffer[current_index];
+        if current_sample != 0 && last_sample == 0 {
+            return current_index;
+        }
+        last_sample = current_sample;
+    }
+    // Couldn't find a falling edge, so return our original start index instead
+    return start_index;
+}
+
 impl ApuWindow {
     pub fn new() -> ApuWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
@@ -24,7 +40,12 @@ impl ApuWindow {
         };
     }
 
-    pub fn draw_waveform(&mut self, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, sample_min: i16, sample_max: i16) {
+    pub fn draw_waveform(&mut self, audiobuffer: &[i16], playback_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, sample_min: i16, sample_max: i16, align: bool) {
+        let mut start_index = playback_index;
+        if align {
+            start_index = find_rising_edge(audiobuffer, playback_index);
+        }
+
         let mut last_y = 0;
         for dx in x .. (x + width) {
             let sample_index = (start_index + dx as usize) % audiobuffer.len();
@@ -110,10 +131,12 @@ impl ApuWindow {
             let y = (i * 40) as u32;
             if !audio_buffers[i].disabled {
                 drawing::rect(&mut self.canvas, 0, y, 256, 40, audio_buffers[i].background_color);
+                let align_waveform = i < 4; // pulse1, pulse2, and triangle only
                 self.draw_waveform(audio_buffers[i].buffer,
                     apu.buffer_index, audio_buffers[i].foreground_color, 
                     0,   y + 8, 256,  32, 
-                    audio_buffers[i].min, audio_buffers[i].max);
+                    audio_buffers[i].min, audio_buffers[i].max,
+                    align_waveform);
             }
         }
     }
