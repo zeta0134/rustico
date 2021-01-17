@@ -24,34 +24,14 @@ impl ApuWindow {
         };
     }
 
-    pub fn draw_channel_waveform(&mut self, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
+    pub fn draw_waveform(&mut self, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, sample_min: i16, sample_max: i16) {
         let mut last_y = 0;
         for dx in x .. (x + width) {
             let sample_index = (start_index + dx as usize) % audiobuffer.len();
             let sample = audiobuffer[sample_index];
             let current_x = dx as u32;
-            let mut current_y = ((sample as u64 * height as u64) / scale as u64) as u32;
-            if current_y >= height {
-                current_y = height - 1;
-            }
-            for dy in current_y .. last_y {
-                self.canvas.put_pixel(current_x, y + dy, color);
-            }
-            for dy in last_y .. current_y {
-                self.canvas.put_pixel(current_x, y + dy, color);
-            }
-            last_y = current_y;
-            self.canvas.put_pixel(dx, y + current_y, color);
-        }
-    }
-
-    pub fn draw_final_waveform(&mut self, audiobuffer: &[i16], start_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, scale: u32) {
-        let mut last_y = 0;
-        for dx in x .. (x + width) {
-            let sample_index = (start_index + dx as usize) % audiobuffer.len();
-            let sample = audiobuffer[sample_index];
-            let current_x = dx as u32;
-            let mut current_y = (((sample as i64 + (scale as i64 / 2)) * height as i64) / scale as i64) as u32;
+            let range = (sample_max as u32) - (sample_min as u32);
+            let mut current_y = (((sample - sample_min) as u64 * height as u64) / range as u64) as u32;
             if current_y >= height {
                 current_y = height - 1;
             }
@@ -69,6 +49,75 @@ impl ApuWindow {
     pub fn draw_audio_samples(&mut self, apu: &ApuState) {
         // Background
         // TODO: Optimize this somewhat
+
+        struct ChannelDefinition<'a> {
+            buffer: &'a [i16],
+            disabled: bool,
+            background_color: &'a [u8],
+            foreground_color: &'a [u8],
+            min: i16,
+            max: i16,
+        };
+
+        let audio_buffers = [
+            ChannelDefinition {
+                buffer: &apu.pulse_1.debug_buffer, 
+                disabled: apu.pulse_1.debug_disable,
+                background_color: &[32,  8,  8, 255], 
+                foreground_color: &[192,  32,  32, 255],
+                min: 0, max: 16
+            },
+            ChannelDefinition {
+                buffer: &apu.pulse_2.debug_buffer,
+                disabled: apu.pulse_2.debug_disable,
+                background_color: &[32, 16,  8, 255],
+                foreground_color: &[192,  96,  32, 255],
+                min: 0, max: 16
+            },
+            ChannelDefinition {
+                buffer: &apu.triangle.debug_buffer, 
+                disabled: apu.triangle.debug_disable,
+                background_color: &[ 8, 32,  8, 255],
+                foreground_color: &[32, 192,  32, 255],
+                min: 0, max: 16
+            },
+            ChannelDefinition {
+                buffer: &apu.noise.debug_buffer, 
+                disabled: apu.noise.debug_disable,
+                background_color: &[ 8, 16, 32, 255],
+                foreground_color: &[32,  96, 192, 255],
+                min: 0, max: 16
+            },
+            ChannelDefinition {
+                buffer: &apu.dmc.debug_buffer, 
+                disabled: apu.dmc.debug_disable,
+                background_color: &[ 16, 8, 32, 255],
+                foreground_color: &[96,  32, 192, 255],
+                min: 0, max: 128
+            },
+            ChannelDefinition {
+                buffer: &apu.sample_buffer, 
+                disabled: false,
+                background_color: &[16, 16, 16, 255],
+                foreground_color: &[192, 192, 192, 255],
+                min: -16384, max: 16383
+            },
+        ];
+
+        for i in 0 .. audio_buffers.len() {
+            let y = (i * 32) as u32;
+            if audio_buffers[i].disabled {
+                drawing::rect(&mut self.canvas, 0, y, 256, 32, &[8,  8,  8, 255]);
+            } else {
+                drawing::rect(&mut self.canvas, 0, y, 256, 32, audio_buffers[i].background_color);
+                self.draw_waveform(audio_buffers[i].buffer,
+                    apu.buffer_index, audio_buffers[i].foreground_color, 
+                    0,   y, 256,  32, 
+                    audio_buffers[i].min, audio_buffers[i].max);
+            }
+        }
+
+        /*
         for x in 0 .. 256 {
             for y in   0 ..  192 { self.canvas.put_pixel(x, y, &[8,  8,  8, 255]); }
             if !(apu.pulse_1.debug_disable) {
@@ -87,8 +136,10 @@ impl ApuWindow {
                 for y in  128 .. 160 { self.canvas.put_pixel(x, y, &[ 16, 8, 32, 255]); }
             }
             for y in 160 .. 192 { self.canvas.put_pixel(x, y, &[16, 16, 16, 255]); }
-        }
+        }*/
 
+
+        /*
         if !(apu.pulse_1.debug_disable) {
             self.draw_channel_waveform(&apu.pulse_1.debug_buffer,
                 apu.buffer_index, &[192,  32,  32, 255], 0,   0, 256,  32, 16);
@@ -111,6 +162,7 @@ impl ApuWindow {
         }
         self.draw_final_waveform(&apu.sample_buffer,
             apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 65536);
+        */
 
         drawing::text(&mut self.canvas, &self.font, 0, 32  - 8, 
             &format!("Pulse 1 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
