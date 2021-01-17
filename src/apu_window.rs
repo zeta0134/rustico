@@ -49,8 +49,11 @@ impl ApuWindow {
         
         let range = (sample_max as u32) - (sample_min as u32);
         let mut last_y = (((audiobuffer[start_index] - sample_min) as u64 * height as u64) / range as u64) as u32;
+        if last_y >= height {
+            last_y = height - 1;
+        }
         for dx in x .. (x + width) {
-            let sample_index = (start_index + dx as usize) % audiobuffer.len();
+            let sample_index = (start_index + (dx * 2) as usize) % audiobuffer.len();
             let sample = audiobuffer[sample_index];
             let current_x = dx as u32;
             let mut current_y = (((sample - sample_min) as u64 * height as u64) / range as u64) as u32;
