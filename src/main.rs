@@ -6,7 +6,6 @@ extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
 mod audio_window;
-mod debugger_window;
 mod game_window;
 mod memory_window;
 mod piano_roll_window;
@@ -32,6 +31,7 @@ use std::fs::remove_file;
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
+use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
 
@@ -75,6 +75,7 @@ pub fn main() {
 
   let mut windows: Vec<SdlAppWindow> = Vec::new();
 
+  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
 
@@ -151,21 +152,6 @@ pub fn main() {
   let memory_texture_creator = memory_canvas.texture_creator();
   let mut memory_screen_texture = memory_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, memory_window.buffer.width, memory_window.buffer.height).unwrap();
 
-  let sdl_debugger_window = video_subsystem.window("Debugger", 512, 600)
-    .position(490, 40)
-    .hidden()
-    .opengl()
-    .build()
-    .unwrap();
-
-  let mut debugger_canvas = sdl_debugger_window.into_canvas().build().unwrap();
-  debugger_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  debugger_canvas.clear();
-  debugger_canvas.present();
-  let mut debugger_window = debugger_window::DebuggerWindow::new();
-  let debugger_texture_creator = debugger_canvas.texture_creator();
-  let mut debugger_screen_texture = debugger_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, debugger_window.buffer.width, debugger_window.buffer.height).unwrap();
-
   let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
   let sdl_piano_roll_window = video_subsystem.window("Piano Roll", piano_roll_window.buffer.width, piano_roll_window.buffer.height)
     .position(490, 40)
@@ -205,7 +191,6 @@ pub fn main() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
             let mut application_focused = 
               audio_canvas.window().id() == focused_window_id ||
-              debugger_canvas.window().id() == focused_window_id ||
               game_canvas.window().id() == focused_window_id ||
               memory_canvas.window().id() == focused_window_id ||
               piano_roll_canvas.window().id() == focused_window_id;
@@ -244,7 +229,9 @@ pub fn main() {
                     // Previous implementation handled debug window showing / hiding here
                     match key {
                       Keycode::F1 => {application_events.push(events::Event::ShowPpuWindow);},
+                      Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
                       Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
+
                       Keycode::F2 => {
                         if !audio_window.shown {
                           audio_window.shown = true;
@@ -261,15 +248,6 @@ pub fn main() {
                         } else {
                           memory_window.shown = false;
                           memory_canvas.window_mut().hide();
-                        }
-                      },
-                      Keycode::F4 => {
-                        if !debugger_window.shown {
-                          debugger_window.shown = true;
-                          debugger_canvas.window_mut().show();
-                        } else {
-                          debugger_window.shown = false;
-                          debugger_canvas.window_mut().hide();
                         }
                       },
                       Keycode::F5 => {
@@ -328,10 +306,6 @@ pub fn main() {
                     audio_window.shown = false;
                     audio_canvas.window_mut().hide();
                   }
-                  if id == debugger_canvas.window().id() {
-                    debugger_window.shown = false;
-                    debugger_canvas.window_mut().hide();
-                  }
                   if id == memory_canvas.window().id() {
                     memory_window.shown = false;
                     memory_canvas.window_mut().hide();
@@ -371,9 +345,6 @@ pub fn main() {
     if audio_window.shown {
       audio_window.update(&mut runtime_state.nes);
     }
-    if debugger_window.shown {
-      debugger_window.update(&mut runtime_state.nes);
-    }
     if memory_window.shown {
       memory_window.update(&mut runtime_state.nes);
     }
@@ -403,13 +374,6 @@ pub fn main() {
       let _ = audio_screen_texture.update(None, &audio_window.buffer.buffer, 256 * 4);
       let _ = audio_canvas.copy(&audio_screen_texture, None, None);
       audio_canvas.present();
-    }
-
-    if debugger_window.shown {
-      debugger_canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = debugger_screen_texture.update(None, &debugger_window.buffer.buffer, (debugger_window.buffer.width * 4) as usize);
-      let _ = debugger_canvas.copy(&debugger_screen_texture, None, None);
-      debugger_canvas.present();
     }
 
     if piano_roll_window.shown {
