@@ -5,7 +5,8 @@ use panel::Panel;
 
 pub struct TestWindow {
     pub canvas: SimpleBuffer,
-    pub counter: u8
+    pub counter: u8,
+    pub shown: bool,
 }
 
 impl TestWindow {
@@ -13,6 +14,7 @@ impl TestWindow {
         return TestWindow {
             canvas: SimpleBuffer::new(256, 256),
             counter: 0,
+            shown: false,
         };
     }
 
@@ -37,10 +39,16 @@ impl Panel for TestWindow {
         return "Hello World!";
     }
 
+    fn shown(&self) -> bool {
+        return self.shown;
+    }
+
     fn handle_event(&mut self, _: &RuntimeState, event: Event) -> Vec<Event> {
         match event {
             Event::Update => {self.update()},
             Event::RequestFrame => {self.draw()},
+            Event::ShowTestWindow => {self.shown = true},
+            Event::CloseWindow => {self.shown = false},
             _ => {}
         }
         return Vec::<Event>::new();

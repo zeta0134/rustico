@@ -90,6 +90,7 @@ pub struct VramWindow {
     pub canvas: SimpleBuffer,
     pub palette_cache: [[u8; 4*4]; 4*2],
     pub font: Font,
+    pub shown: bool,
 }
 
 impl VramWindow {
@@ -100,6 +101,7 @@ impl VramWindow {
             canvas: SimpleBuffer::new(792, 512),
             palette_cache: [[0u8; 4*4]; 4*2],
             font: font,
+            shown: false,
         }
     }
 
@@ -283,10 +285,16 @@ impl Panel for VramWindow {
         return "VRAM Debugger";
     }
 
+    fn shown(&self) -> bool {
+        return self.shown;
+    }
+
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
         match event {
             Event::Update => {self.update(&runtime.nes)},
             Event::RequestFrame => {self.draw(&runtime.nes)},
+            Event::ShowVramWindow => {self.shown = true},
+            Event::CloseWindow => {self.shown = false},
             _ => {}
         }
         return Vec::<Event>::new();
