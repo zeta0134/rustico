@@ -86,18 +86,18 @@ fn draw_color_box(buffer: &mut SimpleBuffer, dx: u32, dy: u32, color: &[u8]) {
     }
 }
 
-pub struct VramWindow {
+pub struct PpuWindow {
     pub canvas: SimpleBuffer,
     pub palette_cache: [[u8; 4*4]; 4*2],
     pub font: Font,
     pub shown: bool,
 }
 
-impl VramWindow {
-    pub fn new() -> VramWindow {
+impl PpuWindow {
+    pub fn new() -> PpuWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
-        return VramWindow {
+        return PpuWindow {
             canvas: SimpleBuffer::new(792, 512),
             palette_cache: [[0u8; 4*4]; 4*2],
             font: font,
@@ -280,9 +280,9 @@ impl VramWindow {
     }
 }
 
-impl Panel for VramWindow {
+impl Panel for PpuWindow {
     fn title(&self) -> &str {
-        return "VRAM Debugger";
+        return "PPU";
     }
 
     fn shown(&self) -> bool {
@@ -293,7 +293,7 @@ impl Panel for VramWindow {
         match event {
             Event::Update => {self.update(&runtime.nes)},
             Event::RequestFrame => {self.draw(&runtime.nes)},
-            Event::ShowVramWindow => {self.shown = true},
+            Event::ShowPpuWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
         }

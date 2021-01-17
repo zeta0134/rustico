@@ -2,7 +2,7 @@
 pub enum Event {
     CloseWindow,
     RequestFrame,
-    ShowVramWindow,
+    ShowPpuWindow,
     ShowTestWindow,
     Update,
 }
