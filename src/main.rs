@@ -42,7 +42,9 @@ pub struct SdlAppWindow {
 
 impl<'a> SdlAppWindow {
   pub fn from_panel(video_subsystem: &'a VideoSubsystem, panel: Box<dyn Panel>) -> SdlAppWindow {
-    let sdl_window = video_subsystem.window(panel.title(), panel.active_canvas().width, panel.active_canvas().height)
+    let width = panel.active_canvas().width * panel.scale_factor();
+    let height = panel.active_canvas().height * panel.scale_factor();
+    let sdl_window = video_subsystem.window(panel.title(), width, height)
       .position(490, 40)
       .opengl()
       .hidden()
