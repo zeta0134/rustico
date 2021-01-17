@@ -18,7 +18,7 @@ impl ApuWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return ApuWindow {
-            canvas: SimpleBuffer::new(256, 192),
+            canvas: SimpleBuffer::new(256, 240),
             font: font,
             shown: false,
         };
@@ -104,67 +104,22 @@ impl ApuWindow {
             },
         ];
 
+        drawing::rect(&mut self.canvas, 0, 0, 256, 240, &[8,  8,  8, 255]);
+
         for i in 0 .. audio_buffers.len() {
-            let y = (i * 32) as u32;
-            if audio_buffers[i].disabled {
-                drawing::rect(&mut self.canvas, 0, y, 256, 32, &[8,  8,  8, 255]);
-            } else {
-                drawing::rect(&mut self.canvas, 0, y, 256, 32, audio_buffers[i].background_color);
+            let y = (i * 40) as u32;
+            if !audio_buffers[i].disabled {
+                drawing::rect(&mut self.canvas, 0, y, 256, 40, audio_buffers[i].background_color);
                 self.draw_waveform(audio_buffers[i].buffer,
                     apu.buffer_index, audio_buffers[i].foreground_color, 
-                    0,   y, 256,  32, 
+                    0,   y + 8, 256,  32, 
                     audio_buffers[i].min, audio_buffers[i].max);
             }
         }
+    }
 
-        /*
-        for x in 0 .. 256 {
-            for y in   0 ..  192 { self.canvas.put_pixel(x, y, &[8,  8,  8, 255]); }
-            if !(apu.pulse_1.debug_disable) {
-                for y in   0 ..  32 { self.canvas.put_pixel(x, y, &[32,  8,  8, 255]); }
-            }
-            if !(apu.pulse_2.debug_disable) {
-                for y in  32 ..  64 { self.canvas.put_pixel(x, y, &[32, 16,  8, 255]); }
-            }
-            if !(apu.triangle.debug_disable) {
-                for y in  64 ..  96 { self.canvas.put_pixel(x, y, &[ 8, 32,  8, 255]); }
-            }
-            if !(apu.noise.debug_disable) {
-                for y in  96 .. 128 { self.canvas.put_pixel(x, y, &[ 8, 16, 32, 255]); }
-            }
-            if !(apu.dmc.debug_disable) {
-                for y in  128 .. 160 { self.canvas.put_pixel(x, y, &[ 16, 8, 32, 255]); }
-            }
-            for y in 160 .. 192 { self.canvas.put_pixel(x, y, &[16, 16, 16, 255]); }
-        }*/
-
-
-        /*
-        if !(apu.pulse_1.debug_disable) {
-            self.draw_channel_waveform(&apu.pulse_1.debug_buffer,
-                apu.buffer_index, &[192,  32,  32, 255], 0,   0, 256,  32, 16);
-        }
-        if !(apu.pulse_2.debug_disable) {
-            self.draw_channel_waveform(&apu.pulse_2.debug_buffer,
-                apu.buffer_index, &[192,  96,  32, 255], 0,  32, 256,  32, 16);
-        }
-        if !(apu.triangle.debug_disable) {
-            self.draw_channel_waveform(&apu.triangle.debug_buffer,
-                apu.buffer_index, &[32, 192,  32, 255], 0,  64, 256,  32, 16);
-        }
-        if !(apu.noise.debug_disable) {
-            self.draw_channel_waveform(&apu.noise.debug_buffer,
-                apu.buffer_index, &[32,  96, 192, 255], 0,  96, 256,  32, 16);
-        }
-        if !(apu.dmc.debug_disable) {
-            self.draw_channel_waveform(&apu.dmc.debug_buffer,
-                apu.buffer_index, &[96,  32, 192, 255], 0, 128, 256,  32, 128);
-        }
-        self.draw_final_waveform(&apu.sample_buffer,
-            apu.buffer_index, &[192, 192, 192, 255], 0, 160, 256,  32, 65536);
-        */
-
-        drawing::text(&mut self.canvas, &self.font, 0, 32  - 8, 
+    pub fn draw_channel_text(&mut self, apu: &ApuState) {
+        drawing::text(&mut self.canvas, &self.font, 0, 0, 
             &format!("Pulse 1 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
             if apu.pulse_1.sweep_enabled {if apu.pulse_1.sweep_negate {"-"} else {"+"}} else {" "}, apu.pulse_1.period_initial,
             if apu.pulse_1.envelope.looping {"L"} else {" "}, apu.pulse_1.envelope.current_volume(),
@@ -172,7 +127,7 @@ impl ApuWindow {
             apu.pulse_1.duty),
             &[192,  32,  32, 255]);
 
-        drawing::text(&mut self.canvas, &self.font, 0, 64  - 8, 
+        drawing::text(&mut self.canvas, &self.font, 0, 40, 
             &format!("Pulse 2 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
             if apu.pulse_2.sweep_enabled {if apu.pulse_2.sweep_negate {"-"} else {"+"}} else {" "}, apu.pulse_2.period_initial,
             if apu.pulse_2.envelope.looping {"L"} else {" "}, apu.pulse_2.envelope.current_volume(),
@@ -180,14 +135,14 @@ impl ApuWindow {
             apu.pulse_2.duty),
             &[192,  96,  32, 255]);
 
-        drawing::text(&mut self.canvas, &self.font, 0, 96  - 8, 
+        drawing::text(&mut self.canvas, &self.font, 0, 80, 
             &format!("Triangle - {:03X}     {}{:02X}        {:02X}", 
             apu.triangle.period_initial,
             if apu.triangle.length_counter.length == 0 {"M"} else {" "}, apu.triangle.length_counter.length,
             apu.triangle.sequence_counter), 
             &[ 32, 192,  32, 255]);
 
-        drawing::text(&mut self.canvas, &self.font, 0, 128 - 8, 
+        drawing::text(&mut self.canvas, &self.font, 0, 120, 
             &format!("Noise -    {:03X} {}{:02X} {}{:02X}        {:02X}",
             apu.noise.period_initial,
             if apu.noise.envelope.looping {"L"} else {" "}, apu.noise.envelope.current_volume(),
@@ -195,18 +150,19 @@ impl ApuWindow {
             apu.noise.mode),
             &[ 32,  96, 192, 255]);
 
-        drawing::text(&mut self.canvas, &self.font, 0, 160 - 8, 
+        drawing::text(&mut self.canvas, &self.font, 0, 160, 
             &format!("DMC -      {:03X}     {}{:02X}  {:04X}  {:02X}",
             apu.dmc.period_initial,
             if apu.triangle.length_counter.length == 0 {"M"} else {" "}, apu.triangle.length_counter.length,
             apu.dmc.starting_address, apu.dmc.output_level),
             &[ 96,  32, 192, 255]);
         
-        drawing::text(&mut self.canvas, &self.font, 0, 192 - 8, "Final",    &[192, 192, 192, 255]);
+        drawing::text(&mut self.canvas, &self.font, 0, 200, "Final",    &[192, 192, 192, 255]);
     }
 
     pub fn draw(&mut self, apu: &ApuState) {
         self.draw_audio_samples(apu);
+        self.draw_channel_text(apu);
     }
 }
 
@@ -214,7 +170,7 @@ impl ApuWindow {
 
 impl Panel for ApuWindow {
     fn title(&self) -> &str {
-        return "APU Surfing";
+        return "APU Surfboard";
     }
 
     fn shown(&self) -> bool {
