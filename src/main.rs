@@ -5,7 +5,6 @@ extern crate sdl2;
 extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
-mod audio_window;
 mod game_window;
 mod memory_window;
 mod piano_roll_window;
@@ -31,6 +30,7 @@ use std::fs::remove_file;
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
+use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
@@ -80,6 +80,7 @@ pub fn main() {
 
   let mut windows: Vec<SdlAppWindow> = Vec::new();
 
+  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
@@ -127,21 +128,6 @@ pub fn main() {
   let mut game_window = game_window::GameWindow::new();
 
   // Setup various debug windows
-  let sdl_audio_window = video_subsystem.window("Audio Visualizer", 512, 384)
-    .position(490, 40)
-    .hidden()
-    .opengl()
-    .build()
-    .unwrap();
-
-  let mut audio_canvas = sdl_audio_window.into_canvas().build().unwrap();
-  audio_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  audio_canvas.clear();
-  audio_canvas.present();
-  let audio_screen_texture_creator = audio_canvas.texture_creator();
-  let mut audio_screen_texture = audio_screen_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, 256, 192).unwrap();
-  let mut audio_window = audio_window::AudioWindow::new();
-
   let sdl_memory_window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
     .position(490, 40)
     .hidden()
@@ -195,7 +181,6 @@ pub fn main() {
           if sdl_context.keyboard().focused_window_id().is_some() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
             let mut application_focused = 
-              audio_canvas.window().id() == focused_window_id ||
               game_canvas.window().id() == focused_window_id ||
               memory_canvas.window().id() == focused_window_id ||
               piano_roll_canvas.window().id() == focused_window_id;
@@ -239,18 +224,10 @@ pub fn main() {
                       Keycode::Num9 => {application_events.push(events::Event::ApuToggleDmc);},
 
                       Keycode::F1 => {application_events.push(events::Event::ShowPpuWindow);},
+                      Keycode::F2 => {application_events.push(events::Event::ShowApuWindow);},
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
                       Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
 
-                      Keycode::F2 => {
-                        if !audio_window.shown {
-                          audio_window.shown = true;
-                          audio_canvas.window_mut().show();
-                        } else {
-                          audio_window.shown = false;
-                          audio_canvas.window_mut().hide();
-                        }
-                      },
                       Keycode::F3 => {
                         if !memory_window.shown {
                           memory_window.shown = true;
@@ -312,10 +289,6 @@ pub fn main() {
                     game_window.shown = false;
                     game_canvas.window_mut().hide();
                   }
-                  if id == audio_canvas.window().id() {
-                    audio_window.shown = false;
-                    audio_canvas.window_mut().hide();
-                  }
                   if id == memory_canvas.window().id() {
                     memory_window.shown = false;
                     memory_canvas.window_mut().hide();
@@ -352,9 +325,6 @@ pub fn main() {
       // The main game window was closed! Exit the program.
       break 'running
     }
-    if audio_window.shown {
-      audio_window.update(&mut runtime_state.nes);
-    }
     if memory_window.shown {
       memory_window.update(&mut runtime_state.nes);
     }
@@ -379,13 +349,6 @@ pub fn main() {
     }
 
     // Draw all windows
-    if audio_window.shown {
-      audio_canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = audio_screen_texture.update(None, &audio_window.buffer.buffer, 256 * 4);
-      let _ = audio_canvas.copy(&audio_screen_texture, None, None);
-      audio_canvas.present();
-    }
-
     if piano_roll_window.shown {
       piano_roll_canvas.set_draw_color(Color::RGB(255, 255, 255));
       let _ = piano_roll_screen_texture.update(None, &piano_roll_window.buffer.buffer, (piano_roll_window.buffer.width * 4) as usize);
