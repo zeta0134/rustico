@@ -45,6 +45,7 @@ impl<'a> SdlAppWindow {
     let sdl_window = video_subsystem.window(panel.title(), panel.active_canvas().width, panel.active_canvas().height)
       .position(490, 40)
       .opengl()
+      .hidden()
       .build()
       .unwrap();
     let mut sdl_canvas = sdl_window.into_canvas().build().unwrap();
@@ -89,7 +90,7 @@ pub fn main() {
     textures.push(texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, width, height).unwrap());  
   }
 
-  let mut application_events: Vec<Event> = Vec::new();
+  let mut application_events: Vec<events::Event> = Vec::new();
 
   let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -193,6 +194,7 @@ pub fn main() {
       break 'running
     }
 
+    // Process all incoming SDL events
     for event in event_pump.poll_iter() {
       match event {
         Event::Quit {..} => {
@@ -201,12 +203,17 @@ pub fn main() {
         _ => {
           if sdl_context.keyboard().focused_window_id().is_some() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
-            let application_focused = 
+            let mut application_focused = 
               audio_canvas.window().id() == focused_window_id ||
               debugger_canvas.window().id() == focused_window_id ||
               game_canvas.window().id() == focused_window_id ||
               memory_canvas.window().id() == focused_window_id ||
               piano_roll_canvas.window().id() == focused_window_id;
+            for i in 0 .. windows.len() {
+              if windows[i].canvas.window().id() == focused_window_id {
+                application_focused = true;
+              }
+            }
 
             if application_focused {
               match event {
@@ -236,6 +243,8 @@ pub fn main() {
                   } else {
                     // Previous implementation handled debug window showing / hiding here
                     match key {
+                      Keycode::F1 => {application_events.push(events::Event::ShowVramWindow);},
+                      Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
                       Keycode::F2 => {
                         if !audio_window.shown {
                           audio_window.shown = true;
@@ -306,6 +315,11 @@ pub fn main() {
                     memory_window.handle_click(&mut runtime_state.nes, omx / 2, omy / 2);
                 },
                 Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+                  for i in 0 .. windows.len() {
+                    if id == windows[i].canvas.window().id() {
+                      windows[i].panel.handle_event(&runtime_state, events::Event::CloseWindow);
+                    }
+                  }
                   if id == game_canvas.window().id() {
                     game_window.shown = false;
                     game_canvas.window_mut().hide();
@@ -329,6 +343,13 @@ pub fn main() {
           }
         }
       }
+    }
+
+    // Process all the application-level events
+    let events_to_process = application_events.clone();
+    application_events.clear();
+    for event in events_to_process{
+      dispatch_event(&mut windows, &runtime_state, event);
     }
 
     // Update windows
@@ -406,11 +427,16 @@ pub fn main() {
     }
 
     for i in 0 .. windows.len() {
-      windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
-      windows[i].canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = textures[i].update(None, &windows[i].panel.active_canvas().buffer, (windows[i].panel.active_canvas().width * 4) as usize);
-      let _ = windows[i].canvas.copy(&textures[i], None, None);
-      windows[i].canvas.present();
+      if windows[i].panel.shown() {
+        windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
+        windows[i].canvas.set_draw_color(Color::RGB(255, 255, 255));
+        let _ = textures[i].update(None, &windows[i].panel.active_canvas().buffer, (windows[i].panel.active_canvas().width * 4) as usize);
+        let _ = windows[i].canvas.copy(&textures[i], None, None);
+        windows[i].canvas.present();
+        windows[i].canvas.window_mut().show();
+      } else {
+        windows[i].canvas.window_mut().hide();
+      }
     }
 
     game_canvas.set_draw_color(Color::RGB(255, 255, 255));
