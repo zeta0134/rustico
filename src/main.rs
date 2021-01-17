@@ -62,10 +62,13 @@ impl<'a> SdlAppWindow {
   }
 }
 
-pub fn dispatch_event(windows: &mut Vec<SdlAppWindow>, runtime_state: &RusticNesRuntimeState, event: events::Event) {
+pub fn dispatch_event(windows: &mut Vec<SdlAppWindow>, runtime_state: &mut RusticNesRuntimeState, event: events::Event) {
   for i in 0 .. windows.len() {
+    // Note: Windows get an immutable reference to everything other than themselves
     windows[i].panel.handle_event(&runtime_state, event);
   }
+  // ... but RuntimeState needs a mutable reference to itself
+  runtime_state.handle_event(event);
 }
 
 pub fn main() {
@@ -214,7 +217,6 @@ pub fn main() {
                 },
                 Event::KeyUp { keycode: Some(key), .. } => {
                   // Pass keyup events into sub-windows
-                  audio_window.handle_key_up(&mut runtime_state.nes, key);
                   game_window.handle_key_up(&mut runtime_state.nes, key);
                   memory_window.handle_key_up(&mut runtime_state.nes, key);
                   // Handle global keydown events
@@ -230,6 +232,12 @@ pub fn main() {
                   } else {
                     // Previous implementation handled debug window showing / hiding here
                     match key {
+                      Keycode::Num5 => {application_events.push(events::Event::ApuTogglePulse1);},
+                      Keycode::Num6 => {application_events.push(events::Event::ApuTogglePulse2);},
+                      Keycode::Num7 => {application_events.push(events::Event::ApuToggleTriangle);},
+                      Keycode::Num8 => {application_events.push(events::Event::ApuToggleNoise);},
+                      Keycode::Num9 => {application_events.push(events::Event::ApuToggleDmc);},
+
                       Keycode::F1 => {application_events.push(events::Event::ShowPpuWindow);},
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
                       Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
@@ -325,7 +333,7 @@ pub fn main() {
     let events_to_process = application_events.clone();
     application_events.clear();
     for event in events_to_process{
-      dispatch_event(&mut windows, &runtime_state, event);
+      dispatch_event(&mut windows, &mut runtime_state, event);
     }
 
     // Update windows
@@ -354,7 +362,7 @@ pub fn main() {
       piano_roll_window.update(&mut runtime_state.nes);
     }
 
-    dispatch_event(&mut windows, &runtime_state, events::Event::Update);
+    dispatch_event(&mut windows, &mut runtime_state, events::Event::Update);
 
 
     // Play Audio

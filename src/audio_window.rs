@@ -3,8 +3,6 @@ extern crate sdl2;
 use rusticnes_core::apu::ApuState;
 use rusticnes_core::nes::NesState;
 
-use sdl2::keyboard::Keycode;
-
 use rusticnes_ui_common::drawing;
 use rusticnes_ui_common::drawing::Font;
 use rusticnes_ui_common::drawing::SimpleBuffer;
@@ -157,27 +155,6 @@ impl AudioWindow {
 
   pub fn update(&mut self, nes: &mut NesState) {
     draw_audio_samples(&mut self.buffer, &self.font, &nes.apu);
-  }
-
-  pub fn handle_key_up(&mut self, nes: &mut NesState, key: Keycode) {
-    match key {
-      Keycode::Num5 => {
-        nes.apu.pulse_1.debug_disable = !nes.apu.pulse_1.debug_disable;
-      },
-      Keycode::Num6 => {
-        nes.apu.pulse_2.debug_disable = !nes.apu.pulse_2.debug_disable;
-      },
-      Keycode::Num7 => {
-        nes.apu.triangle.debug_disable = !nes.apu.triangle.debug_disable;
-      },
-      Keycode::Num8 => {
-        nes.apu.noise.debug_disable = !nes.apu.noise.debug_disable;
-      },
-      Keycode::Num9 => {
-        nes.apu.dmc.debug_disable = !nes.apu.dmc.debug_disable;
-      },
-      _ => ()
-    }
   }
 }
 
