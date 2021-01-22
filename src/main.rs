@@ -6,7 +6,6 @@ extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
 mod game_window;
-mod memory_window;
 mod piano_roll_window;
 
 use sdl2::audio::AudioSpecDesired;
@@ -32,6 +31,7 @@ use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
+use rusticnes_ui_common::memory_window::MemoryWindow;
 use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
 
@@ -82,6 +82,7 @@ pub fn main() {
 
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
+  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
   windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
 
@@ -128,21 +129,6 @@ pub fn main() {
   let mut game_window = game_window::GameWindow::new();
 
   // Setup various debug windows
-  let sdl_memory_window = video_subsystem.window("Memory Viewer", 360 * 2, 220 * 2)
-    .position(490, 40)
-    .hidden()
-    .opengl()
-    .build()
-    .unwrap();
-
-  let mut memory_canvas = sdl_memory_window.into_canvas().build().unwrap();
-  memory_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  memory_canvas.clear();
-  memory_canvas.present();
-  let mut memory_window = memory_window::MemoryWindow::new();
-  let memory_texture_creator = memory_canvas.texture_creator();
-  let mut memory_screen_texture = memory_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, memory_window.buffer.width, memory_window.buffer.height).unwrap();
-
   let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
   let sdl_piano_roll_window = video_subsystem.window("Piano Roll", piano_roll_window.buffer.width, piano_roll_window.buffer.height)
     .position(490, 40)
@@ -182,7 +168,6 @@ pub fn main() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
             let mut application_focused = 
               game_canvas.window().id() == focused_window_id ||
-              memory_canvas.window().id() == focused_window_id ||
               piano_roll_canvas.window().id() == focused_window_id;
             for i in 0 .. windows.len() {
               if windows[i].canvas.window().id() == focused_window_id {
@@ -203,7 +188,6 @@ pub fn main() {
                 Event::KeyUp { keycode: Some(key), .. } => {
                   // Pass keyup events into sub-windows
                   game_window.handle_key_up(&mut runtime_state.nes, key);
-                  memory_window.handle_key_up(&mut runtime_state.nes, key);
                   // Handle global keydown events
                   if key == Keycode::LCtrl || key == Keycode::RCtrl {
                     ctrl_mod = false;
@@ -225,18 +209,14 @@ pub fn main() {
 
                       Keycode::F1 => {application_events.push(events::Event::ShowPpuWindow);},
                       Keycode::F2 => {application_events.push(events::Event::ShowApuWindow);},
+                      Keycode::F3 => {application_events.push(events::Event::ShowMemoryWindow);},
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
                       Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
 
-                      Keycode::F3 => {
-                        if !memory_window.shown {
-                          memory_window.shown = true;
-                          memory_canvas.window_mut().show();
-                        } else {
-                          memory_window.shown = false;
-                          memory_canvas.window_mut().hide();
-                        }
-                      },
+                      Keycode::Period => {application_events.push(events::Event::MemoryViewerNextPage);},
+                      Keycode::Comma => {application_events.push(events::Event::MemoryViewerPreviousPage);},
+                      Keycode::Slash => {application_events.push(events::Event::MemoryViewerNextBus);},
+
                       Keycode::F5 => {
                         if !piano_roll_window.shown {
                           piano_roll_window.shown = true;
@@ -276,8 +256,15 @@ pub fn main() {
                     }
                   }
                 },
-                Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } if id == memory_canvas.window().id() => {
-                    memory_window.handle_click(&mut runtime_state.nes, omx / 2, omy / 2);
+                Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } => {
+                  for i in 0 .. windows.len() {
+                    if id == windows[i].canvas.window().id() {
+                      //memory_window.handle_click(&mut runtime_state.nes, omx / 2, omy / 2);
+                      let wx = omx / windows[i].panel.scale_factor() as i32;
+                      let wy = omy / windows[i].panel.scale_factor() as i32;
+                      windows[i].panel.handle_event(&runtime_state, events::Event::MouseClick(wx, wy));
+                    }
+                  }
                 },
                 Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
                   for i in 0 .. windows.len() {
@@ -288,10 +275,6 @@ pub fn main() {
                   if id == game_canvas.window().id() {
                     game_window.shown = false;
                     game_canvas.window_mut().hide();
-                  }
-                  if id == memory_canvas.window().id() {
-                    memory_window.shown = false;
-                    memory_canvas.window_mut().hide();
                   }
                 },
                 _ => ()
@@ -325,9 +308,6 @@ pub fn main() {
       // The main game window was closed! Exit the program.
       break 'running
     }
-    if memory_window.shown {
-      memory_window.update(&mut runtime_state.nes);
-    }
     if piano_roll_window.shown {
       piano_roll_window.update(&mut runtime_state.nes);
     }
@@ -354,13 +334,6 @@ pub fn main() {
       let _ = piano_roll_screen_texture.update(None, &piano_roll_window.buffer.buffer, (piano_roll_window.buffer.width * 4) as usize);
       let _ = piano_roll_canvas.copy(&piano_roll_screen_texture, None, None);
       piano_roll_canvas.present();
-    }
-
-    if memory_window.shown {
-      memory_canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = memory_screen_texture.update(None, &memory_window.buffer.buffer, (memory_window.buffer.width * 4) as usize);
-      let _ = memory_canvas.copy(&memory_screen_texture, None, None);
-      memory_canvas.present();
     }
 
     for i in 0 .. windows.len() {
