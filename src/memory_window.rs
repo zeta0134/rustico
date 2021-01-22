@@ -22,7 +22,7 @@ impl MemoryWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return MemoryWindow {
-            canvas: SimpleBuffer::new(256, 256),
+            canvas: SimpleBuffer::new(360, 220),
             counter: 0,
             font: font,
             shown: false,
@@ -191,5 +191,9 @@ impl Panel for MemoryWindow {
     
     fn active_canvas(&self) -> &SimpleBuffer {
         return &self.canvas;
+    }
+
+    fn scale_factor(&self) -> u32 {
+        return 2;
     }
 }
