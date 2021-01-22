@@ -6,10 +6,18 @@ pub enum Event {
     ApuToggleTriangle,
     ApuToggleNoise,
     ApuToggleDmc,
+    MouseMove(i32, i32),
+    MouseClick(i32, i32),
+    MouseRelease,
+    MemoryViewerNextPage,
+    MemoryViewerPreviousPage,
+    MemoryViewerNextBus,
     RequestFrame,
     ShowApuWindow,
     ShowCpuWindow,
+    ShowMemoryWindow,
     ShowPpuWindow,
     ShowTestWindow,
     Update,
+
 }
