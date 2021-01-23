@@ -50,7 +50,7 @@ impl<'a> SdlAppWindow {
       .hidden()
       .build()
       .unwrap();
-    let mut sdl_canvas = sdl_window.into_canvas().build().unwrap();
+    let mut sdl_canvas = sdl_window.into_canvas().present_vsync().build().unwrap();
     sdl_canvas.set_draw_color(Color::RGB(0, 0, 0));
     sdl_canvas.clear();
     sdl_canvas.present();
