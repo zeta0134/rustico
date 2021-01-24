@@ -55,8 +55,11 @@ impl RuntimeState {
             Event::ApuToggleDmc => {
                 self.nes.apu.dmc.debug_disable = !self.nes.apu.dmc.debug_disable;
             },
-            Event::LoadCartridge(file_data_rc) => {
-                self.load_cartridge(&file_data_rc);
+            Event::LoadCartridge(file_data) => {
+                self.load_cartridge(&file_data);
+            },
+            Event::LoadSram(sram_data) => {
+                self.load_sram(&sram_data);
             },
             Event::NesRunFrame => {
                 self.nes.run_until_vblank();

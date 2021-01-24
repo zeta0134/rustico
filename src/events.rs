@@ -9,6 +9,7 @@ pub enum Event {
     ApuToggleNoise,
     ApuToggleDmc,
     LoadCartridge(Rc<Vec<u8>>),
+    LoadSram(Rc<Vec<u8>>),
     LoadFailed(String),
     MouseMove(i32, i32),
     MouseClick(i32, i32),
