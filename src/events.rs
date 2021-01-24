@@ -1,4 +1,6 @@
-#[derive(Copy, Clone)]
+use std::rc::Rc;
+
+#[derive(Clone)]
 pub enum Event {
     CloseWindow,
     ApuTogglePulse1,
@@ -6,12 +8,15 @@ pub enum Event {
     ApuToggleTriangle,
     ApuToggleNoise,
     ApuToggleDmc,
+    LoadCartridge(Rc<Vec<u8>>),
+    LoadFailed(String),
     MouseMove(i32, i32),
     MouseClick(i32, i32),
     MouseRelease,
     MemoryViewerNextPage,
     MemoryViewerPreviousPage,
     MemoryViewerNextBus,
+    NesRunFrame,
     RequestFrame,
     ShowApuWindow,
     ShowCpuWindow,
@@ -19,5 +24,4 @@ pub enum Event {
     ShowPpuWindow,
     ShowTestWindow,
     Update,
-
 }
