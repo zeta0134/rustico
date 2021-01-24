@@ -24,7 +24,11 @@ use sdl2::video::WindowContext;
 use sdl2::render::WindowCanvas;
 
 use std::env;
+use std::fs::File;
 use std::fs::remove_file;
+use std::io::Write;
+use std::path::PathBuf;
+use std::rc::Rc;
 
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
@@ -62,17 +66,119 @@ impl<'a> SdlAppWindow {
   }
 }
 
-pub fn dispatch_event(windows: &mut Vec<SdlAppWindow>, runtime_state: &mut RusticNesRuntimeState, event: events::Event) {
+pub struct SdlCartridgeManager {
+  pub game_path: String,
+  pub sram_path: String,
+}
+
+impl SdlCartridgeManager {
+  pub fn new() -> SdlCartridgeManager {
+    return SdlCartridgeManager {
+      game_path: String::from(""),
+      sram_path: String::from(""),
+    }
+  }
+
+  pub fn open_cartridge_with_sram(&mut self, file_path: &str) -> events::Event {
+    match std::fs::read(file_path) {
+      Ok(cartridge_data) => {
+        let cartridge_path = PathBuf::from(file_path);
+        let sram_path = cartridge_path.with_extension("sav");
+        match std::fs::read(&sram_path.to_str().unwrap()) {
+          Ok(sram_data) => {
+            return events::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(sram_data));
+          },
+          Err(reason) => {
+            println!("Failed to load SRAM: {}", reason);
+            println!("Continuing anyway.");
+            let bucket_of_nothing: Vec<u8> = Vec::new();
+            return events::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(bucket_of_nothing));
+          }
+        }
+      },
+      Err(reason) => {
+        println!("{}", reason);
+        return events::Event::LoadFailed(reason.to_string());
+      }
+    }
+  }
+
+  pub fn save_sram(&self, filename: String, sram_data: &[u8]) {
+    let file = File::create(filename);
+    match file {
+        Err(why) => {
+            println!("Couldn't open {}: {}", self.sram_path, why.to_string());
+        },
+        Ok(mut file) => {
+            let _ = file.write_all(sram_data);
+            println!("Wrote sram data to: {}", self.sram_path);
+        },
+    };
+  }
+
+  pub fn handle_event(&mut self, event: events::Event) -> Vec<events::Event> {
+    let mut responses: Vec<events::Event> = Vec::new();
+    match event {
+      events::Event::RequestCartridgeDialog => {
+        match open_file_dialog() {
+          Ok(file_path) => {
+            responses.push(events::Event::RequestSramSave(self.sram_path.clone()));
+            responses.push(self.open_cartridge_with_sram(&file_path));
+          },
+          Err(reason) => {
+            println!("{}", reason);
+            responses.push(events::Event::LoadFailed(reason));
+          }
+        }
+      },
+      events::Event::CartridgeLoaded(cart_id) => {
+        self.game_path = cart_id.to_string();
+        self.sram_path = PathBuf::from(cart_id).with_extension("sav").to_str().unwrap().to_string();
+        println!("Cartridge loading success! Storing save path as: {}", self.sram_path);
+      },
+      events::Event::LoadFailed(reason) => {
+        println!("Loading failed: {}", reason);
+      },
+      events::Event::CartridgeRejected(cart_id, reason) => {
+        println!("Cartridge {} could not be played: {}", cart_id, reason);
+      },
+      events::Event::SaveSram(sram_id, sram_data) => {
+        self.save_sram(sram_id, &sram_data);
+      },
+      _ => {}
+    }
+    return responses;
+  }
+}
+
+pub fn dispatch_event(windows: &mut Vec<SdlAppWindow>, runtime_state: &mut RusticNesRuntimeState, cartridge_state: &mut SdlCartridgeManager, event: events::Event) -> Vec<events::Event> {
+  let mut responses: Vec<events::Event> = Vec::new();
   for i in 0 .. windows.len() {
     // Note: Windows get an immutable reference to everything other than themselves
-    windows[i].panel.handle_event(&runtime_state, event);
+    responses.extend(windows[i].panel.handle_event(&runtime_state, event.clone()));
   }
   // ... but RuntimeState needs a mutable reference to itself
-  runtime_state.handle_event(event);
+  responses.extend(runtime_state.handle_event(event.clone()));
+  // Platform specific state, this is not passed to applications on purpose
+  responses.extend(cartridge_state.handle_event(event.clone()));
+  return responses;
+}
+
+pub fn open_file_dialog() -> Result<String, String> {
+  let result = nfd::dialog().filter("nes").open().unwrap_or_else(|e| { panic!(e); });
+
+  match result {
+    nfd::Response::Okay(file_path) => {
+      return Ok(file_path);
+    },
+    nfd::Response::OkayMultiple(_files) => return Err(String::from("Unexpected multiple files.")),
+    nfd::Response::Cancel => return Err(String::from("No file opened.")),
+  }
 }
 
 pub fn main() {
   let mut runtime_state = RusticNesRuntimeState::new();
+  let mut cartridge_state = SdlCartridgeManager::new();
 
   let sdl_context = sdl2::init().unwrap();
   let audio_subsystem = sdl_context.audio().unwrap();
@@ -149,7 +255,7 @@ pub fn main() {
 
   let args: Vec<_> = env::args().collect();
   if args.len() > 1 {
-      game_window.open_file(&mut runtime_state.nes, &args[1]);
+    application_events.push(cartridge_state.open_cartridge_with_sram(&args[1]));
   }
 
   'running: loop {
@@ -195,7 +301,10 @@ pub fn main() {
                   if ctrl_mod {
                     match key {
                       Keycode::Q => { break 'running },
-                      Keycode::O => { game_window.open_file_dialog(&mut runtime_state.nes); ctrl_mod = false; },
+                      Keycode::O => { 
+                        ctrl_mod = false; // the open file dialog suppresses Ctrl release events, so trigger one manually
+                        application_events.push(events::Event::RequestCartridgeDialog);
+                      },
                       _ => ()
                     }
                   } else {
@@ -216,6 +325,8 @@ pub fn main() {
                       Keycode::Period => {application_events.push(events::Event::MemoryViewerNextPage);},
                       Keycode::Comma => {application_events.push(events::Event::MemoryViewerPreviousPage);},
                       Keycode::Slash => {application_events.push(events::Event::MemoryViewerNextBus);},
+
+                      Keycode::S => {application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));},
 
                       Keycode::F5 => {
                         if !piano_roll_window.shown {
@@ -285,11 +396,18 @@ pub fn main() {
       }
     }
 
+    // If we're currently running, emit NesRunFrame events
+    // TODO: Move this into some sort of timing manager, deal with real time deltas,
+    // and separate these events from the monitor refresh rate.
+    if runtime_state.running {
+      application_events.push(events::Event::NesRunFrame);
+    }
+
     // Process all the application-level events
     let events_to_process = application_events.clone();
     application_events.clear();
     for event in events_to_process{
-      dispatch_event(&mut windows, &mut runtime_state, event);
+      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
     }
 
     // Update windows
@@ -312,7 +430,7 @@ pub fn main() {
       piano_roll_window.update(&mut runtime_state.nes);
     }
 
-    dispatch_event(&mut windows, &mut runtime_state, events::Event::Update);
+    application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
 
 
     // Play Audio
@@ -359,5 +477,17 @@ pub fn main() {
     }
     game_canvas.present();
   }
+
+  println!("Exiting application! Attempting SRAM save one last time.");
+  application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));
+  while application_events.len() > 0 {
+    let events_to_process = application_events.clone();
+    application_events.clear();
+    for event in events_to_process{
+      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+    }
+  }
+
+
 }
 
