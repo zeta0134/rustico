@@ -7,6 +7,7 @@ extern crate rusticnes_ui_common;
 
 mod game_window;
 mod piano_roll_window;
+mod platform_window;
 
 use sdl2::audio::AudioSpecDesired;
 use sdl2::event::Event;
@@ -19,9 +20,7 @@ use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::render::TextureAccess;
 use sdl2::render::TextureCreator;
-use sdl2::VideoSubsystem;
 use sdl2::video::WindowContext;
-use sdl2::render::WindowCanvas;
 
 use std::env;
 use std::fs::File;
@@ -32,39 +31,13 @@ use std::rc::Rc;
 
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
-use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
 use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
 
-pub struct SdlAppWindow {
-  pub panel: Box<dyn Panel>,
-  pub canvas: WindowCanvas,
-}
-
-impl<'a> SdlAppWindow {
-  pub fn from_panel(video_subsystem: &'a VideoSubsystem, panel: Box<dyn Panel>) -> SdlAppWindow {
-    let width = panel.active_canvas().width * panel.scale_factor();
-    let height = panel.active_canvas().height * panel.scale_factor();
-    let sdl_window = video_subsystem.window(panel.title(), width, height)
-      .position(490, 40)
-      .opengl()
-      .hidden()
-      .build()
-      .unwrap();
-    let mut sdl_canvas = sdl_window.into_canvas().present_vsync().build().unwrap();
-    sdl_canvas.set_draw_color(Color::RGB(0, 0, 0));
-    sdl_canvas.clear();
-    sdl_canvas.present();
-
-    return SdlAppWindow {
-      panel: panel,
-      canvas: sdl_canvas,
-    }
-  }
-}
+use platform_window::PlatformWindow;
 
 pub struct SdlCartridgeManager {
   pub game_path: String,
@@ -151,7 +124,7 @@ impl SdlCartridgeManager {
   }
 }
 
-pub fn dispatch_event(windows: &mut Vec<SdlAppWindow>, runtime_state: &mut RusticNesRuntimeState, cartridge_state: &mut SdlCartridgeManager, event: events::Event) -> Vec<events::Event> {
+pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut RusticNesRuntimeState, cartridge_state: &mut SdlCartridgeManager, event: events::Event) -> Vec<events::Event> {
   let mut responses: Vec<events::Event> = Vec::new();
   for i in 0 .. windows.len() {
     // Note: Windows get an immutable reference to everything other than themselves
@@ -184,13 +157,13 @@ pub fn main() {
   let audio_subsystem = sdl_context.audio().unwrap();
   let video_subsystem = sdl_context.video().unwrap();
 
-  let mut windows: Vec<SdlAppWindow> = Vec::new();
+  let mut windows: Vec<PlatformWindow> = Vec::new();
 
-  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
-  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
-  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
-  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
-  windows.push(SdlAppWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
 
   let mut texture_creators: Vec<TextureCreator<WindowContext>> = Vec::new();
   for i in 0 .. windows.len() {

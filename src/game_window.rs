@@ -3,8 +3,6 @@ extern crate nfd;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::palettes::NTSC_PAL;
 
-use std::path::PathBuf;
-
 use sdl2::keyboard::Keycode;
 
 pub struct GameWindow {
@@ -12,8 +10,6 @@ pub struct GameWindow {
   pub running: bool,
   pub file_loaded: bool,
   pub shown: bool,
-  pub game_path: PathBuf,
-  pub save_path: PathBuf,
   pub scale: u32,
   pub display_overscan: bool,
 }
@@ -26,8 +22,6 @@ impl GameWindow {
       running: false,
       file_loaded: false,
       shown: true,
-      game_path: PathBuf::from(""),
-      save_path: PathBuf::from(""),
       scale: 2,
       display_overscan: false,
     }
