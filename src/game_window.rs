@@ -28,10 +28,6 @@ impl GameWindow {
   }
 
   pub fn update(&mut self, nes: &mut NesState) {
-    if self.running {
-      nes.run_until_vblank();
-    }
-
     // Update the game screen
     for x in 0 .. 256 {
       for y in 0 .. 240 {
@@ -121,13 +117,6 @@ impl GameWindow {
         // Clear the corresponding bit
         nes.p1_input &= (0x1 << i) ^ 0xFF;
       }
-    }
-    match key {
-      Keycode::R => {
-        println!("Resetting NES");
-        nes.reset();
-      },
-      _ => ()
     }
   }
 }

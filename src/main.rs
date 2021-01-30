@@ -202,6 +202,8 @@ pub fn main() {
 
                       Keycode::S => {application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));},
 
+                      Keycode::R => {application_events.push(events::Event::NesReset);}
+
                       Keycode::F5 => {
                         if !piano_roll_window.shown {
                           piano_roll_window.shown = true;
