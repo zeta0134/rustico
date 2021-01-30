@@ -71,6 +71,9 @@ impl RuntimeState {
             Event::NesRunFrame => {
                 self.nes.run_until_vblank();
             },
+            Event::NesReset => {
+                self.nes.reset();
+            },
             Event::RequestSramSave(sram_id) => {
                 if self.nes.mapper.has_sram()  {
                     responses.push(Event::SaveSram(sram_id, Rc::new(self.nes.sram())));

@@ -1,6 +1,18 @@
 use std::rc::Rc;
 
 #[derive(Clone)]
+pub enum StandardControllerButton {
+    A,
+    B,
+    Select,
+    Start,
+    DPadUp,
+    DPadDown,
+    DPadLeft,
+    DPadRight,
+}
+
+#[derive(Clone)]
 pub enum Event {
     CloseWindow,
     ApuTogglePulse1,
@@ -20,6 +32,7 @@ pub enum Event {
     MemoryViewerPreviousPage,
     MemoryViewerNextBus,
     NesRunFrame,
+    NesReset,
     RequestFrame,
     RequestCartridgeDialog,
     RequestSramSave(String),
@@ -29,5 +42,7 @@ pub enum Event {
     ShowMemoryWindow,
     ShowPpuWindow,
     ShowTestWindow,
+    StandardControllerPress(usize, StandardControllerButton),
+    StandardControllerRelease(usize, StandardControllerButton),
     Update,
 }
