@@ -28,6 +28,7 @@ use std::fs::remove_file;
 
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
+use rusticnes_ui_common::events::StandardControllerButton;
 use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
@@ -164,10 +165,20 @@ pub fn main() {
                   if key == Keycode::LCtrl || key == Keycode::RCtrl {
                     ctrl_mod = true;
                   }
+
+                  match key {
+                    Keycode::X =>      {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::A))},
+                    Keycode::Z =>      {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::B))},
+                    Keycode::RShift => {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::Select))},
+                    Keycode::Return => {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::Start))},
+                    Keycode::Up =>     {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::DPadUp))},
+                    Keycode::Down =>   {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::DPadDown))},
+                    Keycode::Left =>   {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::DPadLeft))},
+                    Keycode::Right =>  {application_events.push(events::Event::StandardControllerPress(0, StandardControllerButton::DPadRight))},
+                    _ => {}
+                  }
                 },
                 Event::KeyUp { keycode: Some(key), .. } => {
-                  // Pass keyup events into sub-windows
-                  game_window.handle_key_up(&mut runtime_state.nes, key);
                   // Handle global keydown events
                   if key == Keycode::LCtrl || key == Keycode::RCtrl {
                     ctrl_mod = false;
@@ -203,6 +214,19 @@ pub fn main() {
                       Keycode::S => {application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));},
 
                       Keycode::R => {application_events.push(events::Event::NesReset);}
+                      Keycode::Space => {application_events.push(events::Event::NesRunOpcode);},
+                      Keycode::C => {application_events.push(events::Event::NesRunCycle);},
+                      Keycode::H => {application_events.push(events::Event::NesRunScanline);},
+                      Keycode::V => {application_events.push(events::Event::NesRunFrame);},
+
+                      Keycode::X =>      {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::A))},
+                      Keycode::Z =>      {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::B))},
+                      Keycode::RShift => {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::Select))},
+                      Keycode::Return => {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::Start))},
+                      Keycode::Up =>     {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::DPadUp))},
+                      Keycode::Down =>   {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::DPadDown))},
+                      Keycode::Left =>   {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::DPadLeft))},
+                      Keycode::Right =>  {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::DPadRight))},
 
                       Keycode::F5 => {
                         if !piano_roll_window.shown {
