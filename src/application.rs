@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use events::Event;
+use events::StandardControllerButton;
 
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
@@ -43,6 +44,40 @@ impl RuntimeState {
         }
     }
 
+    pub fn button_press(&mut self, player_index: usize, button: StandardControllerButton) {
+        let controllers = [
+            &mut self.nes.p1_input,
+            &mut self.nes.p2_input
+        ];
+
+        if player_index > controllers.len() {
+            return;
+        }
+
+        let old_controller_byte = *controllers[player_index];
+        let pressed_button = 0b1 << (button.clone() as u8);
+        let new_controller_byte = old_controller_byte | pressed_button;
+        let fixed_controller_byte = fix_dpad(new_controller_byte, button.clone());
+        *controllers[player_index] = fixed_controller_byte;
+    }
+
+    pub fn button_release(&mut self, player_index: usize, button: StandardControllerButton) {
+        let controllers = [
+            &mut self.nes.p1_input,
+            &mut self.nes.p2_input
+        ];
+
+        if player_index > controllers.len() {
+            return;
+        }
+
+        let old_controller_byte = *controllers[player_index];
+        let released_button = 0b1 << (button as u8);
+        let release_mask = 0b1111_1111 ^ released_button;
+        let new_controller_byte = old_controller_byte & release_mask;
+        *controllers[player_index] = new_controller_byte;
+    }
+
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
         let mut responses: Vec<Event> = Vec::new();
         match event {
@@ -78,9 +113,28 @@ impl RuntimeState {
                 if self.nes.mapper.has_sram()  {
                     responses.push(Event::SaveSram(sram_id, Rc::new(self.nes.sram())));
                 }
-            }
+            },
+            Event::StandardControllerPress(controller_index, button) => {
+                self.button_press(controller_index, button);
+            },
+            Event::StandardControllerRelease(controller_index, button) => {
+                self.button_release(controller_index, button);
+            },
             _ => {}
         }
         return responses;
     }
+}
+
+pub fn fix_dpad(controller_byte: u8, last_button_pressed: StandardControllerButton) -> u8 {
+    let mut fixed_byte = controller_byte;
+    match last_button_pressed {
+        StandardControllerButton::DPadUp => {fixed_byte &= 0b1101_1111},
+        StandardControllerButton::DPadDown => {fixed_byte &= 0b1110_1111},
+        StandardControllerButton::DPadLeft => {fixed_byte &= 0b0111_1111},
+        StandardControllerButton::DPadRight => {fixed_byte &= 0b1011_1111},
+        _ => {}
+    }
+
+    return fixed_byte;
 }
