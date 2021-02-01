@@ -91,13 +91,13 @@ impl CartridgeManager {
 }
 
 pub fn open_file_dialog() -> Result<String, String> {
-  let result = nfd::dialog().filter("nes").open().unwrap_or_else(|e| { panic!(e); });
+  let result = nfd2::dialog().filter("nes").open().unwrap_or_else(|e| { panic!(e); });
 
   match result {
-    nfd::Response::Okay(file_path) => {
-      return Ok(file_path);
+    nfd2::Response::Okay(file_path) => {
+      return Ok(file_path.to_str().unwrap().to_string());
     },
-    nfd::Response::OkayMultiple(_files) => return Err(String::from("Unexpected multiple files.")),
-    nfd::Response::Cancel => return Err(String::from("No file opened.")),
+    nfd2::Response::OkayMultiple(_files) => return Err(String::from("Unexpected multiple files.")),
+    nfd2::Response::Cancel => return Err(String::from("No file opened.")),
   }
 }
