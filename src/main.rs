@@ -143,6 +143,30 @@ pub fn main() {
               }
             }
 
+            // Global events, we want to always handle these even if the application is not focused. Note that
+            // unfocused mouse handling appears to be inconsistent between platforms, we're choosing to let SDL
+            // dictate this behavior to hopefully match platform conventions.
+            match event {
+              Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } => {
+                for i in 0 .. windows.len() {
+                  if id == windows[i].canvas.window().id() {
+                    let wx = omx / windows[i].panel.scale_factor() as i32;
+                    let wy = omy / windows[i].panel.scale_factor() as i32;
+                    windows[i].panel.handle_event(&runtime_state, events::Event::MouseClick(wx, wy));
+                  }
+                }
+              },
+              Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
+                for i in 0 .. windows.len() {
+                  if id == windows[i].canvas.window().id() {
+                    windows[i].panel.handle_event(&runtime_state, events::Event::CloseWindow);
+                  }
+                }
+              },
+              _ => {}
+            }
+
+            // Focus-filtered events, typically keybindings and such.
             if application_focused {
               match event {
                 Event::KeyDown { keycode: Some(key), .. } => {
@@ -178,8 +202,16 @@ pub fn main() {
                       _ => ()
                     }
                   } else {
-                    // Previous implementation handled debug window showing / hiding here
                     match key {
+                      Keycode::Escape => {
+                        // Escape closes the active window
+                        for i in 0 .. windows.len() {
+                          if windows[i].canvas.window().id() == focused_window_id {
+                            windows[i].panel.handle_event(&runtime_state, events::Event::CloseWindow);
+                          }
+                        }
+                      },
+
                       Keycode::Num5 => {application_events.push(events::Event::ApuTogglePulse1);},
                       Keycode::Num6 => {application_events.push(events::Event::ApuTogglePulse2);},
                       Keycode::Num7 => {application_events.push(events::Event::ApuToggleTriangle);},
@@ -237,22 +269,6 @@ pub fn main() {
                       },
                       
                       _ => ()
-                    }
-                  }
-                },
-                Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } => {
-                  for i in 0 .. windows.len() {
-                    if id == windows[i].canvas.window().id() {
-                      let wx = omx / windows[i].panel.scale_factor() as i32;
-                      let wy = omy / windows[i].panel.scale_factor() as i32;
-                      windows[i].panel.handle_event(&runtime_state, events::Event::MouseClick(wx, wy));
-                    }
-                  }
-                },
-                Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
-                  for i in 0 .. windows.len() {
-                    if id == windows[i].canvas.window().id() {
-                      windows[i].panel.handle_event(&runtime_state, events::Event::CloseWindow);
                     }
                   }
                 },
