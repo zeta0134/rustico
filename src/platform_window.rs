@@ -29,4 +29,16 @@ impl<'a> PlatformWindow {
       canvas: sdl_canvas,
     }
   }
+
+  pub fn size(&self) -> (u32, u32) {
+    let px = self.panel.active_canvas().width * self.panel.scale_factor();
+    let py = self.panel.active_canvas().height * self.panel.scale_factor();
+    return (px, py);
+  }
+
+  pub fn needs_resize(&self) -> bool {
+    let (wx, wy) = self.canvas.window().size();
+    let (px, py) = self.size();
+    return (wx != px) || (wy != py);
+  }
 }

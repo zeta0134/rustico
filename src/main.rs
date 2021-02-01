@@ -6,7 +6,6 @@ extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
 mod cartridge_manager;
-mod game_window;
 mod piano_roll_window;
 mod platform_window;
 
@@ -17,11 +16,11 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
-use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::render::TextureAccess;
 use sdl2::render::TextureCreator;
 use sdl2::video::WindowContext;
+use sdl2::video::WindowPos;
 
 use std::env;
 use std::fs::remove_file;
@@ -31,6 +30,7 @@ use rusticnes_ui_common::events;
 use rusticnes_ui_common::events::StandardControllerButton;
 use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
+use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
 use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
@@ -61,6 +61,10 @@ pub fn main() {
 
   let mut windows: Vec<PlatformWindow> = Vec::new();
 
+  // For now, we use index 0 as the "main" window; when this window closes, the application exits.
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(GameWindow::new())));
+  windows[0].canvas.window_mut().set_position(WindowPos::Positioned(5), WindowPos::Positioned(40));
+  
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
@@ -80,7 +84,6 @@ pub fn main() {
   }
 
   let mut application_events: Vec<events::Event> = Vec::new();
-
   let mut event_pump = sdl_context.event_pump().unwrap();
 
   // Setup Audio output format and sample rate
@@ -94,20 +97,6 @@ pub fn main() {
   let device = audio_subsystem.open_queue::<i16, _>(None, &desired_spec).unwrap();
   device.clear();
   device.resume();
-
-  // Setup the main window for rendering
-  let sdl_game_window = video_subsystem.window("RusticNES NEW", (256 - 16) * 2, (240 - 16) * 2)
-    .position(5, 40)
-    .opengl()
-    .build()
-    .unwrap();
-  let mut game_canvas = sdl_game_window.into_canvas().present_vsync().build().unwrap();
-  game_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  game_canvas.clear();
-  game_canvas.present();
-  let game_screen_texture_creator = game_canvas.texture_creator();
-  let mut game_screen_texture = game_screen_texture_creator.create_texture(PixelFormatEnum::RGBA8888, TextureAccess::Streaming, 256, 240).unwrap();
-  let mut game_window = game_window::GameWindow::new();
 
   // Setup various debug windows
   let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
@@ -125,7 +114,6 @@ pub fn main() {
   let mut piano_roll_screen_texture = piano_roll_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, piano_roll_window.buffer.width, piano_roll_window.buffer.height).unwrap();
 
   let mut ctrl_mod = false;
-  let mut trigger_resize = false;
   let mut dump_audio = false;
 
   let args: Vec<_> = env::args().collect();
@@ -134,7 +122,7 @@ pub fn main() {
   }
 
   'running: loop {
-    if !game_window.shown {
+    if !windows[0].panel.shown() {
       break 'running
     }
 
@@ -148,7 +136,6 @@ pub fn main() {
           if sdl_context.keyboard().focused_window_id().is_some() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
             let mut application_focused = 
-              game_canvas.window().id() == focused_window_id ||
               piano_roll_canvas.window().id() == focused_window_id;
             for i in 0 .. windows.len() {
               if windows[i].canvas.window().id() == focused_window_id {
@@ -159,8 +146,6 @@ pub fn main() {
             if application_focused {
               match event {
                 Event::KeyDown { keycode: Some(key), .. } => {
-                  // Pass keydown events into sub-windows
-                  game_window.handle_key_down(&mut runtime_state.nes, key);
                   // Handle global keydown events
                   if key == Keycode::LCtrl || key == Keycode::RCtrl {
                     ctrl_mod = true;
@@ -213,6 +198,7 @@ pub fn main() {
 
                       Keycode::S => {application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));},
 
+                      Keycode::P => {application_events.push(events::Event::NesToggleEmulation);}
                       Keycode::R => {application_events.push(events::Event::NesReset);}
                       Keycode::Space => {application_events.push(events::Event::NesRunOpcode);},
                       Keycode::C => {application_events.push(events::Event::NesRunCycle);},
@@ -237,22 +223,9 @@ pub fn main() {
                           piano_roll_canvas.window_mut().hide();
                         }
                       },
-                      Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {
-                        if game_window.scale < 8 {
-                          game_window.scale += 1;
-                          trigger_resize = true;
-                        }
-                      },
-                      Keycode::KpMinus | Keycode::Minus => {
-                        if game_window.scale > 1 {
-                          game_window.scale -= 1;
-                          trigger_resize = true;
-                        }
-                      },
-                      Keycode::KpMultiply=> {
-                        game_window.display_overscan = !game_window.display_overscan;
-                        trigger_resize = true;
-                      },
+                      Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {application_events.push(events::Event::GameIncreaseScale);},
+                      Keycode::KpMinus | Keycode::Minus => {application_events.push(events::Event::GameDecreaseScale);},
+                      Keycode::KpMultiply=> {application_events.push(events::Event::GameToggleOverscan);},
                       Keycode::A => {
                         dump_audio = !dump_audio;
                         if dump_audio {
@@ -270,7 +243,6 @@ pub fn main() {
                 Event::MouseButtonDown{ window_id: id, mouse_btn: MouseButton::Left, x: omx, y: omy, .. } => {
                   for i in 0 .. windows.len() {
                     if id == windows[i].canvas.window().id() {
-                      //memory_window.handle_click(&mut runtime_state.nes, omx / 2, omy / 2);
                       let wx = omx / windows[i].panel.scale_factor() as i32;
                       let wy = omy / windows[i].panel.scale_factor() as i32;
                       windows[i].panel.handle_event(&runtime_state, events::Event::MouseClick(wx, wy));
@@ -282,10 +254,6 @@ pub fn main() {
                     if id == windows[i].canvas.window().id() {
                       windows[i].panel.handle_event(&runtime_state, events::Event::CloseWindow);
                     }
-                  }
-                  if id == game_canvas.window().id() {
-                    game_window.shown = false;
-                    game_canvas.window_mut().hide();
                   }
                 },
                 _ => ()
@@ -310,22 +278,18 @@ pub fn main() {
       application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
     }
 
-    // Update windows
-    if game_window.shown {
-      game_window.update(&mut runtime_state.nes);
+    // Update window sizes
+    for i in 0 .. windows.len() {
+      if windows[i].needs_resize() {
+        let (wx, wy) = windows[i].size();
+        let _ = windows[i].canvas.window_mut().set_size(wx, wy);
 
-      if trigger_resize {
-        trigger_resize = false;
-        if game_window.display_overscan {
-          let _ = game_canvas.window_mut().set_size(game_window.scale * 256, game_window.scale * 240);
-        } else {
-          let _ = game_canvas.window_mut().set_size(game_window.scale * (256 - 16), game_window.scale * (240 - 16));
-        }
+        let tx = windows[i].panel.active_canvas().width;
+        let ty = windows[i].panel.active_canvas().height;
+        textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap()
       }
-    } else {
-      // The main game window was closed! Exit the program.
-      break 'running
     }
+
     if piano_roll_window.shown {
       piano_roll_window.update(&mut runtime_state.nes);
     }
@@ -366,16 +330,6 @@ pub fn main() {
         windows[i].canvas.window_mut().hide();
       }
     }
-
-    game_canvas.set_draw_color(Color::RGB(255, 255, 255));
-    let _ = game_screen_texture.update(None, &game_window.screen_buffer, 256 * 4);
-    if game_window.display_overscan {
-      let _ = game_canvas.copy(&game_screen_texture, None, None);
-    } else {
-      let borderless_rectangle = Rect::new(8, 8, 256 - 16, 240 - 16);
-      let _ = game_canvas.copy(&game_screen_texture, borderless_rectangle, None);
-    }
-    game_canvas.present();
   }
 
   println!("Exiting application! Attempting SRAM save one last time.");
