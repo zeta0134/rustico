@@ -6,7 +6,6 @@ extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
 mod cartridge_manager;
-mod piano_roll_window;
 mod platform_window;
 
 use sdl2::audio::AudioSpecDesired;
@@ -98,21 +97,6 @@ pub fn main() {
   device.clear();
   device.resume();
 
-  // Setup various debug windows
-  let mut piano_roll_window = piano_roll_window::PianoRollWindow::new();
-  let sdl_piano_roll_window = video_subsystem.window("Piano Roll", piano_roll_window.buffer.width, piano_roll_window.buffer.height)
-    .position(490, 40)
-    .hidden()
-    .opengl()
-    .build()
-    .unwrap();
-  let mut piano_roll_canvas = sdl_piano_roll_window.into_canvas().build().unwrap();
-  piano_roll_canvas.set_draw_color(Color::RGB(0, 0, 0));
-  piano_roll_canvas.clear();
-  piano_roll_canvas.present();
-  let piano_roll_texture_creator = piano_roll_canvas.texture_creator();
-  let mut piano_roll_screen_texture = piano_roll_texture_creator.create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, piano_roll_window.buffer.width, piano_roll_window.buffer.height).unwrap();
-
   let mut ctrl_mod = false;
   let mut dump_audio = false;
 
@@ -135,8 +119,7 @@ pub fn main() {
         _ => {
           if sdl_context.keyboard().focused_window_id().is_some() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
-            let mut application_focused = 
-              piano_roll_canvas.window().id() == focused_window_id;
+            let mut application_focused = false;
             for i in 0 .. windows.len() {
               if windows[i].canvas.window().id() == focused_window_id {
                 application_focused = true;
@@ -255,15 +238,6 @@ pub fn main() {
                       Keycode::Left =>   {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::DPadLeft))},
                       Keycode::Right =>  {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::DPadRight))},
 
-                      Keycode::F5 => {
-                        if !piano_roll_window.shown {
-                          piano_roll_window.shown = true;
-                          piano_roll_canvas.window_mut().show();
-                        } else {
-                          piano_roll_window.shown = false;
-                          piano_roll_canvas.window_mut().hide();
-                        }
-                      },
                       Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {application_events.push(events::Event::GameIncreaseScale);},
                       Keycode::KpMinus | Keycode::Minus => {application_events.push(events::Event::GameDecreaseScale);},
                       Keycode::KpMultiply=> {application_events.push(events::Event::GameToggleOverscan);},
@@ -305,12 +279,7 @@ pub fn main() {
       }
     }
 
-    if piano_roll_window.shown {
-      piano_roll_window.update(&mut runtime_state.nes);
-    }
-
     application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
-
 
     // Play Audio
     if runtime_state.nes.apu.buffer_full {
@@ -326,13 +295,6 @@ pub fn main() {
     }
 
     // Draw all windows
-    if piano_roll_window.shown {
-      piano_roll_canvas.set_draw_color(Color::RGB(255, 255, 255));
-      let _ = piano_roll_screen_texture.update(None, &piano_roll_window.buffer.buffer, (piano_roll_window.buffer.width * 4) as usize);
-      let _ = piano_roll_canvas.copy(&piano_roll_screen_texture, None, None);
-      piano_roll_canvas.present();
-    }
-
     for i in 0 .. windows.len() {
       if windows[i].panel.shown() {
         windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
