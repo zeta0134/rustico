@@ -199,6 +199,15 @@ pub fn main() {
                         ctrl_mod = false; // the open file dialog suppresses Ctrl release events, so trigger one manually
                         application_events.push(events::Event::RequestCartridgeDialog);
                       },
+                      Keycode::A => {
+                        dump_audio = !dump_audio;
+                        if dump_audio {
+                          let _ = remove_file("audiodump.raw");
+                          println!("Beginning audio dump...");
+                        } else {
+                          println!("Audio dump stopped.");
+                        }
+                      },
                       _ => ()
                     }
                   } else {
@@ -258,16 +267,6 @@ pub fn main() {
                       Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {application_events.push(events::Event::GameIncreaseScale);},
                       Keycode::KpMinus | Keycode::Minus => {application_events.push(events::Event::GameDecreaseScale);},
                       Keycode::KpMultiply=> {application_events.push(events::Event::GameToggleOverscan);},
-                      Keycode::A => {
-                        dump_audio = !dump_audio;
-                        if dump_audio {
-                          let _ = remove_file("audiodump.raw");
-                          println!("Beginning audio dump...");
-                        } else {
-                          println!("Audio dump stopped.");
-                        }
-                      },
-                      
                       _ => ()
                     }
                   }
