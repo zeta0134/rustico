@@ -31,7 +31,6 @@ use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
-use rusticnes_ui_common::test_window::TestWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
 
 use cartridge_manager::CartridgeManager;
@@ -68,7 +67,6 @@ pub fn main() {
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
-  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(TestWindow::new())));
 
   let mut texture_creators: Vec<TextureCreator<WindowContext>> = Vec::new();
   for i in 0 .. windows.len() {
@@ -214,7 +212,6 @@ pub fn main() {
                       Keycode::F2 => {application_events.push(events::Event::ShowApuWindow);},
                       Keycode::F3 => {application_events.push(events::Event::ShowMemoryWindow);},
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
-                      Keycode::F6 => {application_events.push(events::Event::ShowTestWindow);},
 
                       Keycode::Period => {application_events.push(events::Event::MemoryViewerNextPage);},
                       Keycode::Comma => {application_events.push(events::Event::MemoryViewerPreviousPage);},
@@ -318,7 +315,5 @@ pub fn main() {
       application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
     }
   }
-
-
 }
 
