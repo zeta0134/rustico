@@ -81,6 +81,8 @@ impl RuntimeState {
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
         let mut responses: Vec<Event> = Vec::new();
         match event {
+            // At the very least these functions should be moved into a trait implemented by
+            // all audio channels.
             Event::ApuTogglePulse1 => {
                 self.nes.apu.pulse_1.debug_disable = !self.nes.apu.pulse_1.debug_disable;
             },
@@ -96,6 +98,7 @@ impl RuntimeState {
             Event::ApuToggleDmc => {
                 self.nes.apu.dmc.debug_disable = !self.nes.apu.dmc.debug_disable;
             },
+
             Event::LoadCartridge(cart_id, file_data, sram_data) => {
                 responses.push(self.load_cartridge(cart_id, &file_data));
                 self.load_sram(&sram_data);
@@ -103,17 +106,41 @@ impl RuntimeState {
             Event::LoadSram(sram_data) => {
                 self.load_sram(&sram_data);
             },
+            Event::NesRunCycle => {
+                self.nes.cycle();
+            },
             Event::NesRunFrame => {
                 self.nes.run_until_vblank();
+            },
+            Event::NesRunOpcode => {
+                self.nes.step();
+            },
+            Event::NesRunScanline => {
+                self.nes.run_until_hblank();
             },
             Event::NesReset => {
                 self.nes.reset();
             },
+            
+            // These three events should ideally move to some sort of FrameTiming manager
+            Event::NesPauseEmulation => {
+                self.running = false;
+            },
+            Event::NesResumeEmulation => {
+                self.running = true;
+            },
+            Event::NesToggleEmulation => {
+                self.running = !self.running;
+            },
+
             Event::RequestSramSave(sram_id) => {
                 if self.nes.mapper.has_sram()  {
                     responses.push(Event::SaveSram(sram_id, Rc::new(self.nes.sram())));
                 }
             },
+
+            // Input is due for an overhaul. Ideally the IoBus should handle its own
+            // events, rather than doing this here.
             Event::StandardControllerPress(controller_index, button) => {
                 self.button_press(controller_index, button);
             },
