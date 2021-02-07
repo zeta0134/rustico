@@ -9,6 +9,13 @@ pub struct SimpleBuffer {
     pub height: u32,
 }
 
+fn blend_component(a: u8, b: u8, alpha: u8) -> u8 {
+    return (
+        (a as u16 * (255 - alpha as u16) / 255) + 
+        (b as u16 * (alpha as u16) / 255)
+    ) as u8;
+}
+
 impl SimpleBuffer {
     pub fn new(width: u32, height: u32) -> SimpleBuffer {
         return SimpleBuffer{
@@ -22,6 +29,16 @@ impl SimpleBuffer {
         let index = ((y * self.width + x) * 4) as usize;
         self.buffer[index .. (index + 4)].clone_from_slice(color);
     }
+
+    pub fn blend_pixel(&mut self, x: u32, y: u32, color: &[u8]) {
+        let index = ((y * self.width + x) * 4) as usize;
+        let original = self.get_pixel(x, y);
+        let alpha = color[3];
+        let r = blend_component(original[0], color[0], alpha);
+        let g = blend_component(original[1], color[1], alpha);
+        let b = blend_component(original[2], color[2], alpha);
+        self.buffer[index .. (index + 4)].clone_from_slice(&[r, g, b, 255]);
+    }    
 
     pub fn get_pixel(&self, x: u32, y: u32) -> [u8; 4] {
         let index = ((y * self.width + x) * 4) as usize;
