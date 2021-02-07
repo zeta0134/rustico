@@ -1,5 +1,5 @@
 extern crate image;
-extern crate nfd;
+extern crate nfd2;
 extern crate sdl2;
 
 extern crate rusticnes_core;
