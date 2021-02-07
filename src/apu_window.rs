@@ -6,6 +6,8 @@ use events::Event;
 use panel::Panel;
 
 use rusticnes_core::apu::ApuState;
+use rusticnes_core::mmc::mapper::Mapper;
+use rusticnes_core::apu::AudioChannelState;
 
 pub struct ApuWindow {
     pub canvas: SimpleBuffer,
@@ -41,12 +43,16 @@ impl ApuWindow {
         };
     }
 
-    pub fn draw_waveform(&mut self, audiobuffer: &[i16], playback_index: usize, color: &[u8], x: u32, y: u32, width: u32, height: u32, sample_min: i16, sample_max: i16, align: bool) {
-        let mut start_index = playback_index;
+    pub fn draw_waveform(&mut self, channel: &dyn AudioChannelState, color: &[u8], x: u32, y: u32, width: u32, height: u32, align: bool) {
+        let audiobuffer = channel.sample_buffer().buffer();
+        let mut start_index = channel.sample_buffer().index() - ((width as usize) * 2) - 1000;
+        start_index = start_index % audiobuffer.len();
         if align {
-            start_index = find_rising_edge(audiobuffer, playback_index);
+            start_index = find_rising_edge(audiobuffer, start_index);
         }
         
+        let sample_min = channel.min_sample();
+        let sample_max = channel.max_sample() + 1;
         let range = (sample_max as u32) - (sample_min as u32);
         let mut last_y = (((audiobuffer[start_index] - sample_min) as u64 * height as u64) / range as u64) as u32;
         if last_y >= height {
@@ -71,125 +77,55 @@ impl ApuWindow {
         }
     }
 
-    pub fn draw_audio_samples(&mut self, apu: &ApuState) {
-        // Background
-        // TODO: Optimize this somewhat
-
-        struct ChannelDefinition<'a> {
-            buffer: &'a [i16],
-            disabled: bool,
-            background_color: &'a [u8],
-            foreground_color: &'a [u8],
-            min: i16,
-            max: i16,
-        };
-
-        let audio_buffers = [
-            ChannelDefinition {
-                buffer: &apu.pulse_1.debug_buffer, 
-                disabled: apu.pulse_1.debug_disable,
-                background_color: &[32,  8,  8, 255], 
-                foreground_color: &[192,  32,  32, 255],
-                min: 0, max: 16
-            },
-            ChannelDefinition {
-                buffer: &apu.pulse_2.debug_buffer,
-                disabled: apu.pulse_2.debug_disable,
-                background_color: &[32, 16,  8, 255],
-                foreground_color: &[192,  96,  32, 255],
-                min: 0, max: 16
-            },
-            ChannelDefinition {
-                buffer: &apu.triangle.debug_buffer, 
-                disabled: apu.triangle.debug_disable,
-                background_color: &[ 8, 32,  8, 255],
-                foreground_color: &[32, 192,  32, 255],
-                min: 0, max: 16
-            },
-            ChannelDefinition {
-                buffer: &apu.noise.debug_buffer, 
-                disabled: apu.noise.debug_disable,
-                background_color: &[ 8, 16, 32, 255],
-                foreground_color: &[32,  96, 192, 255],
-                min: 0, max: 16
-            },
-            ChannelDefinition {
-                buffer: &apu.dmc.debug_buffer, 
-                disabled: apu.dmc.debug_disable,
-                background_color: &[ 16, 8, 32, 255],
-                foreground_color: &[96,  32, 192, 255],
-                min: 0, max: 128
-            },
-            ChannelDefinition {
-                buffer: &apu.sample_buffer, 
-                disabled: false,
-                background_color: &[16, 16, 16, 255],
-                foreground_color: &[192, 192, 192, 255],
-                min: -16384, max: 16383
-            },
-        ];
-
-        drawing::rect(&mut self.canvas, 0, 0, 256, 240, &[8,  8,  8, 255]);
-
-        for i in 0 .. audio_buffers.len() {
-            let y = (i * 40) as u32;
-            if !audio_buffers[i].disabled {
-                drawing::rect(&mut self.canvas, 0, y, 256, 40, audio_buffers[i].background_color);
-                let align_waveform = i < 4; // pulse1, pulse2, and triangle only
-                self.draw_waveform(audio_buffers[i].buffer,
-                    apu.buffer_index, audio_buffers[i].foreground_color, 
-                    0,   y + 8, 256,  32, 
-                    audio_buffers[i].min, audio_buffers[i].max,
-                    align_waveform);
-            }
+    pub fn channel_color(channel: &dyn AudioChannelState) -> &[u8] {
+        if channel.muted() {
+            return &[32, 32, 32, 255];
         }
+        return match channel.name().as_str() {
+            "[2A03] Pulse 1" => {&[192,  32,  32, 255]},
+            "[2A03] Pulse 2" => {&[192,  96,  32, 255]},
+            "[2A03] Triangle" => {&[32, 192,  32, 255]},
+            "[2A03] Noise" => {&[32,  96, 192, 255]},
+            "[2A03] DMC" => {&[96,  32, 192, 255]},
+            "Final Mix" => {&[192,  192, 192, 255]},
+            _ => {&[224, 24, 64, 255]} // Mapper audio, which is definitely pink
+        };
     }
 
-    pub fn draw_channel_text(&mut self, apu: &ApuState) {
-        drawing::text(&mut self.canvas, &self.font, 0, 0, 
-            &format!("Pulse 1 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
-            if apu.pulse_1.sweep_enabled {if apu.pulse_1.sweep_negate {"-"} else {"+"}} else {" "}, apu.pulse_1.period_initial,
-            if apu.pulse_1.envelope.looping {"L"} else {" "}, apu.pulse_1.envelope.current_volume(),
-            if apu.pulse_1.length_counter.length == 0 {"M"} else {" "}, apu.pulse_1.length_counter.length,
-            apu.pulse_1.duty),
-            &[192,  32,  32, 255]);
-
-        drawing::text(&mut self.canvas, &self.font, 0, 40, 
-            &format!("Pulse 2 - {}{:03X} {}{:02X} {}{:02X}  {:08b}",
-            if apu.pulse_2.sweep_enabled {if apu.pulse_2.sweep_negate {"-"} else {"+"}} else {" "}, apu.pulse_2.period_initial,
-            if apu.pulse_2.envelope.looping {"L"} else {" "}, apu.pulse_2.envelope.current_volume(),
-            if apu.pulse_2.length_counter.length == 0 {"M"} else {" "}, apu.pulse_2.length_counter.length,
-            apu.pulse_2.duty),
-            &[192,  96,  32, 255]);
-
-        drawing::text(&mut self.canvas, &self.font, 0, 80, 
-            &format!("Triangle - {:03X}     {}{:02X}        {:02X}", 
-            apu.triangle.period_initial,
-            if apu.triangle.length_counter.length == 0 {"M"} else {" "}, apu.triangle.length_counter.length,
-            apu.triangle.sequence_counter), 
-            &[ 32, 192,  32, 255]);
-
-        drawing::text(&mut self.canvas, &self.font, 0, 120, 
-            &format!("Noise -    {:03X} {}{:02X} {}{:02X}        {:02X}",
-            apu.noise.period_initial,
-            if apu.noise.envelope.looping {"L"} else {" "}, apu.noise.envelope.current_volume(),
-            if apu.noise.length_counter.length == 0 {"M"} else {" "}, apu.noise.length_counter.length,
-            apu.noise.mode),
-            &[ 32,  96, 192, 255]);
-
-        drawing::text(&mut self.canvas, &self.font, 0, 160, 
-            &format!("DMC -      {:03X}     {}{:02X}  {:04X}  {:02X}",
-            apu.dmc.period_initial,
-            if apu.triangle.length_counter.length == 0 {"M"} else {" "}, apu.triangle.length_counter.length,
-            apu.dmc.starting_address, apu.dmc.output_level),
-            &[ 96,  32, 192, 255]);
-        
-        drawing::text(&mut self.canvas, &self.font, 0, 200, "Final",    &[192, 192, 192, 255]);
+    pub fn background_color(foreground_color: &[u8]) -> [u8; 4] {
+        return [
+            foreground_color[0] / 4,
+            foreground_color[1] / 4,
+            foreground_color[2] / 4,
+            foreground_color[3],
+        ];
     }
 
-    pub fn draw(&mut self, apu: &ApuState) {
-        self.draw_audio_samples(apu);
-        self.draw_channel_text(apu);
+    pub fn draw_channel(&mut self, x: u32, y: u32, channel: &dyn AudioChannelState) {
+        let foreground_color = ApuWindow::channel_color(channel);
+        let background_color = &ApuWindow::background_color(foreground_color);
+
+        let canvas_width = self.canvas.width;
+        drawing::rect(&mut self.canvas, x, y, canvas_width, 40, background_color);
+        drawing::text(&mut self.canvas, &self.font, x, y, channel.name().as_str(), foreground_color);
+
+        self.draw_waveform(channel,
+            foreground_color, 
+            0,   y + 8, canvas_width,  32, 
+            true);
+    }
+
+    pub fn draw(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
+        let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
+        channels.extend(apu.channels());
+        channels.extend(mapper.channels());
+        channels.push(apu);
+
+        let mut dy = 0;
+        for channel in channels {
+            self.draw_channel(0, dy, channel);
+            dy = dy + 40;
+        }
     }
 }
 
@@ -206,7 +142,7 @@ impl Panel for ApuWindow {
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
         match event {
-            Event::RequestFrame => {self.draw(&runtime.nes.apu)},
+            Event::RequestFrame => {self.draw(&runtime.nes.apu, &*runtime.nes.mapper)},
             Event::ShowApuWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
