@@ -98,7 +98,12 @@ impl RuntimeState {
             Event::ApuToggleDmc => {
                 self.nes.apu.dmc.debug_disable = !self.nes.apu.dmc.debug_disable;
             },
-
+            Event::MuteChannel(channel_index) => {
+                self.nes.apu.mute_channel(&mut *self.nes.mapper, channel_index);
+            },
+            Event::UnmuteChannel(channel_index) => {
+                self.nes.apu.unmute_channel(&mut *self.nes.mapper, channel_index);  
+            },
             Event::LoadCartridge(cart_id, file_data, sram_data) => {
                 responses.push(self.load_cartridge(cart_id, &file_data));
                 self.load_sram(&sram_data);

@@ -134,11 +134,16 @@ impl ApuWindow {
             true);
     }
 
-    pub fn draw(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
+    pub fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
         let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
         channels.extend(apu.channels());
         channels.extend(mapper.channels());
         channels.push(apu);
+        return channels;
+    }
+
+    pub fn draw(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
+        let channels = ApuWindow::collect_channels(apu, mapper);
 
         let mut dy = self.spacing;
         for channel in channels {
@@ -148,15 +153,26 @@ impl ApuWindow {
     }
 
     pub fn resize_panel(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
-        let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
-        channels.extend(apu.channels());
-        channels.extend(mapper.channels());
-        channels.push(apu);
+        let channels = ApuWindow::collect_channels(apu, mapper);
 
         self.canvas.height = ((self.channel_height() + self.spacing) * channels.len() as u32) + self.spacing;
         let canvas_width = self.canvas.width;
         let canvas_height = self.canvas.height;
         drawing::rect(&mut self.canvas, 0, 0, canvas_width, canvas_height, &[12, 12, 12, 255]);
+    }
+
+    pub fn mouse_mutes_channel(&mut self, apu: &ApuState, mapper: &dyn Mapper, my: i32) -> Vec<Event> {
+        let mut events: Vec<Event> = Vec::new();
+        let channels = ApuWindow::collect_channels(apu, mapper);
+        let channel_index = ((my as u32) / (self.channel_height() + self.spacing)) as usize;
+        if channel_index < (channels.len() - 1) { // do not attempt to mute the final mix
+            if channels[channel_index].muted() {
+                events.push(Event::UnmuteChannel(channel_index))
+            } else {
+                events.push(Event::MuteChannel(channel_index))
+            }
+        }
+        return events;
     }
 }
 
@@ -170,14 +186,16 @@ impl Panel for ApuWindow {
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
+        let mut events: Vec<Event> = Vec::new();
         match event {
             Event::RequestFrame => {self.draw(&runtime.nes.apu, &*runtime.nes.mapper)},
             Event::ShowApuWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             Event::CartridgeLoaded(_id) => {self.resize_panel(&runtime.nes.apu, &*runtime.nes.mapper)},
+            Event::MouseClick(_x, y) => {events.extend(self.mouse_mutes_channel(&runtime.nes.apu, &*runtime.nes.mapper, y));},
             _ => {}
         }
-        return Vec::<Event>::new();
+        return events;
     }
     
     fn active_canvas(&self) -> &SimpleBuffer {
