@@ -202,12 +202,6 @@ pub fn main() {
                         }
                       },
 
-                      Keycode::Num5 => {application_events.push(events::Event::ApuTogglePulse1);},
-                      Keycode::Num6 => {application_events.push(events::Event::ApuTogglePulse2);},
-                      Keycode::Num7 => {application_events.push(events::Event::ApuToggleTriangle);},
-                      Keycode::Num8 => {application_events.push(events::Event::ApuToggleNoise);},
-                      Keycode::Num9 => {application_events.push(events::Event::ApuToggleDmc);},
-
                       Keycode::F1 => {application_events.push(events::Event::ShowPpuWindow);},
                       Keycode::F2 => {application_events.push(events::Event::ShowApuWindow);},
                       Keycode::F3 => {application_events.push(events::Event::ShowMemoryWindow);},
