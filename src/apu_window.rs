@@ -37,7 +37,7 @@ impl ApuWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return ApuWindow {
-            canvas: SimpleBuffer::new(256, 240),
+            canvas: SimpleBuffer::new(256, 1080),
             font: font,
             shown: false,
         };
@@ -127,9 +127,16 @@ impl ApuWindow {
             dy = dy + 40;
         }
     }
+
+    pub fn resize_panel(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
+        let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
+        channels.extend(apu.channels());
+        channels.extend(mapper.channels());
+        channels.push(apu);
+
+        self.canvas.height = (40 * channels.len()) as u32;
+    }
 }
-
-
 
 impl Panel for ApuWindow {
     fn title(&self) -> &str {
@@ -145,6 +152,7 @@ impl Panel for ApuWindow {
             Event::RequestFrame => {self.draw(&runtime.nes.apu, &*runtime.nes.mapper)},
             Event::ShowApuWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
+            Event::CartridgeLoaded(_id) => {self.resize_panel(&runtime.nes.apu, &*runtime.nes.mapper)},
             _ => {}
         }
         return Vec::<Event>::new();
