@@ -13,6 +13,9 @@ pub struct ApuWindow {
     pub canvas: SimpleBuffer,
     pub font: Font,
     pub shown: bool,
+    pub waveform_height: u32,
+    pub text_height: u32,
+    pub spacing: u32,
 }
 
 pub fn find_rising_edge(audiobuffer: &[i16], start_index: usize) -> usize {
@@ -40,7 +43,14 @@ impl ApuWindow {
             canvas: SimpleBuffer::new(256, 1080),
             font: font,
             shown: false,
+            waveform_height: 32,
+            text_height: 10,
+            spacing: 2,
         };
+    }
+
+    pub fn channel_height(&self) -> u32 {
+        return self.waveform_height + self.text_height;
     }
 
     pub fn draw_waveform(&mut self, channel: &dyn AudioChannelState, color: &[u8], x: u32, y: u32, width: u32, height: u32, align: bool) {
@@ -77,7 +87,7 @@ impl ApuWindow {
         }
     }
 
-    pub fn channel_color(channel: &dyn AudioChannelState) -> &[u8] {
+    pub fn channel_color(channel: &dyn AudioChannelState, index: u32) -> &[u8] {
         if channel.muted() {
             return &[32, 32, 32, 255];
         }
@@ -88,7 +98,14 @@ impl ApuWindow {
             "[2A03] Noise" => {&[32,  96, 192, 255]},
             "[2A03] DMC" => {&[96,  32, 192, 255]},
             "Final Mix" => {&[192,  192, 192, 255]},
-            _ => {&[224, 24, 64, 255]} // Mapper audio, which is definitely pink
+            _ => {
+                // Mapper audio, which is definitely pink
+                if index % 2 != 0 {
+                    &[224, 24, 64, 255]
+                } else {
+                    &[180, 12, 40, 255]
+                }
+            } 
         };
     }
 
@@ -102,16 +119,18 @@ impl ApuWindow {
     }
 
     pub fn draw_channel(&mut self, x: u32, y: u32, channel: &dyn AudioChannelState) {
-        let foreground_color = ApuWindow::channel_color(channel);
+        let index = y / self.channel_height();
+        let foreground_color = ApuWindow::channel_color(channel, index);
         let background_color = &ApuWindow::background_color(foreground_color);
 
         let canvas_width = self.canvas.width;
-        drawing::rect(&mut self.canvas, x, y, canvas_width, 40, background_color);
-        drawing::text(&mut self.canvas, &self.font, x, y, channel.name().as_str(), foreground_color);
+        let channel_height = self.channel_height();
+        drawing::rect(&mut self.canvas, x, y, canvas_width, channel_height, background_color);
+        drawing::text(&mut self.canvas, &self.font, x, y + 1, channel.name().as_str(), foreground_color);
 
         self.draw_waveform(channel,
             foreground_color, 
-            0,   y + 8, canvas_width,  32, 
+            0,   y + self.text_height, canvas_width,  self.waveform_height, 
             true);
     }
 
@@ -121,10 +140,10 @@ impl ApuWindow {
         channels.extend(mapper.channels());
         channels.push(apu);
 
-        let mut dy = 0;
+        let mut dy = self.spacing;
         for channel in channels {
             self.draw_channel(0, dy, channel);
-            dy = dy + 40;
+            dy = dy + self.channel_height() + self.spacing;
         }
     }
 
@@ -134,7 +153,10 @@ impl ApuWindow {
         channels.extend(mapper.channels());
         channels.push(apu);
 
-        self.canvas.height = (40 * channels.len()) as u32;
+        self.canvas.height = ((self.channel_height() + self.spacing) * channels.len() as u32) + self.spacing;
+        let canvas_width = self.canvas.width;
+        let canvas_height = self.canvas.height;
+        drawing::rect(&mut self.canvas, 0, 0, canvas_width, canvas_height, &[12, 12, 12, 255]);
     }
 }
 
