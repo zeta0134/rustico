@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use rusticnes_ui_common::events;
+use rusticnes_ui_common;
 
 pub struct CartridgeManager {
   pub game_path: String,
@@ -18,26 +18,26 @@ impl CartridgeManager {
     }
   }
 
-  pub fn open_cartridge_with_sram(&mut self, file_path: &str) -> events::Event {
+  pub fn open_cartridge_with_sram(&mut self, file_path: &str) -> rusticnes_ui_common::Event {
     match std::fs::read(file_path) {
       Ok(cartridge_data) => {
         let cartridge_path = PathBuf::from(file_path);
         let sram_path = cartridge_path.with_extension("sav");
         match std::fs::read(&sram_path.to_str().unwrap()) {
           Ok(sram_data) => {
-            return events::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(sram_data));
+            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(sram_data));
           },
           Err(reason) => {
             println!("Failed to load SRAM: {}", reason);
             println!("Continuing anyway.");
             let bucket_of_nothing: Vec<u8> = Vec::new();
-            return events::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(bucket_of_nothing));
+            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(bucket_of_nothing));
           }
         }
       },
       Err(reason) => {
         println!("{}", reason);
-        return events::Event::LoadFailed(reason.to_string());
+        return rusticnes_ui_common::Event::LoadFailed(reason.to_string());
       }
     }
   }
@@ -55,33 +55,33 @@ impl CartridgeManager {
     };
   }
 
-  pub fn handle_event(&mut self, event: events::Event) -> Vec<events::Event> {
-    let mut responses: Vec<events::Event> = Vec::new();
+  pub fn handle_event(&mut self, event: rusticnes_ui_common::Event) -> Vec<rusticnes_ui_common::Event> {
+    let mut responses: Vec<rusticnes_ui_common::Event> = Vec::new();
     match event {
-      events::Event::RequestCartridgeDialog => {
+      rusticnes_ui_common::Event::RequestCartridgeDialog => {
         match open_file_dialog() {
           Ok(file_path) => {
-            responses.push(events::Event::RequestSramSave(self.sram_path.clone()));
+            responses.push(rusticnes_ui_common::Event::RequestSramSave(self.sram_path.clone()));
             responses.push(self.open_cartridge_with_sram(&file_path));
           },
           Err(reason) => {
             println!("{}", reason);
-            responses.push(events::Event::LoadFailed(reason));
+            responses.push(rusticnes_ui_common::Event::LoadFailed(reason));
           }
         }
       },
-      events::Event::CartridgeLoaded(cart_id) => {
+      rusticnes_ui_common::Event::CartridgeLoaded(cart_id) => {
         self.game_path = cart_id.to_string();
         self.sram_path = PathBuf::from(cart_id).with_extension("sav").to_str().unwrap().to_string();
         println!("Cartridge loading success! Storing save path as: {}", self.sram_path);
       },
-      events::Event::LoadFailed(reason) => {
+      rusticnes_ui_common::Event::LoadFailed(reason) => {
         println!("Loading failed: {}", reason);
       },
-      events::Event::CartridgeRejected(cart_id, reason) => {
+      rusticnes_ui_common::Event::CartridgeRejected(cart_id, reason) => {
         println!("Cartridge {} could not be played: {}", cart_id, reason);
       },
-      events::Event::SaveSram(sram_id, sram_data) => {
+      rusticnes_ui_common::Event::SaveSram(sram_id, sram_data) => {
         self.save_sram(sram_id, &sram_data);
       },
       _ => {}
