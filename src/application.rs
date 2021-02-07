@@ -81,29 +81,13 @@ impl RuntimeState {
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
         let mut responses: Vec<Event> = Vec::new();
         match event {
-            // At the very least these functions should be moved into a trait implemented by
-            // all audio channels.
-            Event::ApuTogglePulse1 => {
-                self.nes.apu.pulse_1.debug_disable = !self.nes.apu.pulse_1.debug_disable;
-            },
-            Event::ApuTogglePulse2 => {
-                self.nes.apu.pulse_2.debug_disable = !self.nes.apu.pulse_2.debug_disable;
-            },
-            Event::ApuToggleTriangle => {
-                self.nes.apu.triangle.debug_disable = !self.nes.apu.triangle.debug_disable;
-            },
-            Event::ApuToggleNoise => {
-                self.nes.apu.noise.debug_disable = !self.nes.apu.noise.debug_disable;
-            },
-            Event::ApuToggleDmc => {
-                self.nes.apu.dmc.debug_disable = !self.nes.apu.dmc.debug_disable;
-            },
             Event::MuteChannel(channel_index) => {
                 self.nes.apu.mute_channel(&mut *self.nes.mapper, channel_index);
             },
             Event::UnmuteChannel(channel_index) => {
                 self.nes.apu.unmute_channel(&mut *self.nes.mapper, channel_index);  
             },
+            
             Event::LoadCartridge(cart_id, file_data, sram_data) => {
                 responses.push(self.load_cartridge(cart_id, &file_data));
                 self.load_sram(&sram_data);

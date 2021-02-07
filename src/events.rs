@@ -15,11 +15,6 @@ pub enum StandardControllerButton {
 #[derive(Clone)]
 pub enum Event {
     CloseWindow,
-    ApuTogglePulse1,
-    ApuTogglePulse2,
-    ApuToggleTriangle,
-    ApuToggleNoise,
-    ApuToggleDmc,
     CartridgeLoaded(String),
     CartridgeRejected(String, String),
     GameToggleOverscan,
