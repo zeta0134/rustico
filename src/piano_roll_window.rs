@@ -9,6 +9,7 @@ use rusticnes_core::apu::AudioChannelState;
 use rusticnes_core::apu::PlaybackRate;
 use rusticnes_core::apu::Volume;
 use rusticnes_core::apu::Timbre;
+use rusticnes_core::mmc::mapper::Mapper;
 
 use std::collections::VecDeque;
 
@@ -51,29 +52,30 @@ impl PianoRollWindow {
             key_height: 2,
             roll_width: 240,
             lowest_frequency: 27.5, // ~A0
-            highest_frequency: 4434.922, // ~C#8
+            highest_frequency: 4434.92209563, // ~C#8
             roll: VecDeque::new(),
 
         };
     }
 
-    fn draw_right_white_key(&mut self, y: u32, color: &[u8]) {
-        drawing::rect(&mut self.canvas, 248, y + 1, 8, 1, color);
-        drawing::rect(&mut self.canvas, 240, y, 16, 1, color);
+    fn draw_right_white_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+        drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
+        drawing::blend_rect(canvas, 240, y, 16, 1, color);
     }
 
-    fn draw_center_white_key(&mut self, y: u32, color: &[u8]) {
-        drawing::rect(&mut self.canvas, 240, y, 16, 1, color);
-        drawing::rect(&mut self.canvas, 248, y - 1, 8, 3, color);
+    fn draw_center_white_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+        drawing::blend_rect(canvas, 240, y, 16, 1, color);
+        drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
+        drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
     }
 
-    fn draw_left_white_key(&mut self, y: u32, color: &[u8]) {
-        drawing::rect(&mut self.canvas, 248, y - 1, 8, 1, color);
-        drawing::rect(&mut self.canvas, 240, y, 16, 1, color);
+    fn draw_left_white_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+        drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
+        drawing::blend_rect(canvas, 240, y, 16, 1, color);
     }
 
-    fn draw_black_key(&mut self, y: u32, color: &[u8]) {
-        drawing::rect(&mut self.canvas, 241, y - 1, 7, 3, color);
+    fn draw_black_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+        drawing::blend_rect(canvas, 241, y - 1, 7, 3, color);
     }
 
     fn draw_piano_strings(&mut self) {
@@ -106,7 +108,7 @@ impl PianoRollWindow {
         let white_key_border = [0x40, 0x40, 0x40, 0xFF];
         let white_key = [0x50, 0x50, 0x50, 0xFF];
         let black_key = [0x00, 0x00, 0x00, 0xFF];
-        let black_key_border = [0x18, 0x18, 0x18, 0xFF];
+        let black_key_border = [0x10, 0x10, 0x10, 0xFF];
 
         let upper_key_pixels = [
           white_key, // C
@@ -148,6 +150,44 @@ impl PianoRollWindow {
             drawing::rect(&mut self.canvas, 240, y, 8, 1, &upper_key_pixels[pixel_index as usize]);
             drawing::rect(&mut self.canvas, 248, y, 8, 1, &lower_key_pixels[pixel_index as usize]);
         }
+        drawing::rect(&mut self.canvas, 240, 0, 1, self.keys * self.key_height, &black_key_border);
+    }
+
+    fn draw_key_spot(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32) {
+        if !slice.visible {return;}
+
+        let key_drawing_functions = [
+            PianoRollWindow::draw_left_white_key,   //C
+            PianoRollWindow::draw_right_white_key,  //B
+            PianoRollWindow::draw_black_key,        //Bb
+            PianoRollWindow::draw_center_white_key, //A
+            PianoRollWindow::draw_black_key,        //Ab
+            PianoRollWindow::draw_center_white_key, //G
+            PianoRollWindow::draw_black_key,        //Gb
+            PianoRollWindow::draw_left_white_key,   //F
+            PianoRollWindow::draw_right_white_key,  //E
+            PianoRollWindow::draw_black_key,        //Eb
+            PianoRollWindow::draw_center_white_key, //D
+            PianoRollWindow::draw_black_key,        //Db
+        ];
+
+        let mut base_color = slice.color;
+
+        let note_key = ((slice.y + 1.5) / key_height as f64) - 1.0;
+        let base_key = note_key.floor();
+        let adjacent_key = note_key.ceil();
+
+        let volume_percent = slice.thickness / 8.0;
+        let base_percent = (1.0 - (note_key % 1.0)) * volume_percent;
+        let adjacent_percent = (note_key % 1.0) * volume_percent;
+
+        let base_y = base_key * key_height as f64;
+        base_color[3] = (base_percent * 255.0) as u8;
+        key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, &base_color);
+
+        let adjacent_y = adjacent_key * key_height as f64;
+        base_color[3] = (adjacent_percent * 255.0) as u8;
+        key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, &base_color);                
     }
 
     fn frequency_to_coordinate(&self, note_frequency: f64) -> f64 {
@@ -240,36 +280,45 @@ impl PianoRollWindow {
     }
 
     fn draw_slices(&mut self, num_channels: usize) {
-        let mut x = 0;
+        let mut x = 239;
         let mut channel_index = 0;
         for channel_slice in self.roll.iter() {
             PianoRollWindow::draw_slice(&mut self.canvas, &channel_slice, x);
             channel_index += 1;
             if channel_index >= num_channels {
                 channel_index = 0;
-                x += 1;
+                x -= 1;
             }
         }
     }
 
-    fn update(&mut self, apu: &ApuState) {
-        let channels = apu.channels();
-        let channel_len = channels.len();
-        for channel in channels {
-            self.roll.push_back(self.slice_from_channel(channel));
-        }
-
-        while self.roll.len() > channel_len * self.roll_width as usize {
-            self.roll.pop_front();
+    fn draw_key_spots(&mut self, num_channels: usize) {
+        for slice in self.roll.iter().take(num_channels) {
+            PianoRollWindow::draw_key_spot(&mut self.canvas, &slice, self.key_height);
         }
     }
 
-    fn draw(&mut self, apu: &ApuState) {
+    fn update(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
+        let mut channels = apu.channels();
+        channels.extend(mapper.channels());
+        let channel_len = channels.len();
+        for channel in channels {
+            self.roll.push_front(self.slice_from_channel(channel));
+        }
+
+        while self.roll.len() > channel_len * self.roll_width as usize {
+            self.roll.pop_back();
+        }
+    }
+
+    fn draw(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
         drawing::rect(&mut self.canvas, 0, 0, 256, 240, &[0,0,0,0]);
         self.draw_piano_strings();
         self.draw_piano_keys();
-        let channels = apu.channels();
+        let mut channels = apu.channels();
+        channels.extend(mapper.channels());
         self.draw_slices(channels.len());
+        self.draw_key_spots(channels.len());
     }
 }
 
@@ -290,10 +339,10 @@ impl Panel for PianoRollWindow {
         match event {
             Event::Update => {
                 if runtime.running {
-                    self.update(&runtime.nes.apu);
+                    self.update(&runtime.nes.apu, &*runtime.nes.mapper);
                 }
             },
-            Event::RequestFrame => {self.draw(&runtime.nes.apu)},
+            Event::RequestFrame => {self.draw(&runtime.nes.apu, &*runtime.nes.mapper)},
             Event::ShowPianoRollWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
