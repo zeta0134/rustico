@@ -142,3 +142,11 @@ pub fn rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: 
         }
     }
 }
+
+pub fn blend_rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: u32, color: &[u8]) {
+    for dx in x .. (x + width) {
+        for dy in y .. (y + height) {
+            destination.blend_pixel(dx, dy, &color);
+        }
+    }
+}
