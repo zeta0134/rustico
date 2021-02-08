@@ -31,6 +31,7 @@ use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
+use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
 
 use cartridge_manager::CartridgeManager;
@@ -66,6 +67,7 @@ pub fn main() {
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(PianoRollWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
 
   let mut texture_creators: Vec<TextureCreator<WindowContext>> = Vec::new();
@@ -206,6 +208,7 @@ pub fn main() {
                       Keycode::F2 => {application_events.push(events::Event::ShowApuWindow);},
                       Keycode::F3 => {application_events.push(events::Event::ShowMemoryWindow);},
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
+                      Keycode::F5 => {application_events.push(events::Event::ShowPianoRollWindow);},
 
                       Keycode::Period => {application_events.push(events::Event::MemoryViewerNextPage);},
                       Keycode::Comma => {application_events.push(events::Event::MemoryViewerPreviousPage);},
