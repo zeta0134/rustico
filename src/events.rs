@@ -47,6 +47,7 @@ pub enum Event {
     ShowCpuWindow,
     ShowGameWindow,
     ShowMemoryWindow,
+    ShowPianoRollWindow,
     ShowPpuWindow,
     ShowTestWindow,
     StandardControllerPress(usize, StandardControllerButton),
