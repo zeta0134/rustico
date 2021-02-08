@@ -177,7 +177,7 @@ impl PianoRollWindow {
         let base_key = note_key.floor();
         let adjacent_key = note_key.ceil();
 
-        let volume_percent = slice.thickness / 8.0;
+        let volume_percent = slice.thickness / 6.0;
         let base_percent = (1.0 - (note_key % 1.0)) * volume_percent;
         let adjacent_percent = (note_key % 1.0) * volume_percent;
 
@@ -200,14 +200,39 @@ impl PianoRollWindow {
         return piano_roll_height - coordinate - 1.5;
     }
 
+    pub fn channel_color(channel: &dyn AudioChannelState) -> &[u8] {
+        if channel.muted() {
+            return &[32, 32, 32, 255];
+        }
+        return match channel.name().as_str() {
+            "[2A03] Pulse 1" => {&[192,  32,  32, 255]},
+            "[2A03] Pulse 2" => {&[192,  96,  32, 255]},
+            "[2A03] Triangle" => {&[32, 192,  32, 255]},
+            "[2A03] Noise" => {&[32,  96, 192, 255]},
+            "[2A03] DMC" => {&[96,  32, 192, 255]},
+            "Final Mix" => {&[192,  192, 192, 255]},
+            _ => {
+                // Mapper audio, which is definitely pink
+                &[224, 24, 64, 255]
+            } 
+        };
+    }
+
     fn slice_from_channel(&self, channel: &dyn AudioChannelState) -> ChannelSlice {
         if !channel.playing() {
             return ChannelSlice::none();
         }
 
         let mut y: f64 = 0.0;
-        let mut thickness: f64 = 5.0;
-        let mut color = [0xFF,0xFF,0xFF,0xFF];
+        let mut thickness: f64 = 4.0;
+        let channel_color = PianoRollWindow::channel_color(channel);
+        let mut color = [
+            channel_color[0],
+            channel_color[1],
+            channel_color[2],
+            channel_color[3],
+        ];
+        
 
         match channel.rate() {
             PlaybackRate::FundamentalFrequency{frequency} => {
@@ -221,7 +246,7 @@ impl PianoRollWindow {
 
         match channel.volume() {
             Some(Volume::VolumeIndex{index, max}) => {
-                thickness = (index as f64) / (max as f64) * 8.0;
+                thickness = (index as f64) / (max as f64) * 6.0;
             },
             None => {}
         }
