@@ -75,7 +75,9 @@ impl PianoRollWindow {
     }
 
     fn draw_black_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
-        drawing::blend_rect(canvas, 241, y - 1, 7, 3, color);
+        drawing::blend_rect(canvas, 241, y - 1, 7, 1, color);
+        drawing::blend_rect(canvas, 240, y, 8, 1, color);
+        drawing::blend_rect(canvas, 241, y + 1, 7, 2, color);
     }
 
     fn draw_piano_strings(&mut self) {
