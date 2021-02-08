@@ -157,7 +157,7 @@ impl PianoRollWindow {
         let note_log = note_frequency.ln();
         let piano_roll_height = (self.keys * self.key_height) as f64;
         let coordinate = (note_log - lowest_log) * piano_roll_height / range;
-        return piano_roll_height - coordinate - 0.5;
+        return piano_roll_height - coordinate - 1.5;
     }
 
     fn slice_from_channel(&self, channel: &dyn AudioChannelState) -> ChannelSlice {
@@ -283,7 +283,7 @@ impl Panel for PianoRollWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 2;
+        return 3;
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
