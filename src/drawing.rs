@@ -59,6 +59,28 @@ impl Color {
     }
 }
 
+pub fn apply_gradient(colors: Vec<Color>, index: f64) -> Color {
+    if colors.len() == 0 {
+        return Color::rgb(0,0,0);
+    }
+    if colors.len() == 1  {
+        return colors[0];
+    }
+
+    let lower_index = (index * (colors.len() as f64)).floor().max(0.0).min((colors.len() - 1) as f64) as usize;
+    let upper_index = (index * (colors.len() as f64)).ceil().max(0.0).min((colors.len() - 1) as f64) as usize;
+    let weight = ((index * (colors.len() as f64)).fract() * 255.0) as u8;
+
+
+    let final_color = Color::rgb(
+        blend_component(colors[lower_index].r(), colors[upper_index].r(), weight),
+        blend_component(colors[lower_index].g(), colors[upper_index].g(), weight),
+        blend_component(colors[lower_index].b(), colors[upper_index].b(), weight),
+    );
+    return final_color;
+
+}
+
 #[derive(Clone)]
 pub struct SimpleBuffer {
     pub buffer: Vec<u8>,

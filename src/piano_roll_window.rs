@@ -203,22 +203,46 @@ impl PianoRollWindow {
         return piano_roll_height - coordinate - 1.5;
     }
 
-    pub fn channel_color(channel: &dyn AudioChannelState) -> Color {
+    pub fn channel_colors(channel: &dyn AudioChannelState) -> Vec<Color> {
         if channel.muted() {
-            return Color::rgb(32, 32, 32);
+            return vec!(Color::rgb(32, 32, 32));
         }
         return match channel.chip().as_str() {
             "2A03" => match channel.name().as_str() {
-                "Pulse 1"  => {Color::rgb(192,  32,  32)},
-                "Pulse 2"  => {Color::rgb(192,  96,  32)},
-                "Triangle" => {Color::rgb(32, 192,  32)},
-                "Noise"    => {Color::rgb(32,  96, 192)},
-                "DMC"      => {Color::rgb(96,  32, 192)},
-                _ => {Color::rgb(192,  192, 192)} // default, should be unreachable
+                "Pulse 1"  => {
+                    vec!(                        
+                        Color::rgb(0xFF, 0xA0, 0xA0), // 12.5
+                        Color::rgb(0xFF, 0x40, 0xFF), // 25
+                        Color::rgb(0xFF, 0x40, 0x40), // 50
+                        Color::rgb(0xFF, 0x40, 0xFF)) // 75 (same as 25)
+                },
+                "Pulse 2"  => {
+                    vec!(                        
+                        Color::rgb(0xFF, 0xE0, 0xA0), // 12.5
+                        Color::rgb(0xFF, 0xC0, 0x40), // 25
+                        Color::rgb(0xFF, 0xFF, 0x40), // 50
+                        Color::rgb(0xFF, 0xC0, 0x40)) // 75 (same as 25)
+                },
+                "Triangle" => {vec!(Color::rgb(0x40, 0xFF, 0x40))},
+                "Noise"    => {vec!(Color::rgb(32,  96, 192))},
+                "DMC"      => {vec!(Color::rgb(96,  32, 192))},
+                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
+            },
+            "MMC5" => match channel.name().as_str() {
+                "Pulse 1" => {vec!(Color::rgb(224, 24, 64))},
+                "Pulse 2" => {vec!(Color::rgb(180, 12, 40))},
+                "PCM" => {vec!(Color::rgb(224, 24, 64))},
+                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
+            },
+            "YM2149F" => match channel.name().as_str() {
+                "A" => {vec!(Color::rgb(32, 144, 204))},
+                "B" => {vec!(Color::rgb(24, 104, 228))},
+                "C" => {vec!(Color::rgb(16, 64, 248))},
+                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
             },
             _ => {
                 // Unknown expansion audio, we'll default it to grey
-                Color::rgb(224, 224, 224)
+                vec!(Color::rgb(224, 224, 224))
             } 
         };
     }
@@ -230,7 +254,8 @@ impl PianoRollWindow {
 
         let y: f64;
         let mut thickness: f64 = 4.0;
-        let color = PianoRollWindow::channel_color(channel);        
+        let colors = PianoRollWindow::channel_colors(channel);
+        let mut color = colors[0]; // default to the first color
 
         match channel.rate() {
             PlaybackRate::FundamentalFrequency{frequency} => {
@@ -248,14 +273,15 @@ impl PianoRollWindow {
             },
             None => {}
         }
-        /*
+        
         match channel.timbre() {
             Some(Timbre::DutyIndex{index, max}) => {
-                
+                let weight = index as f64 / (max + 1) as f64;
+                color = drawing::apply_gradient(colors, weight);
             },
-            None => {return ChannelSlice::none()},
-            _ => {return ChannelSlice::none()}
-        }*/
+            None => {},
+            _ => {}
+        }
 
         return ChannelSlice{
             visible: true,
