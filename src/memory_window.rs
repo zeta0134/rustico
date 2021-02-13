@@ -1,5 +1,6 @@
 use application::RuntimeState;
 use drawing;
+use drawing::Color;
 use drawing::Font;
 use drawing::SimpleBuffer;
 use events::Event;
@@ -36,20 +37,20 @@ impl MemoryWindow {
             for x in 0 .. 16 {
                 let address = self.memory_page + (x as u16) + (y as u16 * 16);
                 let byte: u8;
-                let mut bg_color = [32, 32, 32, 255];
+                let mut bg_color = Color::rgb(32, 32, 32);
                 if (x + y) % 2 == 0 {
-                    bg_color = [48, 48, 48, 255];
+                    bg_color = Color::rgb(48, 48, 48);
                 }
                 if self.view_ppu {
                     let masked_address = address & 0x3FFF;
                     byte = nes.ppu.debug_read_byte(& *nes.mapper, masked_address);
                     if masked_address == (nes.ppu.current_vram_address & 0x3FFF) {
-                        bg_color = [128, 32, 32, 255];
+                        bg_color = Color::rgb(128, 32, 32);
                     } else if nes.ppu.recent_reads.contains(&masked_address) {
                         for i in 0 .. nes.ppu.recent_reads.len() {
                             if nes.ppu.recent_reads[i] == masked_address {
                                 let brightness = 192 - (5 * i as u8);
-                                bg_color = [64, brightness, 64, 255];
+                                bg_color = Color::rgb(64, brightness, 64);
                                 break;
                             }
                         }
@@ -57,7 +58,7 @@ impl MemoryWindow {
                         for i in 0 .. nes.ppu.recent_writes.len() {
                             if nes.ppu.recent_writes[i] == masked_address {
                                 let brightness = 192 - (5 * i as u8);
-                                bg_color = [brightness, brightness, 32, 255];
+                                bg_color = Color::rgb(brightness, brightness, 32);
                                 break;
                             }
                         }
@@ -65,14 +66,14 @@ impl MemoryWindow {
                 } else {
                     byte = memory::debug_read_byte(nes, address);
                     if address == nes.registers.pc {
-                        bg_color = [128, 32, 32, 255];
+                        bg_color = Color::rgb(128, 32, 32);
                     } else if address == (nes.registers.s as u16 + 0x100) {
-                        bg_color = [32, 32, 128, 255];
+                        bg_color = Color::rgb(32, 32, 128);
                     } else if nes.memory.recent_reads.contains(&address) {
                         for i in 0 .. nes.memory.recent_reads.len() {
                             if nes.memory.recent_reads[i] == address {
                                 let brightness = 192 - (5 * i as u8);
-                                bg_color = [64, brightness, 64, 255];
+                                bg_color = Color::rgb(64, brightness, 64);
                                 break;
                             }
                         }
@@ -80,23 +81,23 @@ impl MemoryWindow {
                         for i in 0 .. nes.memory.recent_writes.len() {
                             if nes.memory.recent_writes[i] == address {
                                 let brightness = 192 - (5 * i as u8);
-                                bg_color = [brightness, brightness, 32, 255];
+                                bg_color = Color::rgb(brightness, brightness, 32);
                                 break;
                             }
                         }
                     }
                 }
-                let mut text_color = [255, 255, 255, 192];
+                let mut text_color = Color::rgba(255, 255, 255, 192);
                 if byte == 0 {
-                    text_color = [255, 255, 255, 64];
+                    text_color = Color::rgba(255, 255, 255, 64);
                 }
                 let cell_x = sx + x * 19;
                 let cell_y = sy + y * 11;
-                drawing::rect(&mut self.canvas, cell_x, cell_y, 19, 11, &bg_color);
+                drawing::rect(&mut self.canvas, cell_x, cell_y, 19, 11, bg_color);
                 drawing::hex(&mut self.canvas, &self.font, 
                     cell_x + 2, cell_y + 2,
                     byte as u32, 2, 
-                    &text_color);
+                    text_color);
             }
         }
     }
@@ -105,41 +106,41 @@ impl MemoryWindow {
         let width = self.canvas.width;
         let height = self.canvas.height;
         
-        drawing::rect(&mut self.canvas, 0, 0, width, 33, &[0,0,0,255]);
-        drawing::rect(&mut self.canvas, 0, 0, 56, height, &[0,0,0,255]);
+        drawing::rect(&mut self.canvas, 0, 0, width, 33, Color::rgb(0,0,0));
+        drawing::rect(&mut self.canvas, 0, 0, 56, height, Color::rgb(0,0,0));
         drawing::text(&mut self.canvas, &self.font, 0, 0, &format!("{} Page: 0x{:04X}",
             if self.view_ppu {"PPU"} else {"CPU"}, self.memory_page), 
-            &[255, 255, 255, 255]);
+            Color::rgb(255, 255, 255));
 
         // Draw memory region selector
         for i in 0x0 .. 0x10 {
             // Highest Nybble
             let cell_x = 56  + (i as u32 * 19);
             let mut cell_y = 11;
-            let mut text_color = [255, 255, 255, 64];
+            let mut text_color = Color::rgba(255, 255, 255, 64);
             if ((self.memory_page & 0xF000) >> 12) == i {
-                drawing::rect(&mut self.canvas, cell_x, cell_y, 19, 11, &[64, 64, 64,255]);
-                text_color = [255, 255, 255, 192];
+                drawing::rect(&mut self.canvas, cell_x, cell_y, 19, 11, Color::rgb(64, 64, 64));
+                text_color = Color::rgba(255, 255, 255, 192);
             }
-            drawing::hex(&mut self.canvas, &self.font, cell_x + 2, cell_y + 2, i as u32, 1, &text_color);
-            drawing::char(&mut self.canvas, &self.font, cell_x + 2 + 8, cell_y + 2, 'X', &text_color);
+            drawing::hex(&mut self.canvas, &self.font, cell_x + 2, cell_y + 2, i as u32, 1, text_color);
+            drawing::char(&mut self.canvas, &self.font, cell_x + 2 + 8, cell_y + 2, 'X', text_color);
 
             // Second-highest Nybble
-            text_color = [255, 255, 255, 64];
+            text_color = Color::rgba(255, 255, 255, 64);
             cell_y = 22;
             if ((self.memory_page & 0x0F00) >> 8) == i {
-                drawing::rect(&mut self.canvas, cell_x, cell_y, 19, 11, &[64, 64, 64,255]);
-                text_color = [255, 255, 255, 192];
+                drawing::rect(&mut self.canvas, cell_x, cell_y, 19, 11, Color::rgb(64, 64, 64));
+                text_color = Color::rgba(255, 255, 255, 192);
             }
-            drawing::char(&mut self.canvas, &self.font, cell_x + 2, cell_y + 2, 'X', &text_color);
-            drawing::hex(&mut self.canvas, &self.font, cell_x + 2 + 8, cell_y + 2, i as u32, 1, &text_color);
+            drawing::char(&mut self.canvas, &self.font, cell_x + 2, cell_y + 2, 'X', text_color);
+            drawing::hex(&mut self.canvas, &self.font, cell_x + 2 + 8, cell_y + 2, i as u32, 1, text_color);
         }
 
         // Draw row labels
         for i in 0 .. 0x10 {
             drawing::text(&mut self.canvas, &self.font, 0, 44 + 2 + (i as u32 * 11), &format!("0x{:04X}",
                 self.memory_page + (i as u16 * 0x10)), 
-                &[255, 255, 255, 64]);
+                Color::rgba(255, 255, 255, 64));
         }
         self.draw_memory_page(nes, 56, 44);
     }

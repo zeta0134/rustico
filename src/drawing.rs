@@ -2,6 +2,63 @@ use image;
 use image::Pixel;
 use image::RgbaImage;
 
+fn blend_component(a: u8, b: u8, alpha: u8) -> u8 {
+    return (
+        (a as u16 * (255 - alpha as u16) / 255) + 
+        (b as u16 * (alpha as u16) / 255)
+    ) as u8;
+}
+
+#[derive(Copy,Clone)]
+pub struct Color {
+    pub data: [u8; 4]
+}
+
+impl Color {
+    pub fn rgb(r: u8, g: u8, b: u8) -> Color {
+        return Color {
+            data: [r, g, b, 255]
+        }
+    }
+
+    pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
+        return Color {
+            data: [r, g, b, a]
+        }   
+    }
+
+    pub fn from_slice(color_data: &[u8]) -> Color {
+        return Color {
+            data: [
+                color_data[0],
+                color_data[1],
+                color_data[2],
+                color_data[3]
+            ]
+        }
+    }
+
+    pub fn r(&self) -> u8 {
+        return self.data[0];
+    }
+
+    pub fn g(&self) -> u8 {
+        return self.data[1];
+    }
+
+    pub fn b(&self) -> u8 {
+        return self.data[2];
+    }
+
+    pub fn alpha(&self) -> u8 {
+        return self.data[3];
+    }
+
+    pub fn set_alpha(&mut self, a: u8) {
+        self.data[3] = a;
+    }
+}
+
 #[derive(Clone)]
 pub struct SimpleBuffer {
     pub buffer: Vec<u8>,
@@ -9,12 +66,7 @@ pub struct SimpleBuffer {
     pub height: u32,
 }
 
-fn blend_component(a: u8, b: u8, alpha: u8) -> u8 {
-    return (
-        (a as u16 * (255 - alpha as u16) / 255) + 
-        (b as u16 * (alpha as u16) / 255)
-    ) as u8;
-}
+
 
 impl SimpleBuffer {
     pub fn new(width: u32, height: u32) -> SimpleBuffer {
@@ -25,28 +77,28 @@ impl SimpleBuffer {
         }
     }
 
-    pub fn put_pixel(&mut self, x: u32, y: u32, color: &[u8]) {
+    pub fn put_pixel(&mut self, x: u32, y: u32, color: Color) {
         let index = ((y * self.width + x) * 4) as usize;
-        self.buffer[index .. (index + 4)].clone_from_slice(color);
+        self.buffer[index .. (index + 4)].clone_from_slice(&color.data);
     }
 
-    pub fn blend_pixel(&mut self, x: u32, y: u32, color: &[u8]) {
+    pub fn blend_pixel(&mut self, x: u32, y: u32, color: Color) {
         let index = ((y * self.width + x) * 4) as usize;
         let original = self.get_pixel(x, y);
-        let alpha = color[3];
-        let r = blend_component(original[0], color[0], alpha);
-        let g = blend_component(original[1], color[1], alpha);
-        let b = blend_component(original[2], color[2], alpha);
+        let r = blend_component(original.r(), color.r(), color.alpha());
+        let g = blend_component(original.g(), color.g(), color.alpha());
+        let b = blend_component(original.b(), color.b(), color.alpha());
         self.buffer[index .. (index + 4)].clone_from_slice(&[r, g, b, 255]);
     }    
 
-    pub fn get_pixel(&self, x: u32, y: u32) -> [u8; 4] {
+    pub fn get_pixel(&self, x: u32, y: u32) -> Color {
         let index = ((y * self.width + x) * 4) as usize;
-        return [
+        return Color::rgba(
             self.buffer[index],
             self.buffer[index + 1],
             self.buffer[index + 2],
-            self.buffer[index + 3]];
+            self.buffer[index + 3]
+        );
     }
 }
 
@@ -64,7 +116,8 @@ impl Font {
         for x in 0 .. img_width {
             for y in 0 .. img_height {
                 let pixel = img[(x, y)].to_rgba();
-                raw_buffer.put_pixel(x, y, &pixel.data);
+                let color = Color::from_slice(&pixel.data);
+                raw_buffer.put_pixel(x, y, color);
             }
         }
 
@@ -74,7 +127,7 @@ impl Font {
         for i in 0 .. (128 - 32) {
             for y in 0 .. img_height {
                 for x in 0 .. glyph_width {
-                    glyphs[i].put_pixel(x, y, &raw_buffer.get_pixel((i as u32) * glyph_width + (x as u32), y as u32));
+                    glyphs[i].put_pixel(x, y, raw_buffer.get_pixel((i as u32) * glyph_width + (x as u32), y as u32));
                 }
             }
         }
@@ -90,29 +143,29 @@ impl Font {
     }
 }
 
-pub fn blit(destination: &mut SimpleBuffer, source: &SimpleBuffer, dx: u32, dy: u32, color: &[u8]) {
+pub fn blit(destination: &mut SimpleBuffer, source: &SimpleBuffer, dx: u32, dy: u32, color: Color) {
     for x in 0 .. source.width {
         for y in 0 .. source.height {
             let mut source_color = source.get_pixel(x, y);
             let destination_color = destination.get_pixel(dx + x, dy + y);
             // Multiply by target color
             for i in 0 .. 4 {
-                source_color[i] = ((source_color[i] as u16 * color[i] as u16) / 255) as u8;
+                source_color.data[i] = ((source_color.data[i] as u16 * color.data[i] as u16) / 255) as u8;
             }
             // Blend to apply alpha transparency
-            let source_alpha = source_color[3] as u16;
+            let source_alpha = source_color.alpha() as u16;
             let destination_alpha = 255 - source_alpha;
-            let final_color = [
-                ((destination_color[0] as u16 * destination_alpha + source_color[0] as u16 * source_alpha) / 255) as u8,
-                ((destination_color[1] as u16 * destination_alpha + source_color[1] as u16 * source_alpha) / 255) as u8,
-                ((destination_color[2] as u16 * destination_alpha + source_color[2] as u16 * source_alpha) / 255) as u8,
-                255];
-            destination.put_pixel(dx + x, dy + y, &final_color);
+            let final_color = Color::rgb(
+                ((destination_color.r() as u16 * destination_alpha + source_color.r() as u16 * source_alpha) / 255) as u8,
+                ((destination_color.g() as u16 * destination_alpha + source_color.g() as u16 * source_alpha) / 255) as u8,
+                ((destination_color.b() as u16 * destination_alpha + source_color.b() as u16 * source_alpha) / 255) as u8
+            );
+            destination.put_pixel(dx + x, dy + y, final_color);
         }
     }
 }
 
-pub fn char(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, c: char, color: &[u8]) {
+pub fn char(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, c: char, color: Color) {
     if c.is_ascii() {
         let ascii_code_point = c as u32;
         if ascii_code_point >= 32 && ascii_code_point < 127 {
@@ -121,13 +174,13 @@ pub fn char(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, c: char
     }
 }
 
-pub fn text(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, s: &str, color: &[u8]) {
+pub fn text(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, s: &str, color: Color) {
     for i in 0 .. s.len() {
         char(destination, font, x + ((i as u32) * font.glyph_width), y, s.chars().nth(i).unwrap(), color);
     }
 }
 
-pub fn hex(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, value: u32, nybbles: u32, color: &[u8]) {
+pub fn hex(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, value: u32, nybbles: u32, color: Color) {
     let char_map = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
     for i in 0 .. nybbles {
         let c = char_map[((value & (0xF << (i * 4))) >> (i * 4)) as usize];
@@ -135,18 +188,18 @@ pub fn hex(destination: &mut SimpleBuffer, font: &Font, x: u32, y: u32, value: u
     }
 }
 
-pub fn rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: u32, color: &[u8]) {
+pub fn rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: u32, color: Color) {
     for dx in x .. (x + width) {
         for dy in y .. (y + height) {
-            destination.put_pixel(dx, dy, &color);
+            destination.put_pixel(dx, dy, color);
         }
     }
 }
 
-pub fn blend_rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: u32, color: &[u8]) {
+pub fn blend_rect(destination: &mut SimpleBuffer, x: u32, y: u32, width: u32, height: u32, color: Color) {
     for dx in x .. (x + width) {
         for dy in y .. (y + height) {
-            destination.blend_pixel(dx, dy, &color);
+            destination.blend_pixel(dx, dy, color);
         }
     }
 }

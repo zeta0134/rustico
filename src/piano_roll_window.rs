@@ -1,5 +1,6 @@
 use application::RuntimeState;
 use drawing;
+use drawing::Color;
 use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
@@ -18,7 +19,7 @@ pub struct ChannelSlice {
     pub visible: bool,
     pub y: f64,
     pub thickness: f64,
-    pub color: [u8; 4],
+    pub color: Color,
 }
 
 impl ChannelSlice {
@@ -27,7 +28,7 @@ impl ChannelSlice {
             visible: false,
             y: 0.0,
             thickness: 0.0,
-            color: [0,0,0,0]
+            color: Color::rgb(0,0,0)
         };
     }
 }
@@ -58,31 +59,31 @@ impl PianoRollWindow {
         };
     }
 
-    fn draw_right_white_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+    fn draw_right_white_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
         drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
         drawing::blend_rect(canvas, 240, y, 16, 1, color);
     }
 
-    fn draw_center_white_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+    fn draw_center_white_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
         drawing::blend_rect(canvas, 240, y, 16, 1, color);
         drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
         drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
     }
 
-    fn draw_left_white_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+    fn draw_left_white_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
         drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
         drawing::blend_rect(canvas, 240, y, 16, 1, color);
     }
 
-    fn draw_black_key(canvas: &mut SimpleBuffer, y: u32, color: &[u8]) {
+    fn draw_black_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
         drawing::blend_rect(canvas, 241, y - 1, 7, 1, color);
         drawing::blend_rect(canvas, 240, y, 8, 1, color);
         drawing::blend_rect(canvas, 241, y + 1, 7, 1, color);
     }
 
     fn draw_piano_strings(&mut self) {
-        let white_string = [0x0C, 0x0C, 0x0C, 0xFF];
-        let black_string = [0x06, 0x06, 0x06, 0xFF];
+        let white_string = Color::rgb(0x0C, 0x0C, 0x0C);
+        let black_string = Color::rgb(0x06, 0x06, 0x06);
 
         let string_colors = [
             white_string, //C
@@ -102,15 +103,15 @@ impl PianoRollWindow {
         for i in 0 .. self.keys {
             let string_color = string_colors[(i % 12) as usize];
             let y = i * self.key_height;
-            drawing::rect(&mut self.canvas, 0, y, 240, 1, &string_color);
+            drawing::rect(&mut self.canvas, 0, y, 240, 1, string_color);
         }
     }
 
     fn draw_piano_keys(&mut self) {
-        let white_key_border = [0x40, 0x40, 0x40, 0xFF];
-        let white_key = [0x50, 0x50, 0x50, 0xFF];
-        let black_key = [0x00, 0x00, 0x00, 0xFF];
-        let black_key_border = [0x10, 0x10, 0x10, 0xFF];
+        let white_key_border = Color::rgb(0x40, 0x40, 0x40);
+        let white_key = Color::rgb(0x50, 0x50, 0x50);
+        let black_key = Color::rgb(0x00, 0x00, 0x00);
+        let black_key_border = Color::rgb(0x10, 0x10, 0x10);
 
         let upper_key_pixels = [
           white_key, // C
@@ -149,10 +150,10 @@ impl PianoRollWindow {
 
         for y in 0 .. self.keys * self.key_height {
             let pixel_index = y % upper_key_pixels.len() as u32;
-            drawing::rect(&mut self.canvas, 240, y, 8, 1, &upper_key_pixels[pixel_index as usize]);
-            drawing::rect(&mut self.canvas, 248, y, 8, 1, &lower_key_pixels[pixel_index as usize]);
+            drawing::rect(&mut self.canvas, 240, y, 8, 1, upper_key_pixels[pixel_index as usize]);
+            drawing::rect(&mut self.canvas, 248, y, 8, 1, lower_key_pixels[pixel_index as usize]);
         }
-        drawing::rect(&mut self.canvas, 240, 0, 1, self.keys * self.key_height, &black_key_border);
+        drawing::rect(&mut self.canvas, 240, 0, 1, self.keys * self.key_height, black_key_border);
     }
 
     fn draw_key_spot(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32) {
@@ -184,12 +185,12 @@ impl PianoRollWindow {
         let adjacent_percent = (note_key % 1.0) * volume_percent;
 
         let base_y = base_key * key_height as f64;
-        base_color[3] = (base_percent * 255.0) as u8;
-        key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, &base_color);
+        base_color.set_alpha((base_percent * 255.0) as u8);
+        key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, base_color);
 
         let adjacent_y = adjacent_key * key_height as f64;
-        base_color[3] = (adjacent_percent * 255.0) as u8;
-        key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, &base_color);                
+        base_color.set_alpha((adjacent_percent * 255.0) as u8);
+        key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, base_color);
     }
 
     fn frequency_to_coordinate(&self, note_frequency: f64) -> f64 {
@@ -202,20 +203,20 @@ impl PianoRollWindow {
         return piano_roll_height - coordinate - 1.5;
     }
 
-    pub fn channel_color(channel: &dyn AudioChannelState) -> &[u8] {
+    pub fn channel_color(channel: &dyn AudioChannelState) -> Color {
         if channel.muted() {
-            return &[32, 32, 32, 255];
+            return Color::rgb(32, 32, 32);
         }
         return match channel.name().as_str() {
-            "[2A03] Pulse 1" => {&[192,  32,  32, 255]},
-            "[2A03] Pulse 2" => {&[192,  96,  32, 255]},
-            "[2A03] Triangle" => {&[32, 192,  32, 255]},
-            "[2A03] Noise" => {&[32,  96, 192, 255]},
-            "[2A03] DMC" => {&[96,  32, 192, 255]},
-            "Final Mix" => {&[192,  192, 192, 255]},
+            "[2A03] Pulse 1"  => {Color::rgb(192,  32,  32)},
+            "[2A03] Pulse 2"  => {Color::rgb(192,  96,  32)},
+            "[2A03] Triangle" => {Color::rgb(32, 192,  32)},
+            "[2A03] Noise"    => {Color::rgb(32,  96, 192)},
+            "[2A03] DMC"      => {Color::rgb(96,  32, 192)},
+            "Final Mix"       => {Color::rgb(192,  192, 192)},
             _ => {
                 // Mapper audio, which is definitely pink
-                &[224, 24, 64, 255]
+                Color::rgb(224, 24, 64)
             } 
         };
     }
@@ -227,14 +228,7 @@ impl PianoRollWindow {
 
         let y: f64;
         let mut thickness: f64 = 4.0;
-        let channel_color = PianoRollWindow::channel_color(channel);
-        let color = [
-            channel_color[0],
-            channel_color[1],
-            channel_color[2],
-            channel_color[3],
-        ];
-        
+        let color = PianoRollWindow::channel_color(channel);        
 
         match channel.rate() {
             PlaybackRate::FundamentalFrequency{frequency} => {
@@ -286,23 +280,23 @@ impl PianoRollWindow {
             // Special case: alpha here will be related to their distance. Draw one
             // blended point and exit
             let alpha = bottom_edge - top_edge;
-            blended_color[3] = (alpha * 255.0) as u8;
-            canvas.blend_pixel(x, top_floor as u32, &blended_color);
+            blended_color.set_alpha((alpha * 255.0) as u8);
+            canvas.blend_pixel(x, top_floor as u32, blended_color);
             return;
         }
         // Alpha blend the edges
         let top_alpha = 1.0 - (top_edge - top_floor);
-        blended_color[3] = (top_alpha * 255.0) as u8;
-        canvas.blend_pixel(x, top_floor as u32, &blended_color);
+        blended_color.set_alpha((top_alpha * 255.0) as u8);
+        canvas.blend_pixel(x, top_floor as u32, blended_color);
 
         let bottom_alpha = bottom_edge - bottom_floor;
-        blended_color[3] = (bottom_alpha * 255.0) as u8;
-        canvas.blend_pixel(x, bottom_floor as u32, &blended_color);
+        blended_color.set_alpha((bottom_alpha * 255.0) as u8);
+        canvas.blend_pixel(x, bottom_floor as u32, blended_color);
 
         // If there is any distance at all between the edges, draw a solid color
         // line between them
         for y in (top_floor as u32) + 1 .. bottom_floor as u32 {
-            canvas.put_pixel(x, y, &slice.color);
+            canvas.put_pixel(x, y, slice.color);
         }
     }
 
@@ -340,7 +334,7 @@ impl PianoRollWindow {
     }
 
     fn draw(&mut self) {
-        drawing::rect(&mut self.canvas, 0, 0, 256, 240, &[0,0,0,0]);
+        drawing::rect(&mut self.canvas, 0, 0, 256, 240, Color::rgb(0,0,0));
         self.draw_piano_strings();
         self.draw_piano_keys();
         self.draw_slices();

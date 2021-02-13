@@ -1,4 +1,5 @@
 use application::RuntimeState;
+use drawing::Color;
 use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
@@ -28,7 +29,7 @@ impl TestWindow {
                 let r = x;
                 let g = y;
                 let b = self.counter.wrapping_add(x ^ y);
-                self.canvas.put_pixel(x as u32, y as u32, &[r, g, b, 255]);
+                self.canvas.put_pixel(x as u32, y as u32, Color::rgb(r, g, b));
             }
         }
     }

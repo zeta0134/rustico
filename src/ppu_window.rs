@@ -1,5 +1,6 @@
 use application::RuntimeState;
 use drawing;
+use drawing::Color;
 use drawing::Font;
 use drawing::SimpleBuffer;
 use events::Event;
@@ -21,11 +22,12 @@ fn draw_tile(mapper: &dyn Mapper, pattern_address: u16, tile_index: u16, buffer:
             tile_high = tile_high >> 1;
             buffer.put_pixel(
                 dx + (7 - px as u32), 
-                dy + (py as u32), &[
+                dy + (py as u32), 
+                Color::rgb(
                     palette[(palette_index * 4 + 0) as usize],
                     palette[(palette_index * 4 + 1) as usize],
-                    palette[(palette_index * 4 + 2) as usize],
-                    255]);
+                    palette[(palette_index * 4 + 2) as usize])
+            );
         }
     }
 }
@@ -43,11 +45,12 @@ fn draw_2x_tile(mapper: &dyn Mapper, pattern_address: u16, tile_index: u16, buff
                 for sy in 0 .. 2 {
                     buffer.put_pixel(
                         dx + (7 - px as u32) * 2 + sx, 
-                        dy + (py as u32) * 2 + sy, &[
+                        dy + (py as u32) * 2 + sy, 
+                        Color::rgb(
                             palette[(palette_index * 4 + 0) as usize],
                             palette[(palette_index * 4 + 1) as usize],
-                            palette[(palette_index * 4 + 2) as usize],
-                            255]);
+                            palette[(palette_index * 4 + 2) as usize])
+                    );
                 }
             }
         }
@@ -70,18 +73,17 @@ fn generate_chr_pattern(mapper: &dyn Mapper, pattern_address: u16, buffer: &mut 
     }
 }
 
-fn draw_color_box(buffer: &mut SimpleBuffer, dx: u32, dy: u32, color: &[u8]) {
+fn draw_color_box(buffer: &mut SimpleBuffer, dx: u32, dy: u32, color: Color) {
     // First, draw a white outline
     for x in 0 .. 16 {
         for y in 0 .. 16 {
-            buffer.put_pixel(dx + x, dy + y, 
-                &[255, 255, 255, 255]);
+            buffer.put_pixel(dx + x, dy + y, Color::rgb(255, 255, 255));
         }
     }
     // Then draw the palette color itself in the center of the outline
     for x in 1 .. 15 {
         for y in 1 .. 15 {
-            buffer.put_pixel(dx + x, dy + y, color);          
+            buffer.put_pixel(dx + x, dy + y, color);
         }
     }
 }
@@ -153,23 +155,23 @@ impl PpuWindow {
         for x in scroll_x .. scroll_x + 256 {
             let px = x % 512;
             let mut py = (scroll_y) % 480;
-            self.canvas.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+            self.canvas.put_pixel(dx + px, dy + py, Color::rgb(255, 0, 0));
             py = (scroll_y + 239) % 480;
-            self.canvas.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+            self.canvas.put_pixel(dx + px, dy + py, Color::rgb(255, 0, 0));
         }
 
         for y in scroll_y .. scroll_y + 240 {
             let py = y % 480;
             let mut px = scroll_x % 512;
-            self.canvas.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+            self.canvas.put_pixel(dx + px, dy + py, Color::rgb(255, 0, 0));
             px = (scroll_x + 255) % 512;
-            self.canvas.put_pixel(dx + px, dy + py, &[255, 0, 0, 255]);
+            self.canvas.put_pixel(dx + px, dy + py, Color::rgb(255, 0, 0));
         }
     }
 
     pub fn draw_palettes(&mut self, dx: u32, dy: u32) {
         // Global Background (just once)
-        let color = &self.palette_cache[0][0 .. 4];
+        let color = Color::from_slice(&self.palette_cache[0][0 .. 4]);
         draw_color_box(&mut self.canvas, dx, dy, color);
 
         // Backgrounds
@@ -177,7 +179,7 @@ impl PpuWindow {
             for i in 1 .. 4 {
                 let x = dx + p * 64 + i * 15;
                 let y = dy;
-                let color = &self.palette_cache[p as usize][(i * 4) as usize .. (i * 4 + 4) as usize];
+                let color = Color::from_slice(&self.palette_cache[p as usize][(i * 4) as usize .. (i * 4 + 4) as usize]);
                 draw_color_box(&mut self.canvas, x, y, color);
             }
         }
@@ -187,7 +189,7 @@ impl PpuWindow {
             for i in 1 .. 4 {
                 let x = dx + p * 64 + i * 15;
                 let y = dy + 18;
-                let color = &self.palette_cache[(p + 4) as usize][(i * 4) as usize .. (i * 4 + 4) as usize];
+                let color = Color::from_slice(&self.palette_cache[(p + 4) as usize][(i * 4) as usize .. (i * 4 + 4) as usize]);
                 draw_color_box(&mut self.canvas, x, y, color);
             }
         }
@@ -225,7 +227,7 @@ impl PpuWindow {
                     drawing::rect(&mut self.canvas, 
                         cell_x, cell_y,
                         18, 34, 
-                        &[255, 255, 255, 255]);
+                        Color::rgb(255, 255, 255));
                     draw_2x_tile(& *nes.mapper, pattern_address, sprite_tile as u16, &mut self.canvas, 
                         cell_x + 1, cell_y + 1,
                         &self.palette_cache[(palette_index + 4) as usize]);
@@ -241,26 +243,26 @@ impl PpuWindow {
                     drawing::rect(&mut self.canvas, 
                         cell_x, cell_y,
                         18, 18, 
-                        &[255, 255, 255, 255]);
+                        Color::rgb(255, 255, 255));
                     draw_2x_tile(& *nes.mapper, pattern_address, sprite_tile as u16, &mut self.canvas, 
                         cell_x + 1, cell_y + 1,
                         &self.palette_cache[(palette_index + 4) as usize]);
                 }
 
-                let text_color = [255, 255, 255, 255];
-                let bg_color =   [  0,   0,   0, 255];
+                let text_color = Color::rgb(255, 255, 255);
+                let bg_color = Color::rgb(0, 0, 0);
 
                 drawing::rect(&mut self.canvas, 
                     cell_x + 19, cell_y, 
-                    16, 32, &bg_color);
+                    16, 32, bg_color);
                 drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y,
-                    sprite_x as u32, 2, &text_color);
+                    sprite_x as u32, 2, text_color);
                 drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 8,
-                    sprite_y as u32, 2, &text_color);
+                    sprite_y as u32, 2, text_color);
                 drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 16,
-                    sprite_tile as u32, 2, &text_color);
+                    sprite_tile as u32, 2, text_color);
                 drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 24,
-                    sprite_flags as u32, 2, &text_color);
+                    sprite_flags as u32, 2, text_color);
             }
         }
     }

@@ -1,4 +1,5 @@
 use application::RuntimeState;
+use drawing::Color;
 use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
@@ -32,12 +33,14 @@ impl GameWindow {
         for x in overscan .. 256 - overscan {
             for y in overscan .. 240 - overscan {
                 let palette_index = ((nes.ppu.screen[(y * 256 + x) as usize]) as usize) * 3;
-                self.canvas.put_pixel(x - overscan, y - overscan, &[
-                    NTSC_PAL[palette_index + 0],
-                    NTSC_PAL[palette_index + 1],
-                    NTSC_PAL[palette_index + 2],
-                    255
-                ]);
+                self.canvas.put_pixel(
+                    x - overscan, 
+                    y - overscan, 
+                    Color::rgb(
+                        NTSC_PAL[palette_index + 0],
+                        NTSC_PAL[palette_index + 1],
+                        NTSC_PAL[palette_index + 2])
+                );
             }
         }
     }

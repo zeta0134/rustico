@@ -1,5 +1,6 @@
 use application::RuntimeState;
 use drawing;
+use drawing::Color;
 use drawing::Font;
 use drawing::SimpleBuffer;
 use events::Event;
@@ -53,7 +54,7 @@ impl ApuWindow {
         return self.waveform_height + self.text_height;
     }
 
-    pub fn draw_waveform(&mut self, channel: &dyn AudioChannelState, color: &[u8], x: u32, y: u32, width: u32, height: u32, align: bool) {
+    pub fn draw_waveform(&mut self, channel: &dyn AudioChannelState, color: Color, x: u32, y: u32, width: u32, height: u32, align: bool) {
         let audiobuffer = channel.sample_buffer().buffer();
         let mut start_index = channel.sample_buffer().index() - ((width as usize) * 2) - 1000;
         start_index = start_index % audiobuffer.len();
@@ -87,41 +88,40 @@ impl ApuWindow {
         }
     }
 
-    pub fn channel_color(channel: &dyn AudioChannelState, index: u32) -> &[u8] {
+    pub fn channel_color(channel: &dyn AudioChannelState, index: u32) -> Color {
         if channel.muted() {
-            return &[32, 32, 32, 255];
+            return Color::rgb(32, 32, 32);
         }
         return match channel.name().as_str() {
-            "[2A03] Pulse 1" => {&[192,  32,  32, 255]},
-            "[2A03] Pulse 2" => {&[192,  96,  32, 255]},
-            "[2A03] Triangle" => {&[32, 192,  32, 255]},
-            "[2A03] Noise" => {&[32,  96, 192, 255]},
-            "[2A03] DMC" => {&[96,  32, 192, 255]},
-            "Final Mix" => {&[192,  192, 192, 255]},
+            "[2A03] Pulse 1" => {Color::rgb(192,  32,  32)},
+            "[2A03] Pulse 2" => {Color::rgb(192,  96,  32)},
+            "[2A03] Triangle" => {Color::rgb(32, 192,  32)},
+            "[2A03] Noise" => {Color::rgb(32,  96, 192)},
+            "[2A03] DMC" => {Color::rgb(96,  32, 192)},
+            "Final Mix" => {Color::rgb(192,  192, 192)},
             _ => {
                 // Mapper audio, which is definitely pink
                 if index % 2 != 0 {
-                    &[224, 24, 64, 255]
+                    Color::rgb(224, 24, 64)
                 } else {
-                    &[180, 12, 40, 255]
+                    Color::rgb(180, 12, 40)
                 }
             } 
         };
     }
 
-    pub fn background_color(foreground_color: &[u8]) -> [u8; 4] {
-        return [
-            foreground_color[0] / 4,
-            foreground_color[1] / 4,
-            foreground_color[2] / 4,
-            foreground_color[3],
-        ];
+    pub fn background_color(foreground_color: Color) -> Color {
+        return Color::rgb(
+            foreground_color.r() / 4,
+            foreground_color.g() / 4,
+            foreground_color.b() / 4
+        );
     }
 
     pub fn draw_channel(&mut self, x: u32, y: u32, channel: &dyn AudioChannelState) {
         let index = y / self.channel_height();
         let foreground_color = ApuWindow::channel_color(channel, index);
-        let background_color = &ApuWindow::background_color(foreground_color);
+        let background_color = ApuWindow::background_color(foreground_color);
 
         let canvas_width = self.canvas.width;
         let channel_height = self.channel_height();
@@ -158,7 +158,7 @@ impl ApuWindow {
         self.canvas.height = ((self.channel_height() + self.spacing) * channels.len() as u32) + self.spacing;
         let canvas_width = self.canvas.width;
         let canvas_height = self.canvas.height;
-        drawing::rect(&mut self.canvas, 0, 0, canvas_width, canvas_height, &[12, 12, 12, 255]);
+        drawing::rect(&mut self.canvas, 0, 0, canvas_width, canvas_height, Color::rgb(12, 12, 12));
     }
 
     pub fn mouse_mutes_channel(&mut self, apu: &ApuState, mapper: &dyn Mapper, my: i32) -> Vec<Event> {
