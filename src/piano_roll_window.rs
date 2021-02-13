@@ -40,7 +40,7 @@ pub struct PianoRollWindow {
     pub roll_width: u32,
     pub lowest_frequency: f64,
     pub highest_frequency: f64,
-    pub roll: VecDeque<ChannelSlice>,
+    pub time_slices: VecDeque<Vec<ChannelSlice>>,
 }
 
 impl PianoRollWindow {
@@ -53,7 +53,7 @@ impl PianoRollWindow {
             roll_width: 240,
             lowest_frequency: 27.5, // ~A0
             highest_frequency: 4434.92209563, // ~C#8
-            roll: VecDeque::new(),
+            time_slices: VecDeque::new(),
 
         };
     }
@@ -225,10 +225,10 @@ impl PianoRollWindow {
             return ChannelSlice::none();
         }
 
-        let mut y: f64 = 0.0;
+        let y: f64;
         let mut thickness: f64 = 4.0;
         let channel_color = PianoRollWindow::channel_color(channel);
-        let mut color = [
+        let color = [
             channel_color[0],
             channel_color[1],
             channel_color[2],
@@ -306,46 +306,45 @@ impl PianoRollWindow {
         }
     }
 
-    fn draw_slices(&mut self, num_channels: usize) {
+    fn draw_slices(&mut self) {
         let mut x = 239;
-        let mut channel_index = 0;
-        for channel_slice in self.roll.iter() {
-            PianoRollWindow::draw_slice(&mut self.canvas, &channel_slice, x);
-            channel_index += 1;
-            if channel_index >= num_channels {
-                channel_index = 0;
-                x -= 1;
+        for channel_slice in self.time_slices.iter() {
+            for note in channel_slice.iter() {
+                PianoRollWindow::draw_slice(&mut self.canvas, &note, x);    
             }
+            if x == 0 {
+                return; //bail! don't draw offscreen
+            }
+            x -= 1;
         }
     }
 
-    fn draw_key_spots(&mut self, num_channels: usize) {
-        for slice in self.roll.iter().take(num_channels) {
-            PianoRollWindow::draw_key_spot(&mut self.canvas, &slice, self.key_height);
+    fn draw_key_spots(&mut self) {
+        for note in self.time_slices.front().unwrap_or(&Vec::new()) {
+            PianoRollWindow::draw_key_spot(&mut self.canvas, &note, self.key_height);
         }
     }
 
     fn update(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
         let mut channels = apu.channels();
         channels.extend(mapper.channels());
-        let channel_len = channels.len();
+        let mut frame_notes: Vec<ChannelSlice> = Vec::new();
         for channel in channels {
-            self.roll.push_front(self.slice_from_channel(channel));
+            frame_notes.push(self.slice_from_channel(channel));
         }
+        self.time_slices.push_front(frame_notes);
 
-        while self.roll.len() > channel_len * self.roll_width as usize {
-            self.roll.pop_back();
+        while self.time_slices.len() > self.roll_width as usize {
+            self.time_slices.pop_back();
         }
     }
 
-    fn draw(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
+    fn draw(&mut self) {
         drawing::rect(&mut self.canvas, 0, 0, 256, 240, &[0,0,0,0]);
         self.draw_piano_strings();
         self.draw_piano_keys();
-        let mut channels = apu.channels();
-        channels.extend(mapper.channels());
-        self.draw_slices(channels.len());
-        self.draw_key_spots(channels.len());
+        self.draw_slices();
+        self.draw_key_spots();
     }
 }
 
@@ -369,7 +368,7 @@ impl Panel for PianoRollWindow {
                     self.update(&runtime.nes.apu, &*runtime.nes.mapper);
                 }
             },
-            Event::RequestFrame => {self.draw(&runtime.nes.apu, &*runtime.nes.mapper)},
+            Event::RequestFrame => {self.draw()},
             Event::ShowPianoRollWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
