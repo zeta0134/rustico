@@ -253,7 +253,7 @@ impl PianoRollWindow {
         }
 
         let y: f64;
-        let mut thickness: f64 = 4.0;
+        let thickness: f64 = channel.amplitude() * 6.0;
         let colors = PianoRollWindow::channel_colors(channel);
         let mut color = colors[0]; // default to the first color
 
@@ -265,13 +265,6 @@ impl PianoRollWindow {
                 // We don't know how to draw this. Bail.
                 return ChannelSlice::none();
             }
-        }
-
-        match channel.volume() {
-            Some(Volume::VolumeIndex{index, max}) => {
-                thickness = (index as f64) / (max as f64) * 6.0;
-            },
-            None => {}
         }
         
         match channel.timbre() {
