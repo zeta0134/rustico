@@ -92,13 +92,18 @@ impl ApuWindow {
         if channel.muted() {
             return Color::rgb(32, 32, 32);
         }
-        return match channel.name().as_str() {
-            "[2A03] Pulse 1" => {Color::rgb(192,  32,  32)},
-            "[2A03] Pulse 2" => {Color::rgb(192,  96,  32)},
-            "[2A03] Triangle" => {Color::rgb(32, 192,  32)},
-            "[2A03] Noise" => {Color::rgb(32,  96, 192)},
-            "[2A03] DMC" => {Color::rgb(96,  32, 192)},
-            "Final Mix" => {Color::rgb(192,  192, 192)},
+        return match channel.chip().as_str() {
+            "2A03" => match channel.name().as_str() {
+                "Pulse 1" => {Color::rgb(192,  32,  32)},
+                "Pulse 2" => {Color::rgb(192,  96,  32)},
+                "Triangle" => {Color::rgb(32, 192,  32)},
+                "Noise" => {Color::rgb(32,  96, 192)},
+                "DMC" => {Color::rgb(96,  32, 192)},
+                _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
+            },
+            "APU" => {
+                Color::rgb(192,  192, 192)
+            },
             _ => {
                 // Mapper audio, which is definitely pink
                 if index % 2 != 0 {
@@ -125,8 +130,9 @@ impl ApuWindow {
 
         let canvas_width = self.canvas.width;
         let channel_height = self.channel_height();
+        let channel_header = format!("[{}] {}", channel.chip(), channel.name());
         drawing::rect(&mut self.canvas, x, y, canvas_width, channel_height, background_color);
-        drawing::text(&mut self.canvas, &self.font, x, y + 1, channel.name().as_str(), foreground_color);
+        drawing::text(&mut self.canvas, &self.font, x, y + 1, &channel_header, foreground_color);
 
         self.draw_waveform(channel,
             foreground_color, 

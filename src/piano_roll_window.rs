@@ -207,16 +207,18 @@ impl PianoRollWindow {
         if channel.muted() {
             return Color::rgb(32, 32, 32);
         }
-        return match channel.name().as_str() {
-            "[2A03] Pulse 1"  => {Color::rgb(192,  32,  32)},
-            "[2A03] Pulse 2"  => {Color::rgb(192,  96,  32)},
-            "[2A03] Triangle" => {Color::rgb(32, 192,  32)},
-            "[2A03] Noise"    => {Color::rgb(32,  96, 192)},
-            "[2A03] DMC"      => {Color::rgb(96,  32, 192)},
-            "Final Mix"       => {Color::rgb(192,  192, 192)},
+        return match channel.chip().as_str() {
+            "2A03" => match channel.name().as_str() {
+                "Pulse 1"  => {Color::rgb(192,  32,  32)},
+                "Pulse 2"  => {Color::rgb(192,  96,  32)},
+                "Triangle" => {Color::rgb(32, 192,  32)},
+                "Noise"    => {Color::rgb(32,  96, 192)},
+                "DMC"      => {Color::rgb(96,  32, 192)},
+                _ => {Color::rgb(192,  192, 192)} // default, should be unreachable
+            },
             _ => {
-                // Mapper audio, which is definitely pink
-                Color::rgb(224, 24, 64)
+                // Unknown expansion audio, we'll default it to grey
+                Color::rgb(224, 224, 224)
             } 
         };
     }
