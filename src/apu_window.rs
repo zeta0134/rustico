@@ -114,14 +114,14 @@ impl ApuWindow {
                 _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
             }
             "APU" => {
-                Color::rgb(224,  224, 224)
+                Color::rgb(192,  192, 192)
             },
             _ => {
-                // Mapper audio, which is definitely pink
+                // Unknown mapper audio, we'll default to a drab grey
                 if index % 2 != 0 {
-                    Color::rgb(224, 24, 64)
+                    Color::rgb(128, 128, 128)
                 } else {
-                    Color::rgb(180, 12, 40)
+                    Color::rgb(144, 144, 144)
                 }
             } 
         };
@@ -129,9 +129,9 @@ impl ApuWindow {
 
     pub fn background_color(foreground_color: Color) -> Color {
         return Color::rgb(
-            foreground_color.r() / 4,
-            foreground_color.g() / 4,
-            foreground_color.b() / 4
+            foreground_color.r() / 8,
+            foreground_color.g() / 8,
+            foreground_color.b() / 8
         );
     }
 
