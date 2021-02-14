@@ -88,6 +88,17 @@ impl PianoRollWindow {
         drawing::blend_rect(canvas, 241, y + 1, 7, 1, color);
     }
 
+    fn draw_speaker_key(canvas: &mut SimpleBuffer, color: Color) {
+        drawing::blend_rect(canvas, 240, 228, 2, 1, color);
+        drawing::blend_rect(canvas, 242, 226, 3, 5, color);
+        drawing::blend_rect(canvas, 245, 225, 1, 7, color);
+        drawing::blend_rect(canvas, 246, 224, 1, 9, color);
+        drawing::blend_rect(canvas, 247, 223, 1, 11, color);
+        drawing::blend_rect(canvas, 248, 222, 1, 13, color);
+        drawing::blend_rect(canvas, 250, 226, 1, 5, color);
+        drawing::blend_rect(canvas, 252, 224, 1, 9, color);
+    }
+
     fn draw_piano_strings(&mut self) {
         let white_string = Color::rgb(0x0C, 0x0C, 0x0C);
         let black_string = Color::rgb(0x06, 0x06, 0x06);
@@ -112,6 +123,9 @@ impl PianoRollWindow {
             let y = i * self.key_height;
             drawing::rect(&mut self.canvas, 0, y, 240, 1, string_color);
         }
+
+        // Draw one extra string for the waveform display
+        drawing::rect(&mut self.canvas, 0, 228, 240, 1, black_string);
     }
 
     fn draw_piano_keys(&mut self) {
@@ -155,49 +169,61 @@ impl PianoRollWindow {
           white_key, // C (top half)
         ];
 
+        drawing::rect(&mut self.canvas, 240, 0, 16, 240, black_key_border);
         for y in 0 .. self.keys * self.key_height {
             let pixel_index = y % upper_key_pixels.len() as u32;
             drawing::rect(&mut self.canvas, 240, y, 8, 1, upper_key_pixels[pixel_index as usize]);
             drawing::rect(&mut self.canvas, 248, y, 8, 1, lower_key_pixels[pixel_index as usize]);
         }
-        drawing::rect(&mut self.canvas, 240, 0, 1, self.keys * self.key_height, black_key_border);
+        drawing::rect(&mut self.canvas, 240, 0, 1, 240, black_key_border);
+        PianoRollWindow::draw_speaker_key(&mut self.canvas, black_key);
     }
 
     fn draw_key_spot(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32) {
         if !slice.visible {return;}
 
-        let key_drawing_functions = [
-            PianoRollWindow::draw_left_white_key,   //C
-            PianoRollWindow::draw_right_white_key,  //B
-            PianoRollWindow::draw_black_key,        //Bb
-            PianoRollWindow::draw_center_white_key, //A
-            PianoRollWindow::draw_black_key,        //Ab
-            PianoRollWindow::draw_center_white_key, //G
-            PianoRollWindow::draw_black_key,        //Gb
-            PianoRollWindow::draw_left_white_key,   //F
-            PianoRollWindow::draw_right_white_key,  //E
-            PianoRollWindow::draw_black_key,        //Eb
-            PianoRollWindow::draw_center_white_key, //D
-            PianoRollWindow::draw_black_key,        //Db
-        ];
+        match slice.note_type {
+            NoteType::Waveform => {
+                let mut base_color = slice.color;
+                let volume_percent = slice.thickness / 6.0;
+                base_color.set_alpha((volume_percent * 255.0) as u8);
+                PianoRollWindow::draw_speaker_key(canvas, base_color);
+            },
+            _ => {
+                let key_drawing_functions = [
+                    PianoRollWindow::draw_left_white_key,   //C
+                    PianoRollWindow::draw_right_white_key,  //B
+                    PianoRollWindow::draw_black_key,        //Bb
+                    PianoRollWindow::draw_center_white_key, //A
+                    PianoRollWindow::draw_black_key,        //Ab
+                    PianoRollWindow::draw_center_white_key, //G
+                    PianoRollWindow::draw_black_key,        //Gb
+                    PianoRollWindow::draw_left_white_key,   //F
+                    PianoRollWindow::draw_right_white_key,  //E
+                    PianoRollWindow::draw_black_key,        //Eb
+                    PianoRollWindow::draw_center_white_key, //D
+                    PianoRollWindow::draw_black_key,        //Db
+                ];
 
-        let mut base_color = slice.color;
+                let mut base_color = slice.color;
 
-        let note_key = ((slice.y + 1.5) / key_height as f64) - 1.0;
-        let base_key = note_key.floor();
-        let adjacent_key = note_key.ceil();
+                let note_key = ((slice.y + 1.5) / key_height as f64) - 1.0;
+                let base_key = note_key.floor();
+                let adjacent_key = note_key.ceil();
 
-        let volume_percent = slice.thickness / 6.0;
-        let base_percent = (1.0 - (note_key % 1.0)) * volume_percent;
-        let adjacent_percent = (note_key % 1.0) * volume_percent;
+                let volume_percent = slice.thickness / 6.0;
+                let base_percent = (1.0 - (note_key % 1.0)) * volume_percent;
+                let adjacent_percent = (note_key % 1.0) * volume_percent;
 
-        let base_y = base_key * key_height as f64;
-        base_color.set_alpha((base_percent * 255.0) as u8);
-        key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, base_color);
+                let base_y = base_key * key_height as f64;
+                base_color.set_alpha((base_percent * 255.0) as u8);
+                key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, base_color);
 
-        let adjacent_y = adjacent_key * key_height as f64;
-        base_color.set_alpha((adjacent_percent * 255.0) as u8);
-        key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, base_color);
+                let adjacent_y = adjacent_key * key_height as f64;
+                base_color.set_alpha((adjacent_percent * 255.0) as u8);
+                key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, base_color);
+            }
+        }        
     }
 
     fn frequency_to_coordinate(&self, note_frequency: f64) -> f64 {
@@ -290,9 +316,9 @@ impl PianoRollWindow {
                 y = base_y - key_offset;
 
             },
-            _ => {
-                // We don't know how to draw this. Bail.
-                return ChannelSlice::none();
+            PlaybackRate::SampleRate{frequency: _} => {
+                y = 228.5;
+                note_type = NoteType::Waveform;
             }
         }
         
