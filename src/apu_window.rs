@@ -97,12 +97,24 @@ impl ApuWindow {
                 "Pulse 1" => {Color::rgb(192,  32,  32)},
                 "Pulse 2" => {Color::rgb(192,  96,  32)},
                 "Triangle" => {Color::rgb(32, 192,  32)},
-                "Noise" => {Color::rgb(32,  96, 192)},
-                "DMC" => {Color::rgb(96,  32, 192)},
+                "Noise" => {Color::rgb(144, 144, 180)},
+                "DMC" => {Color::rgb(128,  64, 192)},
                 _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
             },
+            "MMC5" => match channel.name().as_str() {
+                "Pulse 1" => {Color::rgb(224, 24, 64)},
+                "Pulse 2" => {Color::rgb(180, 12, 40)},
+                "PCM" => {Color::rgb(192, 12, 64)},
+                _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
+            },
+            "YM2149F" => match channel.name().as_str() {
+                "A" => {Color::rgb(32, 144, 204)},
+                "B" => {Color::rgb(24, 104, 228)},
+                "C" => {Color::rgb(16, 64, 248)},
+                _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
+            }
             "APU" => {
-                Color::rgb(192,  192, 192)
+                Color::rgb(224,  224, 224)
             },
             _ => {
                 // Mapper audio, which is definitely pink
