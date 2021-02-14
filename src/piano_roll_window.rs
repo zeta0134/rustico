@@ -8,18 +8,24 @@ use panel::Panel;
 use rusticnes_core::apu::ApuState;
 use rusticnes_core::apu::AudioChannelState;
 use rusticnes_core::apu::PlaybackRate;
-use rusticnes_core::apu::Volume;
 use rusticnes_core::apu::Timbre;
 use rusticnes_core::mmc::mapper::Mapper;
 
 use std::collections::VecDeque;
 
+pub enum NoteType {
+    Frequency,
+    Noise,
+    Waveform
+}
 
 pub struct ChannelSlice {
     pub visible: bool,
     pub y: f64,
     pub thickness: f64,
     pub color: Color,
+    pub note_type: NoteType,
+
 }
 
 impl ChannelSlice {
@@ -28,7 +34,8 @@ impl ChannelSlice {
             visible: false,
             y: 0.0,
             thickness: 0.0,
-            color: Color::rgb(0,0,0)
+            color: Color::rgb(0,0,0),
+            note_type: NoteType::Frequency,
         };
     }
 }
@@ -49,10 +56,10 @@ impl PianoRollWindow {
         return PianoRollWindow {
             canvas: SimpleBuffer::new(256, 240),            
             shown: true,
-            keys: 88,
+            keys: 109,
             key_height: 2,
             roll_width: 240,
-            lowest_frequency: 27.5, // ~A0
+            lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
 
@@ -224,7 +231,12 @@ impl PianoRollWindow {
                         Color::rgb(0xFF, 0xC0, 0x40)) // 75 (same as 25)
                 },
                 "Triangle" => {vec!(Color::rgb(0x40, 0xFF, 0x40))},
-                "Noise"    => {vec!(Color::rgb(32,  96, 192))},
+                "Noise"    => {
+                    vec!(
+                        Color::rgb(192, 192, 192),
+                        Color::rgb(192, 255, 255)
+                    )
+                },
                 "DMC"      => {vec!(Color::rgb(96,  32, 192))},
                 _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
             },
@@ -256,11 +268,28 @@ impl PianoRollWindow {
         let thickness: f64 = channel.amplitude() * 6.0;
         let colors = PianoRollWindow::channel_colors(channel);
         let mut color = colors[0]; // default to the first color
+        let note_type: NoteType;
 
         match channel.rate() {
             PlaybackRate::FundamentalFrequency{frequency} => {
                 y = self.frequency_to_coordinate(frequency);
-            }
+                note_type = NoteType::Frequency;
+            },
+            PlaybackRate::LfsrRate{index, max} => {
+                note_type = NoteType::Noise;
+
+                // Arbitrarily map all noise frequencies to 16 "strings" since this is what the
+                // base 2A03 uses. Accuracy is much less important here.
+                let string_coord = (index as f64 / (max + 1) as f64) * 16.0;
+                let key_offset = string_coord * self.key_height as f64;
+
+                // Hrm. Experiment: let's try basing it around C0, so the notes match what you might
+                // enter in FamiTracker
+                let base_freq = 8.176;
+                let base_y = self.frequency_to_coordinate(base_freq);
+                y = base_y - key_offset;
+
+            },
             _ => {
                 // We don't know how to draw this. Bail.
                 return ChannelSlice::none();
@@ -272,6 +301,10 @@ impl PianoRollWindow {
                 let weight = index as f64 / (max + 1) as f64;
                 color = drawing::apply_gradient(colors, weight);
             },
+            Some(Timbre::LsfrMode{index, max}) => {
+                let weight = index as f64 / (max + 1) as f64;
+                color = drawing::apply_gradient(colors, weight);  
+            },
             None => {},
             _ => {}
         }
@@ -280,7 +313,8 @@ impl PianoRollWindow {
             visible: true,
             y: y,
             thickness: thickness,
-            color: color
+            color: color,
+            note_type: note_type
         };
     }
 
