@@ -135,10 +135,19 @@ impl ApuWindow {
         );
     }
 
+    pub fn glow_color(foreground_color: Color) -> Color {
+        return Color::rgb(
+            foreground_color.r() / 3,
+            foreground_color.g() / 3,
+            foreground_color.b() / 3
+        );
+    }
+
     pub fn draw_channel(&mut self, x: u32, y: u32, channel: &dyn AudioChannelState) {
         let index = y / self.channel_height();
         let foreground_color = ApuWindow::channel_color(channel, index);
         let background_color = ApuWindow::background_color(foreground_color);
+        let glow_color = ApuWindow::glow_color(foreground_color);
 
         let canvas_width = self.canvas.width;
         let channel_height = self.channel_height();
@@ -146,10 +155,11 @@ impl ApuWindow {
         drawing::rect(&mut self.canvas, x, y, canvas_width, channel_height, background_color);
         drawing::text(&mut self.canvas, &self.font, x, y + 1, &channel_header, foreground_color);
 
-        self.draw_waveform(channel,
-            foreground_color, 
-            0,   y + self.text_height, canvas_width,  self.waveform_height, 
-            true);
+        
+        self.draw_waveform(channel, glow_color, 0,   y + self.text_height + 1, canvas_width,  self.waveform_height, true);
+        self.draw_waveform(channel, glow_color, 0,   y + self.text_height - 1, canvas_width,  self.waveform_height, true);
+        self.draw_waveform(channel, foreground_color, 0,   y + self.text_height, canvas_width,  self.waveform_height, true);
+        drawing::rect(&mut self.canvas, 0, y + channel_height, canvas_width, 2, Color::rgb(12, 12, 12));
     }
 
     pub fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
