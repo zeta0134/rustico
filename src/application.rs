@@ -5,6 +5,7 @@ use events::StandardControllerButton;
 
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
+use rusticnes_core::cartridge::mapper_from_file;
 
 pub struct RuntimeState {
     pub nes: NesState,
@@ -22,10 +23,11 @@ impl RuntimeState {
     }
 
     pub fn load_cartridge(&mut self, cart_id: String, file_data: &[u8]) -> Event {
-        let maybe_nes = NesState::from_rom(&file_data);
-        match maybe_nes {
-            Ok(nes_state) => {
-                self.nes = nes_state;
+        let maybe_mapper = mapper_from_file(file_data);
+        match maybe_mapper {
+            Ok(mapper) => {
+                self.nes = NesState::new(mapper);
+                self.nes.power_on();
                 self.running = true;
                 self.file_loaded = true;
                 return Event::CartridgeLoaded(cart_id);
