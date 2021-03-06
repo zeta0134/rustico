@@ -186,6 +186,7 @@ pub fn main() {
                         dump_audio = !dump_audio;
                         if dump_audio {
                           let _ = remove_file("audiodump.raw");
+                          let _ = remove_file("hq_audiodump.raw");
                           println!("Beginning audio dump...");
                         } else {
                           println!("Audio dump stopped.");
@@ -284,7 +285,14 @@ pub fn main() {
       device.queue(&buffer);
       runtime_state.nes.apu.buffer_full = false;
       if dump_audio {
-        runtime_state.nes.apu.dump_sample_buffer();
+        //runtime_state.nes.apu.dump_sample_buffer();
+      }
+    }
+
+    if runtime_state.nes.apu.hq_buffer_full {
+      runtime_state.nes.apu.hq_buffer_full = false;
+      if dump_audio {
+        runtime_state.nes.apu.dump_hq_sample_buffer();
       }
     }
 
