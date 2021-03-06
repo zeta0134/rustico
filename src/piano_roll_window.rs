@@ -55,7 +55,7 @@ impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
         return PianoRollWindow {
             canvas: SimpleBuffer::new(256, 240),            
-            shown: true,
+            shown: false,
             keys: 109,
             key_height: 2,
             roll_width: 240,
