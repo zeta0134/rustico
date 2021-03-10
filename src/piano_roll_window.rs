@@ -278,6 +278,36 @@ impl PianoRollWindow {
                 "C" => {vec!(Color::rgb(16, 64, 248))},
                 _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
             },
+            "VRC6" => match channel.name().as_str() {
+                "Pulse 1"  => {
+                    vec!(                        
+                        Color::rgb(0xf2, 0xbb, 0xd8), // 6.25%
+                        Color::rgb(0xdb, 0xa0, 0xbf), // 12.5%
+                        Color::rgb(0xc4, 0x86, 0xa6), // 18.75%
+                        Color::rgb(0xad, 0x6c, 0x8d), // 25%
+                        Color::rgb(0x97, 0x51, 0x74), // 31.25%
+                        Color::rgb(0x80, 0x37, 0x5b), // 37.5%
+                        Color::rgb(0x69, 0x1d, 0x42), // 43.75%
+                        Color::rgb(0x53, 0x03, 0x2a)) // 50%
+                },
+                "Pulse 2"  => {
+                    vec!(                        
+                        Color::rgb(0xe8, 0xa7, 0xe7), // 6.25%
+                        Color::rgb(0xd2, 0x8f, 0xd1), // 12.5%
+                        Color::rgb(0xbd, 0x78, 0xbb), // 18.75%
+                        Color::rgb(0xa7, 0x60, 0xa6), // 25%
+                        Color::rgb(0x92, 0x49, 0x90), // 31.25%
+                        Color::rgb(0x7c, 0x31, 0x7b), // 37.5%
+                        Color::rgb(0x67, 0x1a, 0x65), // 43.75%
+                        Color::rgb(0x52, 0x03, 0x50)) // 50%
+                },
+                "Sawtooth" => {
+                    vec!(
+                        Color::rgb(0x07, 0x7d, 0x5a),   // Normal
+                        Color::rgb(0x9f, 0xb8, 0xed))
+                }, // Distortion
+                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
+            },
             _ => {
                 // Unknown expansion audio, we'll default it to grey
                 vec!(Color::rgb(224, 224, 224))

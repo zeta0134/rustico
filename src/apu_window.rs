@@ -112,7 +112,13 @@ impl ApuWindow {
                 "B" => {Color::rgb(24, 104, 228)},
                 "C" => {Color::rgb(16, 64, 248)},
                 _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
-            }
+            },
+            "VRC6" => match channel.name().as_str() {
+                "Pulse 1" => {Color::rgb(0x97, 0x51, 0x74)},
+                "Pulse 2" => {Color::rgb(0x92, 0x49, 0x90)},
+                "Sawtooth" => {Color::rgb(0x07, 0x7d, 0x5a)},
+                _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
+            },
             "APU" => {
                 Color::rgb(192,  192, 192)
             },
