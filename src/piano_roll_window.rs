@@ -211,9 +211,10 @@ impl PianoRollWindow {
                 let base_key = note_key.floor();
                 let adjacent_key = note_key.ceil();
 
-                let volume_percent = slice.thickness / 6.0;
-                let base_percent = (1.0 - (note_key % 1.0)) * volume_percent;
-                let adjacent_percent = (note_key % 1.0) * volume_percent;
+                let base_volume_percent = slice.thickness / 6.0;
+                let adjusted_volume_percent = 0.1 + base_volume_percent * 0.9;
+                let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
+                let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
                 let base_y = base_key * key_height as f64;
                 base_color.set_alpha((base_percent * 255.0) as u8);
