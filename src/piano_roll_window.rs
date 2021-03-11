@@ -129,10 +129,10 @@ impl PianoRollWindow {
     }
 
     fn draw_piano_keys(&mut self) {
-        let white_key_border = Color::rgb(0x40, 0x40, 0x40);
-        let white_key = Color::rgb(0x50, 0x50, 0x50);
+        let white_key_border = Color::rgb(0x1C, 0x1C, 0x1C);
+        let white_key = Color::rgb(0x20, 0x20, 0x20);
         let black_key = Color::rgb(0x00, 0x00, 0x00);
-        let black_key_border = Color::rgb(0x10, 0x10, 0x10);
+        let top_edge = Color::rgb(0x0A, 0x0A, 0x0A);
 
         let upper_key_pixels = [
           white_key, // C
@@ -169,13 +169,13 @@ impl PianoRollWindow {
           white_key, // C (top half)
         ];
 
-        drawing::rect(&mut self.canvas, 240, 0, 16, 240, black_key_border);
+        drawing::rect(&mut self.canvas, 240, 0, 16, 240, top_edge);
         for y in 0 .. self.keys * self.key_height {
             let pixel_index = y % upper_key_pixels.len() as u32;
             drawing::rect(&mut self.canvas, 240, y, 8, 1, upper_key_pixels[pixel_index as usize]);
             drawing::rect(&mut self.canvas, 248, y, 8, 1, lower_key_pixels[pixel_index as usize]);
         }
-        drawing::rect(&mut self.canvas, 240, 0, 1, 240, black_key_border);
+        drawing::rect(&mut self.canvas, 240, 0, 1, 240, top_edge);
         PianoRollWindow::draw_speaker_key(&mut self.canvas, black_key);
     }
 
@@ -212,7 +212,7 @@ impl PianoRollWindow {
                 let adjacent_key = note_key.ceil();
 
                 let base_volume_percent = slice.thickness / 6.0;
-                let adjusted_volume_percent = 0.1 + base_volume_percent * 0.9;
+                let adjusted_volume_percent = 0.05 + base_volume_percent * 0.95;
                 let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
                 let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
