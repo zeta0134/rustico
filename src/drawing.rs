@@ -99,6 +99,24 @@ impl SimpleBuffer {
         }
     }
 
+    pub fn from_image(img: RgbaImage) -> SimpleBuffer {
+        let (img_width, img_height) = img.dimensions();
+        let mut raw_buffer = SimpleBuffer::new(img_width, img_height);
+        for x in 0 .. img_width {
+            for y in 0 .. img_height {
+                let pixel = img[(x, y)].to_rgba();
+                let color = Color::from_slice(&pixel.data);
+                raw_buffer.put_pixel(x, y, color);
+            }
+        }
+        return raw_buffer
+    }
+
+    pub fn from_raw(bitmap_data: &[u8]) -> SimpleBuffer {
+        let img = image::load_from_memory(bitmap_data).unwrap().to_rgba();
+        return SimpleBuffer::from_image(img);
+    }
+
     pub fn put_pixel(&mut self, x: u32, y: u32, color: Color) {
         let index = ((y * self.width + x) * 4) as usize;
         self.buffer[index .. (index + 4)].clone_from_slice(&color.data);
@@ -131,23 +149,12 @@ pub struct Font {
 
 impl Font {
     pub fn from_image(img: RgbaImage, glyph_width: u32) -> Font {
-        let (img_width, img_height) = img.dimensions();
+        let raw_buffer = SimpleBuffer::from_image(img);
 
-        // First, read everything into a raw buffer
-        let mut raw_buffer = SimpleBuffer::new(img_width, img_height);
-        for x in 0 .. img_width {
-            for y in 0 .. img_height {
-                let pixel = img[(x, y)].to_rgba();
-                let color = Color::from_slice(&pixel.data);
-                raw_buffer.put_pixel(x, y, color);
-            }
-        }
-
-        // Now, run through the newly read raw buffer, and convert each individual character into its
-        // own glyph:
-        let mut glyphs = vec!(SimpleBuffer::new(glyph_width, img_height); 128 - 32);
+        // Convert each individual character into its own glyph:
+        let mut glyphs = vec!(SimpleBuffer::new(glyph_width, raw_buffer.height); 128 - 32);
         for i in 0 .. (128 - 32) {
-            for y in 0 .. img_height {
+            for y in 0 .. raw_buffer.height {
                 for x in 0 .. glyph_width {
                     glyphs[i].put_pixel(x, y, raw_buffer.get_pixel((i as u32) * glyph_width + (x as u32), y as u32));
                 }
