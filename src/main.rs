@@ -89,7 +89,7 @@ pub fn main() {
   let desired_spec = AudioSpecDesired {
     freq: Some(44100),
     channels: Some(1),
-    samples: Some(2048)
+    samples: Some(1024)
   };
 
   // Grab the active audio device and begin playback immediately. Until we fill the buffer, this will "play" silence:
@@ -278,23 +278,24 @@ pub fn main() {
 
     // Play Audio
     if runtime_state.nes.apu.buffer_full {
-      let mut buffer = [0i16; 4096];
-      for i in 0 .. 4096 {
+      let buffer_size = runtime_state.nes.apu.output_buffer.len();
+      let mut buffer = vec!(0i16; buffer_size);
+      for i in 0 .. buffer_size {
         buffer[i] = runtime_state.nes.apu.output_buffer[i] as i16;
       }
       device.queue(&buffer);
       runtime_state.nes.apu.buffer_full = false;
       if dump_audio {
-        //runtime_state.nes.apu.dump_sample_buffer();
+        runtime_state.nes.apu.dump_sample_buffer();
       }
     }
 
-    if runtime_state.nes.apu.hq_buffer_full {
-      runtime_state.nes.apu.hq_buffer_full = false;
-      if dump_audio {
-        runtime_state.nes.apu.dump_hq_sample_buffer();
-      }
-    }
+    //if runtime_state.nes.apu.hq_buffer_full {
+    //  runtime_state.nes.apu.hq_buffer_full = false;
+    //  if dump_audio {
+    //    runtime_state.nes.apu.dump_hq_sample_buffer();
+    //  }
+    //}
 
     // Draw all windows
     for i in 0 .. windows.len() {
