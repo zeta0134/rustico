@@ -119,7 +119,7 @@ impl SimpleBuffer {
 
     pub fn put_pixel(&mut self, x: u32, y: u32, color: Color) {
         let index = ((y * self.width + x) * 4) as usize;
-        self.buffer[index .. (index + 4)].clone_from_slice(&color.data);
+        self.buffer[index .. (index + 4)].copy_from_slice(&color.data);
     }
 
     pub fn blend_pixel(&mut self, x: u32, y: u32, color: Color) {
@@ -128,7 +128,7 @@ impl SimpleBuffer {
         let r = blend_component(original.r(), color.r(), color.alpha());
         let g = blend_component(original.g(), color.g(), color.alpha());
         let b = blend_component(original.b(), color.b(), color.alpha());
-        self.buffer[index .. (index + 4)].clone_from_slice(&[r, g, b, 255]);
+        self.buffer[index .. (index + 4)].copy_from_slice(&[r, g, b, 255]);
     }    
 
     pub fn get_pixel(&self, x: u32, y: u32) -> Color {
