@@ -309,6 +309,24 @@ impl PianoRollWindow {
                 }, // Distortion
                 _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
             },
+            "N163" => {
+                let wavetable_gradient = vec!(
+                    Color::rgb(0x66, 0x0e, 0x0e),
+                    Color::rgb(0xc9, 0x9c, 0x9c),
+                );
+                match channel.name().as_str() {
+                    
+                    "NAMCO 1" => {wavetable_gradient},
+                    "NAMCO 2" => {wavetable_gradient},
+                    "NAMCO 3" => {wavetable_gradient},
+                    "NAMCO 4" => {wavetable_gradient},
+                    "NAMCO 5" => {wavetable_gradient},
+                    "NAMCO 6" => {wavetable_gradient},
+                    "NAMCO 7" => {wavetable_gradient},
+                    "NAMCO 8" => {wavetable_gradient},
+                    _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
+                }
+            },
             _ => {
                 // Unknown expansion audio, we'll default it to grey
                 vec!(Color::rgb(224, 224, 224))
@@ -362,8 +380,11 @@ impl PianoRollWindow {
                 let weight = index as f64 / (max + 1) as f64;
                 color = drawing::apply_gradient(colors, weight);  
             },
+            Some(Timbre::PatchIndex{index, max}) => {
+                let weight = index as f64 / (max + 1) as f64;
+                color = drawing::apply_gradient(colors, weight);  
+            }
             None => {},
-            _ => {}
         }
 
         return ChannelSlice{

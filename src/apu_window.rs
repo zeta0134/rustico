@@ -17,6 +17,7 @@ pub struct ApuWindow {
     pub waveform_height: u32,
     pub text_height: u32,
     pub spacing: u32,
+    pub old_channels: usize,
 }
 
 pub fn find_rising_edge(audiobuffer: &[i16], start_index: usize) -> usize {
@@ -47,6 +48,7 @@ impl ApuWindow {
             waveform_height: 32,
             text_height: 10,
             spacing: 2,
+            old_channels: 5,
         };
     }
 
@@ -119,6 +121,17 @@ impl ApuWindow {
                 "Sawtooth" => {Color::rgb(0x07, 0x7d, 0x5a)},
                 _ => {/*unreachable*/ Color::rgb(192,  192, 192)}
             },
+            "N163" => match channel.name().as_str() {
+                "NAMCO 1" => {Color::rgb(0xC0, 0x20, 0x20)},
+                "NAMCO 2" => {Color::rgb(0xA0, 0x10, 0x10)},
+                "NAMCO 3" => {Color::rgb(0xC0, 0x20, 0x20)},
+                "NAMCO 4" => {Color::rgb(0xA0, 0x10, 0x10)},
+                "NAMCO 5" => {Color::rgb(0xC0, 0x20, 0x20)},
+                "NAMCO 6" => {Color::rgb(0xA0, 0x10, 0x10)},
+                "NAMCO 7" => {Color::rgb(0xC0, 0x20, 0x20)},
+                "NAMCO 8" => {Color::rgb(0xA0, 0x10, 0x10)},
+                _ => {/*unreachable*/ Color::rgb(192,  192, 192)}  
+            },
             "APU" => {
                 Color::rgb(192,  192, 192)
             },
@@ -178,6 +191,10 @@ impl ApuWindow {
 
     pub fn draw(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
         let channels = ApuWindow::collect_channels(apu, mapper);
+        if channels.len() != self.old_channels {
+            self.resize_panel(apu, mapper);
+            self.old_channels = channels.len();
+        }
 
         let mut dy = self.spacing;
         for channel in channels {
