@@ -217,12 +217,16 @@ impl PianoRollWindow {
                 let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
                 let base_y = base_key * key_height as f64;
-                base_color.set_alpha((base_percent * 255.0) as u8);
-                key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, base_color);
+                if base_y > 1.0 && base_y < (canvas.height - 2) as f64 {
+                    base_color.set_alpha((base_percent * 255.0) as u8);
+                    key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, base_color);
+                }
 
                 let adjacent_y = adjacent_key * key_height as f64;
-                base_color.set_alpha((adjacent_percent * 255.0) as u8);
-                key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, base_color);
+                if adjacent_y > 1.0 && adjacent_y < (canvas.height - 2) as f64 {
+                    base_color.set_alpha((adjacent_percent * 255.0) as u8);
+                    key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, base_color);
+                }
             }
         }        
     }
