@@ -11,6 +11,7 @@ pub use events::Event;
 pub mod apu_window;
 pub mod cpu_window;
 pub mod game_window;
+pub mod event_window;
 pub mod memory_window;
 pub mod test_window;
 pub mod piano_roll_window;

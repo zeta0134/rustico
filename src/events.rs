@@ -47,6 +47,7 @@ pub enum Event {
     ShowApuWindow,
     ShowCpuWindow,
     ShowGameWindow,
+    ShowEventWindow,
     ShowMemoryWindow,
     ShowPianoRollWindow,
     ShowPpuWindow,
