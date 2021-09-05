@@ -211,6 +211,8 @@ pub fn main() {
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
                       Keycode::F5 => {application_events.push(events::Event::ShowPianoRollWindow);},
 
+                      Keycode::F9 => {application_events.push(events::Event::NesNudgeAlignment);},
+
                       Keycode::Period => {application_events.push(events::Event::MemoryViewerNextPage);},
                       Keycode::Comma => {application_events.push(events::Event::MemoryViewerPreviousPage);},
                       Keycode::Slash => {application_events.push(events::Event::MemoryViewerNextBus);},
@@ -223,6 +225,7 @@ pub fn main() {
                       Keycode::C => {application_events.push(events::Event::NesRunCycle);},
                       Keycode::H => {application_events.push(events::Event::NesRunScanline);},
                       Keycode::V => {application_events.push(events::Event::NesRunFrame);},
+
 
                       Keycode::X =>      {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::A))},
                       Keycode::Z =>      {application_events.push(events::Event::StandardControllerRelease(0, StandardControllerButton::B))},
