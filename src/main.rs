@@ -30,6 +30,7 @@ use rusticnes_ui_common::events::StandardControllerButton;
 use rusticnes_ui_common::apu_window::ApuWindow;
 use rusticnes_ui_common::cpu_window::CpuWindow;
 use rusticnes_ui_common::game_window::GameWindow;
+use rusticnes_ui_common::event_window::EventWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
 use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
@@ -66,6 +67,7 @@ pub fn main() {
   
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(ApuWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(CpuWindow::new())));
+  windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(EventWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(MemoryWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(PianoRollWindow::new())));
   windows.push(PlatformWindow::from_panel(&video_subsystem, Box::new(PpuWindow::new())));
@@ -210,6 +212,7 @@ pub fn main() {
                       Keycode::F3 => {application_events.push(events::Event::ShowMemoryWindow);},
                       Keycode::F4 => {application_events.push(events::Event::ShowCpuWindow);},
                       Keycode::F5 => {application_events.push(events::Event::ShowPianoRollWindow);},
+                      Keycode::F6 => {application_events.push(events::Event::ShowEventWindow);},
 
                       Keycode::F9 => {application_events.push(events::Event::NesNudgeAlignment);},
 
