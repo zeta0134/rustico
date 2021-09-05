@@ -48,6 +48,14 @@ fn longest(strings: &Vec<String>)  -> usize {
     return length;
 }
 
+fn freshness(scanline: u16, cycle: u16, current_scanline: u16, current_cycle: u16) -> f64 {
+    let test_progress = (scanline as u32) * 341 + (cycle as u32);
+    let current_progress = (current_scanline as u32) * 341 + (current_cycle as u32);
+    let max_distance = 262 * 341;
+    let distance = (test_progress + max_distance - current_progress) % max_distance;
+    return (distance as f64) / (max_distance as f64);
+}
+
 impl EventWindow {
     pub fn new() -> EventWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
@@ -56,7 +64,7 @@ impl EventWindow {
             canvas: SimpleBuffer::new(341, 262),
             font: font,
             shown: false,
-            scale: 3,
+            scale: 2,
             mx: 0,
             my: 0,
         };
@@ -189,28 +197,38 @@ impl EventWindow {
             },
             _ => {}
         }
-        if self.tooltip_visible(event) {
-            self.draw_tooltip(event);
-        }
     }
 
     fn draw(&mut self, nes: &NesState) {
         // Clear!
         drawing::rect(&mut self.canvas, 0, 0, 341, 262, Color::rgb(50,50,50));
 
-        // First, draw the current game screen, darkened somewhat
-        for x in 0 .. 256 {
-            for y in 0 .. 240 {
-                let palette_index = ((nes.ppu.screen[(y * 256 + x) as usize]) as usize) * 3;
-                let darkened_color = Color::rgba(
-                        NTSC_PAL[palette_index + 0],
-                        NTSC_PAL[palette_index + 1],
-                        NTSC_PAL[palette_index + 2],
-                        128);
+        // First, draw the current game screen, and a visualization of the electron beam
+        for x in 0 .. 341 {
+            for y in 0 .. 262 {
+                let pixel_freshness = freshness(y as u16, x as u16, nes.ppu.current_scanline, nes.ppu.current_scanline_cycle);
+                if x  > 0 && x <= 256 && y < 240 {
+                    let palette_index = ((nes.ppu.screen[(y * 256 + x - 1) as usize]) as usize) * 3;
+                    let color = Color::rgba(
+                            NTSC_PAL[palette_index + 0],
+                            NTSC_PAL[palette_index + 1],
+                            NTSC_PAL[palette_index + 2],
+                            192);
+                    let scanline_freshness = (pixel_freshness.powf(32.0) * 255.0) as u8;
+                    //let freshness8 = (scanline_freshness + cycle_freshness).min(255.0) as u8;
+                    self.canvas.put_pixel(x, y, Color::rgb(scanline_freshness, scanline_freshness, scanline_freshness));
+                    self.canvas.blend_pixel(
+                        x, 
+                        y,
+                        color
+                    );
+                }
+
+                let cycle_freshness = (pixel_freshness.powf(341.0 * 16.0) * 192.0) as u8;
                 self.canvas.blend_pixel(
-                    x + 1, 
+                    x, 
                     y,
-                    darkened_color
+                    Color::rgba(255, 255, 255, cycle_freshness)
                 );
             }
         }
@@ -218,15 +236,35 @@ impl EventWindow {
         // Next, draw every current event as a ... I dunno, a bright pixel I guess
         // We want all of the events from last frame *after* the current cycle
         for &event in nes.event_tracker.events_last_frame() {
-            if event.scanline >= nes.ppu.current_scanline && event.cycle > nes.ppu.current_scanline_cycle {
+            if event.scanline > nes.ppu.current_scanline ||
+               (event.scanline == nes.ppu.current_scanline && event.cycle > nes.ppu.current_scanline_cycle) {
                 self.draw_event(event);
             }
         }
 
         // We want all of the events from current frame *before* the current cycle
         for &event in nes.event_tracker.events_this_frame() {
-            if event.scanline <= nes.ppu.current_scanline && event.cycle <= nes.ppu.current_scanline_cycle {
+            if event.scanline < nes.ppu.current_scanline ||
+               (event.scanline == nes.ppu.current_scanline && event.cycle <= nes.ppu.current_scanline_cycle) {
                 self.draw_event(event);
+            }
+        }
+
+        // Now do the same loop, targeting the tooltip
+        for &event in nes.event_tracker.events_last_frame() {
+            if event.scanline > nes.ppu.current_scanline ||
+               (event.scanline == nes.ppu.current_scanline && event.cycle > nes.ppu.current_scanline_cycle) {
+                if self.tooltip_visible(event) {
+                    self.draw_tooltip(event);
+                }
+            }
+        }
+        for &event in nes.event_tracker.events_this_frame() {
+            if event.scanline < nes.ppu.current_scanline ||
+               (event.scanline == nes.ppu.current_scanline && event.cycle <= nes.ppu.current_scanline_cycle) {
+                if self.tooltip_visible(event) {
+                    self.draw_tooltip(event);
+                }
             }
         }
 
