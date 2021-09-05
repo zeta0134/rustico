@@ -124,6 +124,10 @@ impl RuntimeState {
                 self.running = !self.running;
             },
 
+            Event::NesNudgeAlignment => {
+                self.nes.nudge_ppu_alignment();
+            }
+
             Event::RequestSramSave(sram_id) => {
                 if self.nes.mapper.has_sram()  {
                     responses.push(Event::SaveSram(sram_id, Rc::new(self.nes.sram())));

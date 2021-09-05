@@ -31,6 +31,7 @@ pub enum Event {
     MemoryViewerNextBus,
     MuteChannel(usize),
     UnmuteChannel(usize),
+    NesNudgeAlignment,
     NesPauseEmulation,
     NesResumeEmulation,
     NesToggleEmulation,
