@@ -91,7 +91,7 @@ pub fn main() {
   let desired_spec = AudioSpecDesired {
     freq: Some(44100),
     channels: Some(1),
-    samples: Some(1024)
+    samples: Some(256)
   };
 
   // Grab the active audio device and begin playback immediately. Until we fill the buffer, this will "play" silence:
@@ -266,16 +266,40 @@ pub fn main() {
     // If we're currently running, emit NesRunFrame events
     // TODO: Move this into some sort of timing manager, deal with real time deltas,
     // and separate these events from the monitor refresh rate.
-    if runtime_state.running {
-      application_events.push(events::Event::NesRunFrame);
+    while (device.size() as usize) + (runtime_state.nes.apu.samples_queued() * 2) < 4096 {
+      if runtime_state.running {
+        application_events.push(events::Event::NesRunFrame);
+
+        // Play Audio (leave this loop when this buffer fills)
+        if runtime_state.nes.apu.buffer_full {
+          let buffer_size = runtime_state.nes.apu.output_buffer.len();
+          let mut buffer = vec!(0i16; buffer_size);
+          for i in 0 .. buffer_size {
+            buffer[i] = runtime_state.nes.apu.output_buffer[i] as i16;
+          }
+          device.queue(&buffer);
+          runtime_state.nes.apu.buffer_full = false;
+          if dump_audio {
+            runtime_state.nes.apu.dump_sample_buffer();
+          }
+        }
+      } else {
+        // we have to queue up *something*, so let's target around 60 Hz ish of silence
+        let buffer = vec!(0i16; 44100 / 60);
+        device.queue(&buffer);
+      }
+
+      // Process all the application-level events
+      let events_to_process = application_events.clone();
+      application_events.clear();
+      for event in events_to_process{
+        application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+      }      
+
+      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
     }
 
-    // Process all the application-level events
-    let events_to_process = application_events.clone();
-    application_events.clear();
-    for event in events_to_process{
-      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
-    }
+    println!("queue size: {}, nes has queued: {}", device.size(), runtime_state.nes.apu.samples_queued());
 
     // Update window sizes
     for i in 0 .. windows.len() {
@@ -288,29 +312,6 @@ pub fn main() {
         textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap()
       }
     }
-
-    application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
-
-    // Play Audio
-    if runtime_state.nes.apu.buffer_full {
-      let buffer_size = runtime_state.nes.apu.output_buffer.len();
-      let mut buffer = vec!(0i16; buffer_size);
-      for i in 0 .. buffer_size {
-        buffer[i] = runtime_state.nes.apu.output_buffer[i] as i16;
-      }
-      device.queue(&buffer);
-      runtime_state.nes.apu.buffer_full = false;
-      if dump_audio {
-        runtime_state.nes.apu.dump_sample_buffer();
-      }
-    }
-
-    //if runtime_state.nes.apu.hq_buffer_full {
-    //  runtime_state.nes.apu.hq_buffer_full = false;
-    //  if dump_audio {
-    //    runtime_state.nes.apu.dump_hq_sample_buffer();
-    //  }
-    //}
 
     // Draw all windows
     for i in 0 .. windows.len() {
