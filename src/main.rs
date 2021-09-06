@@ -266,7 +266,9 @@ pub fn main() {
     // If we're currently running, emit NesRunFrame events
     // TODO: Move this into some sort of timing manager, deal with real time deltas,
     // and separate these events from the monitor refresh rate.
+    let mut new_frames = 0;
     while (device.size() as usize) + (runtime_state.nes.apu.samples_queued() * 2) < 4096 {
+      new_frames += 1;
       if runtime_state.running {
         application_events.push(events::Event::NesRunFrame);
 
@@ -299,31 +301,32 @@ pub fn main() {
       application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
     }
 
-    //println!("queue size: {}, nes has queued: {}", device.size(), runtime_state.nes.apu.samples_queued());
+    // only present (and thus vsync) if there are new frames to draw
+    if new_frames > 0 {
+      // Update window sizes
+      for i in 0 .. windows.len() {
+        if windows[i].needs_resize() {
+          let (wx, wy) = windows[i].size();
+          let _ = windows[i].canvas.window_mut().set_size(wx, wy);
 
-    // Update window sizes
-    for i in 0 .. windows.len() {
-      if windows[i].needs_resize() {
-        let (wx, wy) = windows[i].size();
-        let _ = windows[i].canvas.window_mut().set_size(wx, wy);
-
-        let tx = windows[i].panel.active_canvas().width;
-        let ty = windows[i].panel.active_canvas().height;
-        textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap()
+          let tx = windows[i].panel.active_canvas().width;
+          let ty = windows[i].panel.active_canvas().height;
+          textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap()
+        }
       }
-    }
 
-    // Draw all windows
-    for i in 0 .. windows.len() {
-      if windows[i].panel.shown() {
-        windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
-        windows[i].canvas.set_draw_color(Color::RGB(255, 255, 255));
-        let _ = textures[i].update(None, &windows[i].panel.active_canvas().buffer, (windows[i].panel.active_canvas().width * 4) as usize);
-        let _ = windows[i].canvas.copy(&textures[i], None, None);
-        windows[i].canvas.present();
-        windows[i].canvas.window_mut().show();
-      } else {
-        windows[i].canvas.window_mut().hide();
+      // Draw all windows
+      for i in 0 .. windows.len() {
+        if windows[i].panel.shown() {
+          windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
+          windows[i].canvas.set_draw_color(Color::RGB(255, 255, 255));
+          let _ = textures[i].update(None, &windows[i].panel.active_canvas().buffer, (windows[i].panel.active_canvas().width * 4) as usize);
+          let _ = windows[i].canvas.copy(&textures[i], None, None);
+          windows[i].canvas.present();
+          windows[i].canvas.window_mut().show();
+        } else {
+          windows[i].canvas.window_mut().hide();
+        }
       }
     }
   }
