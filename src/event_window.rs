@@ -101,28 +101,40 @@ impl EventWindow {
         let shadow_color = Color::rgb(0xE0, 0xE0, 0xD0);
 
         let title = match event.event_type {
-            EventType::CpuRead{address, data: _} => {
+            EventType::CpuRead{address, data: _, program_counter: _} => {
                 let label = cpu_register_label(address);
                 format!("Read: {}", label)
             },
-            EventType::CpuWrite{address, data: _} => {
+            EventType::CpuWrite{address, data: _, program_counter: _} => {
                 let label = cpu_register_label(address);
                 format!("Write: {}", label)
+            },
+            EventType::CpuExecute{program_counter, data: _} => {
+                let label = cpu_register_label(program_counter);
+                format!("Execute: {}", label)
             },
             _ => {format!("Huh!?")}
         };
 
         // variable things for each event, based on its type
         let mut contents = match event.event_type {
-            EventType::CpuRead{address, data} => {
+            EventType::CpuRead{program_counter, address, data} => {
                 vec![
+                    format!("PC:       ${:04X}", program_counter),
+                    format!("Address:  ${:04X}", address),
+                    format!("Data:     ${:02X} ({})", data, data),
+                ]
+            },
+            EventType::CpuWrite{program_counter, address, data} => {
+                vec![
+                    format!("PC:       ${:04X}", program_counter),
                     format!("Address:  ${:04X}", address),
                     format!("Data:     ${:02X} ({})", data, data)
                 ]
             },
-            EventType::CpuWrite{address, data} => {
+            EventType::CpuExecute{program_counter, data} => {
                 vec![
-                    format!("Address:  ${:04X}", address),
+                    format!("PC:       ${:04X}", program_counter),
                     format!("Data:     ${:02X} ({})", data, data)
                 ]
             },
@@ -205,11 +217,14 @@ impl EventWindow {
 
     fn draw_event(&mut self, event: TrackedEvent) {
         match event.event_type {
-            EventType::CpuRead{address, data: _} => {
+            EventType::CpuRead{address, data: _, program_counter: _} => {
                 self.draw_event_dot(event, cpu_register_color(address));
             },
-            EventType::CpuWrite{address, data: _} => {
+            EventType::CpuWrite{address, data: _, program_counter: _} => {
                 self.draw_event_dot(event, cpu_register_color(address));
+            },
+            EventType::CpuExecute{program_counter, data: _} => {
+                self.draw_event_dot(event, cpu_register_color(program_counter));
             },
             _ => {}
         }
