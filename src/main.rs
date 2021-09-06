@@ -141,6 +141,15 @@ pub fn main() {
                   }
                 }
               },
+              Event::MouseMotion{ window_id: id, x: omx, y: omy, .. } => {
+                for i in 0 .. windows.len() {
+                  if id == windows[i].canvas.window().id() {
+                    let wx = omx / windows[i].panel.scale_factor() as i32;
+                    let wy = omy / windows[i].panel.scale_factor() as i32;
+                    application_events.extend(windows[i].panel.handle_event(&runtime_state, events::Event::MouseMove(wx, wy)));
+                  }
+                }
+              },
               Event::Window { window_id: id, win_event: WindowEvent::Close, .. } => {
                 for i in 0 .. windows.len() {
                   if id == windows[i].canvas.window().id() {
