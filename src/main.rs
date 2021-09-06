@@ -299,7 +299,7 @@ pub fn main() {
       application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
     }
 
-    println!("queue size: {}, nes has queued: {}", device.size(), runtime_state.nes.apu.samples_queued());
+    //println!("queue size: {}, nes has queued: {}", device.size(), runtime_state.nes.apu.samples_queued());
 
     // Update window sizes
     for i in 0 .. windows.len() {
