@@ -38,6 +38,22 @@ fn cpu_register_label(address: u16) -> String {
     return label.to_string();
 }
 
+fn cpu_register_color(address: u16) -> Color {
+    match address {
+        0x2000 => Color::rgb(255, 94, 94),
+        0x2001 => Color::rgb(142, 51, 255),
+        0x2002 => Color::rgb(26, 86, 100),
+        0x2003 => Color::rgb(255, 132, 224),
+        0x2004 => Color::rgb(250, 255, 57),
+        0x2005 => Color::rgb(46, 255, 40),
+        0x2006 => Color::rgb(61, 45, 255),
+        0x2007 => Color::rgb(255, 6, 13),
+
+        0x4014 => Color::rgb(255, 255, 0),
+        _ => Color::rgb(192, 192, 192)
+    }
+}
+
 fn longest(strings: &Vec<String>)  -> usize {
     let mut length = 0;
     for string in strings {
@@ -174,10 +190,10 @@ impl EventWindow {
             ry -= 1;
             rh += 1;
         }
-        if x <= 341 {
+        if x < 340 {
             rw += 1;
         }
-        if y <= 262 {
+        if y < 261 {
             rh += 1;
         }
 
@@ -189,11 +205,11 @@ impl EventWindow {
 
     fn draw_event(&mut self, event: TrackedEvent) {
         match event.event_type {
-            EventType::CpuRead{address: _, data: _} => {
-                self.draw_event_dot(event, Color::rgb(0, 0, 255));
+            EventType::CpuRead{address, data: _} => {
+                self.draw_event_dot(event, cpu_register_color(address));
             },
-            EventType::CpuWrite{address: _, data: _} => {
-                self.draw_event_dot(event, Color::rgb(255, 0, 0));
+            EventType::CpuWrite{address, data: _} => {
+                self.draw_event_dot(event, cpu_register_color(address));
             },
             _ => {}
         }
