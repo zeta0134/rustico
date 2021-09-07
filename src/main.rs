@@ -267,6 +267,7 @@ pub fn main() {
     // TODO: Move this into some sort of timing manager, deal with real time deltas,
     // and separate these events from the monitor refresh rate.
     let mut new_frames = 0;
+    //println!("device queue: {}, emulator queue: {}", device.size(), runtime_state.nes.apu.samples_queued());
     while (device.size() as usize) + (runtime_state.nes.apu.samples_queued() * 2) < 4096 {
       new_frames += 1;
       if runtime_state.running {
