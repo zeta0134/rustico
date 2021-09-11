@@ -55,6 +55,8 @@ pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut Rus
 }
 
 pub fn main() {
+  let version = env!("CARGO_PKG_VERSION");
+  println!("Welcome to RusticNES {}", version);
   let mut runtime_state = RusticNesRuntimeState::new();
   let mut cartridge_state = CartridgeManager::new();
 

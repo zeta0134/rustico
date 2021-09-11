@@ -1,5 +1,5 @@
 # RusticNES - SDL
-This is a graphical shell for the [RusticNES](https://github.com/zeta0134/rusticnes-core) emulator, targeting [rust-sdl2](https://github.com/Rust-SDL2/rust-sdl2). It is meant to serve as the official release of the emulator for desktop PCs, and should compile and run on Windows, Linux, and Mac systems. It should theoretically work within any windowing environment that rust-sdl2 supports.
+This is a graphical shell for the [RusticNES](https://github.com/zeta0134/rusticnes-core) emulator, targeting [rust-sdl2](https://github.com/Rust-SDL2/rust-sdl2). It is meant to serve as an official release of the emulator for desktop PCs, and should compile and run on Windows and Linux systems. It should theoretically work on Mac systems, but I don't have one to test.
 
 The interface for the emulator is undergoing heavy development. I will try my best to keep this documentation up to date.
 
@@ -18,14 +18,15 @@ The emulator opens with no game loaded, and only the Game Window visible. Use **
 - F1: VRAM Viewer
 - F2: Audio Visualizer
 - F3: Memory Viewer
-- F4: Debugger
+- F4: Live Disassembly
+- F5: Piano Roll
+- F6: Event Viewer
 - Ctrl-O: Open and run a different game
 - R: Pause / Play current emulation
 - Space: Advance by one instruction
 - C: Advance by one *CPU cycle*
 - H: Advance to the next scanline
 - V: Advance to the start of the next vblank
-- F5 - F9: Mute/Unmute the Pulse 1, Pulse 2, Triangle, Noise, and DMC audio channels, respectively
 - S: Write SRAM immediately (if supported, see below)
 - Esc: Close the emulator
 
