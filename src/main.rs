@@ -1,10 +1,13 @@
 extern crate image;
 extern crate rusticnes_core;
+extern crate rusticnes_ui_common;
 
 use rusticnes_core::nes::NesState;
-use rusticnes_core::mmc::none::NoneMapper;
 use rusticnes_core::palettes::NTSC_PAL;
 use rusticnes_core::cartridge::mapper_from_file;
+
+use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
+use rusticnes_ui_common::events;
 
 use std::env;
 use std::fs::File;
@@ -15,17 +18,33 @@ use std::io::Write;
 use std::io::BufReader;
 use std::io::BufRead;
 
-pub struct RuntimeOptions {
+pub struct CliRuntimeState {
+  pub core: RusticNesRuntimeState,
   pub game_file: Option<File>,
   pub audio_file: Option<File>,
 }
 
-impl RuntimeOptions {
-  pub fn new() -> RuntimeOptions {
-    return RuntimeOptions{
+impl CliRuntimeState {
+  pub fn new() -> CliRuntimeState {
+    return CliRuntimeState{
+      core: RusticNesRuntimeState::new(),
       game_file: None,
       audio_file: None,
     }
+  }
+}
+
+pub fn dispatch_event(state: &mut CliRuntimeState, event: events::Event) {
+  let mut responses: Vec<events::Event> = Vec::new();
+  // Process application events here, passing in a reference to core state
+  // (there aren't any yet!)
+
+  // Now process core state, passing in a reference to itself
+  responses.extend(state.core.handle_event(event.clone()));
+
+  // Finally, recursively dispatch any responses we got to this event, bubbling those up the chain
+  for response in responses {
+    dispatch_event(state, response);
   }
 }
 
@@ -63,13 +82,13 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
 
 // Note: Later we should use the ui-common library, and dump panels instead of just the game screen. That
 // will be very flexible and useful.
-fn dump_frame(nes: &NesState, file_handle: &mut Option<File>) {
-  match file_handle {
+fn dump_frame(state: &mut CliRuntimeState) {
+  match &mut state.game_file {
     Some(file) => {
       let mut rgba_pixels: [u8; 3 * 256 * 240] = [0; 3 * 256 * 240]; 
       for x in 0 .. 256 {
         for y in 0 .. 240 {
-          let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
+          let palette_index = ((state.core.nes.ppu.screen[y * 256 + x]) as usize) * 3;
           let pixel_index = (256 * y + x) * 3;
           rgba_pixels[pixel_index + 0] = NTSC_PAL[palette_index + 0];
           rgba_pixels[pixel_index + 1] = NTSC_PAL[palette_index + 1];
@@ -82,15 +101,15 @@ fn dump_frame(nes: &NesState, file_handle: &mut Option<File>) {
   }
 }
 
-fn dump_audio(nes: &mut NesState, file_handle: &mut Option<File>) {
-  match file_handle {
+fn dump_audio(state: &mut CliRuntimeState) {
+  match &mut state.audio_file {
     Some(file) => {
-      if nes.apu.buffer_full {
-        let buffer_size = nes.apu.output_buffer.len();
+      if state.core.nes.apu.buffer_full {
+        let buffer_size = state.core.nes.apu.output_buffer.len();
         for i in 0 .. buffer_size {
-          let _ = file.write_all(&nes.apu.output_buffer[i].to_be_bytes());
+          let _ = file.write_all(&state.core.nes.apu.output_buffer[i].to_be_bytes());
         }
-        nes.apu.buffer_full = false;
+        state.core.nes.apu.buffer_full = false;
       }
     },
     None => {}
@@ -98,11 +117,12 @@ fn dump_audio(nes: &mut NesState, file_handle: &mut Option<File>) {
 }
 
 
-fn run(nes: &mut NesState, frames: u64, options: &mut RuntimeOptions) {
+fn run(state: &mut CliRuntimeState, frames: u64) {
   for _ in 0 .. frames {
-    nes.run_until_vblank();
-    dump_frame(nes, &mut options.game_file);
-    dump_audio(nes, &mut options.audio_file);
+    //state.core.nes.run_until_vblank();
+    dispatch_event(state, events::Event::NesRunFrame);
+    dump_frame(state);
+    dump_audio(state);
   }
 }
 
@@ -110,7 +130,7 @@ fn reset(nes: &mut NesState) {
   nes.reset();
 }
 
-fn tap(nes: &mut NesState, button: &str, frames: u64, options: &mut RuntimeOptions) {
+fn tap(state: &mut CliRuntimeState, button: &str, frames: u64) {
   let button_index: u8 = match button {
     "a" => 0,
     "b" => 1,
@@ -122,9 +142,10 @@ fn tap(nes: &mut NesState, button: &str, frames: u64, options: &mut RuntimeOptio
     "right" => 7,
     _ => panic!("Invalid button to tap: {}", button)
   };
-  nes.p1_input |= 0x1 << button_index;
-  run(nes, frames, options);
-  nes.p1_input ^= 0x1 << button_index;
+  // TODO: change button state using application events?
+  state.core.nes.p1_input |= 0x1 << button_index;
+  run(state, frames);
+  state.core.nes.p1_input ^= 0x1 << button_index;
 }
 
 fn save_screenshot(nes: &NesState, output_path: &str) {
@@ -186,7 +207,7 @@ fn save_blargg(nes: &mut NesState, output_filename: &str) {
   }
 }
 
-fn command_file(nes: &mut NesState, command_path: &str) {
+fn command_file(state: &mut CliRuntimeState, command_path: &str) {
   let file = File::open(command_path);
   match file {
     Err(why) => {
@@ -200,43 +221,43 @@ fn command_file(nes: &mut NesState, command_path: &str) {
   for l in file_reader.lines() {
     let line = l.unwrap();
     let command_list = line.split(" ").map(|s| s.to_string()).collect();
-    process_command_list(nes, command_list);
+    process_command_list(state, command_list);
   }
 }
 
-fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
-  let mut options = RuntimeOptions::new();
-
+fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<String>) {
   while command_list.len() > 0 {
     let command = command_list.remove(0);
     match command.as_ref() {
       "cart" | "cartridge" | "rom" => {
+        // TODO: implement this with the standard event instead
         let cartridge_path = command_list.remove(0);
-        load_cartridge(nes, cartridge_path.as_ref());
+        load_cartridge(&mut state.core.nes, cartridge_path.as_ref());
       },
       "run" | "frames" => {
         let frames: u64 = command_list.remove(0).parse().unwrap();
-        run(nes, frames, &mut options);
+        run(state, frames);
       },
       "reset" => {
-        reset(nes);
+        // TODO: implement this with the standard event instead
+        reset(&mut state.core.nes);
       }
       "tap" => {
         let button = command_list.remove(0);
         let frames: u64 = command_list.remove(0).parse().unwrap();
-        tap(nes, button.as_ref(), frames, &mut options);
+        tap(state, button.as_ref(), frames);
       }
       "screenshot" => {
         let cartridge_path = command_list.remove(0);
-        save_screenshot(nes, cartridge_path.as_ref());
+        save_screenshot(&mut state.core.nes, cartridge_path.as_ref());
       },
       "blargg" => {
         let output_path = command_list.remove(0);
-        save_blargg(nes, output_path.as_ref());
+        save_blargg(&mut state.core.nes, output_path.as_ref());
       },
       "fromfile" => {
         let command_file_path = command_list.remove(0);
-        command_file(nes, command_file_path.as_ref());
+        command_file(state, command_file_path.as_ref());
       },
       "video" => {
         let panel = command_list.remove(0);
@@ -248,7 +269,7 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
                 panic!("Couldn't open {}: {}", output_path, why);
               },
               Ok(file) => {
-                options.game_file = Some(file);
+                state.game_file = Some(file);
               }
             }
           },
@@ -264,7 +285,7 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
             panic!("Couldn't open {}: {}", output_path, why);
           },
           Ok(file) => {
-            options.audio_file = Some(file);
+            state.audio_file = Some(file);
           }
         }
       }
@@ -288,10 +309,10 @@ fn main() {
     panic!("Usage: rusticnes-cli <commands>");
   }
 
-  let mut nes = NesState::new(Box::new(NoneMapper::new()));
+  let mut state = CliRuntimeState::new();
 
   // Pop off the name of the program
   let _ = args.remove(0);
 
-  process_command_list(&mut nes, args);
+  process_command_list(&mut state, args);
 }
