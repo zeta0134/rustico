@@ -9,7 +9,6 @@ use std::env;
 use std::fs::File;
 use std::str;
 
-use std::error::Error;
 use std::io::Read;
 use std::io::Write;
 use std::io::BufReader;
@@ -20,7 +19,7 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   let file = File::open(cartridge_path);
   match file {
     Err(why) => {
-      panic!("Couldn't open {}: {}", cartridge_path, why.description());
+      panic!("Couldn't open {}: {}", cartridge_path, why);
     },
     Ok(_) => (),
   };
@@ -29,7 +28,7 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   let mut cartridge = Vec::new();
   match file.unwrap().read_to_end(&mut cartridge) {
     Err(why) => {
-      panic!("Couldn't read from {}: {}", cartridge_path, why.description());
+      panic!("Couldn't read from {}: {}", cartridge_path, why);
     },
     Ok(_) => {
       println!("Loading {}...", cartridge_path);
@@ -136,7 +135,7 @@ fn command_file(nes: &mut NesState, command_path: &str) {
   let file = File::open(command_path);
   match file {
     Err(why) => {
-      panic!("Couldn't open {}: {}", command_path, why.description());
+      panic!("Couldn't open {}: {}", command_path, why);
     },
     Ok(_) => (),
   };
