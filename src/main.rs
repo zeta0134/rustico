@@ -86,8 +86,7 @@ fn save_screenshot(nes: &NesState, output_path: &str) {
     }
   }
 
-  let ref mut fout = File::create(output_path).unwrap();
-  image::ImageRgba8(img).save(fout, image::PNG).unwrap();
+  image::ImageRgba8(img).save(output_path).unwrap();
 
   println!("Saved screenshot to {}", output_path);
 }
