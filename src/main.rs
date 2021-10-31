@@ -4,6 +4,7 @@ extern crate rusticnes_core;
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
 use rusticnes_core::palettes::NTSC_PAL;
+use rusticnes_core::cartridge::mapper_from_file;
 
 use std::env;
 use std::fs::File;
@@ -13,6 +14,10 @@ use std::io::Read;
 use std::io::Write;
 use std::io::BufReader;
 use std::io::BufRead;
+
+pub struct RuntimeOptions {
+  pub game_file: File,
+}
 
 fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   // Read in the ROM file and attempt to create a new NesState:
@@ -32,11 +37,12 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
     },
     Ok(_) => {
       println!("Loading {}...", cartridge_path);
-      let maybe_nes = NesState::from_rom(&cartridge);
-      match maybe_nes {
-        Ok(nes_state) => {
-          *nes = nes_state;
-        },
+      let maybe_mapper = mapper_from_file(&cartridge);
+      match maybe_mapper {
+            Ok(mapper) => {
+              *nes = NesState::new(mapper);
+              nes.power_on();
+            },
         Err(why) => {
           panic!("{}", why);
         }
