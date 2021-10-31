@@ -40,6 +40,60 @@ impl ChannelSlice {
     }
 }
 
+
+fn draw_right_white_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
+    drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
+    drawing::blend_rect(canvas, 240, y, 16, 1, color);
+}
+
+fn draw_center_white_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
+    drawing::blend_rect(canvas, 240, y, 16, 1, color);
+    drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
+    drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
+}
+
+fn draw_left_white_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
+    drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
+    drawing::blend_rect(canvas, 240, y, 16, 1, color);
+}
+
+fn draw_black_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
+    drawing::blend_rect(canvas, 241, y - 1, 7, 1, color);
+    drawing::blend_rect(canvas, 240, y, 8, 1, color);
+    drawing::blend_rect(canvas, 241, y + 1, 7, 1, color);
+}
+
+fn draw_speaker_key(canvas: &mut SimpleBuffer, color: Color) {
+    drawing::blend_rect(canvas, 240, 228, 2, 1, color);
+    drawing::blend_rect(canvas, 242, 226, 3, 5, color);
+    drawing::blend_rect(canvas, 245, 225, 1, 7, color);
+    drawing::blend_rect(canvas, 246, 224, 1, 9, color);
+    drawing::blend_rect(canvas, 247, 223, 1, 11, color);
+    drawing::blend_rect(canvas, 248, 222, 1, 13, color);
+    drawing::blend_rect(canvas, 250, 226, 1, 5, color);
+    drawing::blend_rect(canvas, 252, 224, 1, 9, color);
+}
+
+pub enum ScrollDirection {
+    RightToLeft,
+    LeftToRight,
+    TopToBottom,
+    BottomToTop
+}
+
+pub enum KeySize {
+    Small,
+    Medium,
+    Large
+}
+
+pub enum PollingType {
+    PpuFrame,
+    PpuScanline,
+    ApuQuarterFrame,
+    ApuHalfFrame,
+}
+
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
@@ -49,54 +103,32 @@ pub struct PianoRollWindow {
     pub lowest_frequency: f64,
     pub highest_frequency: f64,
     pub time_slices: VecDeque<Vec<ChannelSlice>>,
+    pub polling_counter: usize,
+
+    // user-configurable options
+    pub scroll_direction: ScrollDirection,
+    pub key_size: KeySize,
+    pub polling_type: PollingType,
+    pub polling_frequency: usize,
 }
 
 impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
         return PianoRollWindow {
-            canvas: SimpleBuffer::new(256, 240),            
-            shown: false,
+            canvas: SimpleBuffer::new(480, 270),            
+            shown: true,
             keys: 109,
             key_height: 2,
             roll_width: 240,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
-
+            polling_counter: 1,
+            scroll_direction: ScrollDirection::RightToLeft,
+            key_size: KeySize::Small,
+            polling_type: PollingType::PpuFrame,
+            polling_frequency: 1,
         };
-    }
-
-    fn draw_right_white_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-        drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
-        drawing::blend_rect(canvas, 240, y, 16, 1, color);
-    }
-
-    fn draw_center_white_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-        drawing::blend_rect(canvas, 240, y, 16, 1, color);
-        drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
-        drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
-    }
-
-    fn draw_left_white_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-        drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
-        drawing::blend_rect(canvas, 240, y, 16, 1, color);
-    }
-
-    fn draw_black_key(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-        drawing::blend_rect(canvas, 241, y - 1, 7, 1, color);
-        drawing::blend_rect(canvas, 240, y, 8, 1, color);
-        drawing::blend_rect(canvas, 241, y + 1, 7, 1, color);
-    }
-
-    fn draw_speaker_key(canvas: &mut SimpleBuffer, color: Color) {
-        drawing::blend_rect(canvas, 240, 228, 2, 1, color);
-        drawing::blend_rect(canvas, 242, 226, 3, 5, color);
-        drawing::blend_rect(canvas, 245, 225, 1, 7, color);
-        drawing::blend_rect(canvas, 246, 224, 1, 9, color);
-        drawing::blend_rect(canvas, 247, 223, 1, 11, color);
-        drawing::blend_rect(canvas, 248, 222, 1, 13, color);
-        drawing::blend_rect(canvas, 250, 226, 1, 5, color);
-        drawing::blend_rect(canvas, 252, 224, 1, 9, color);
     }
 
     fn draw_piano_strings(&mut self) {
@@ -176,7 +208,7 @@ impl PianoRollWindow {
             drawing::rect(&mut self.canvas, 248, y, 8, 1, lower_key_pixels[pixel_index as usize]);
         }
         drawing::rect(&mut self.canvas, 240, 0, 1, 240, top_edge);
-        PianoRollWindow::draw_speaker_key(&mut self.canvas, black_key);
+        draw_speaker_key(&mut self.canvas, black_key);
     }
 
     fn draw_key_spot(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32) {
@@ -187,22 +219,22 @@ impl PianoRollWindow {
                 let mut base_color = slice.color;
                 let volume_percent = slice.thickness / 6.0;
                 base_color.set_alpha((volume_percent * 255.0) as u8);
-                PianoRollWindow::draw_speaker_key(canvas, base_color);
+                draw_speaker_key(canvas, base_color);
             },
             _ => {
                 let key_drawing_functions = [
-                    PianoRollWindow::draw_left_white_key,   //C
-                    PianoRollWindow::draw_right_white_key,  //B
-                    PianoRollWindow::draw_black_key,        //Bb
-                    PianoRollWindow::draw_center_white_key, //A
-                    PianoRollWindow::draw_black_key,        //Ab
-                    PianoRollWindow::draw_center_white_key, //G
-                    PianoRollWindow::draw_black_key,        //Gb
-                    PianoRollWindow::draw_left_white_key,   //F
-                    PianoRollWindow::draw_right_white_key,  //E
-                    PianoRollWindow::draw_black_key,        //Eb
-                    PianoRollWindow::draw_center_white_key, //D
-                    PianoRollWindow::draw_black_key,        //Db
+                    draw_left_white_key_horiz,   //C
+                    draw_right_white_key_horiz,  //B
+                    draw_black_key_horiz,        //Bb
+                    draw_center_white_key_horiz, //A
+                    draw_black_key_horiz,        //Ab
+                    draw_center_white_key_horiz, //G
+                    draw_black_key_horiz,        //Gb
+                    draw_left_white_key_horiz,   //F
+                    draw_right_white_key_horiz,  //E
+                    draw_black_key_horiz,        //Eb
+                    draw_center_white_key_horiz, //D
+                    draw_black_key_horiz,        //Db
                 ];
 
                 let mut base_color = slice.color;
