@@ -276,8 +276,6 @@ pub fn main() {
     while (device.size() as usize) + (runtime_state.nes.apu.samples_queued() * 2) < 4096 {
       new_frames += 1;
       if runtime_state.running {
-        application_events.push(events::Event::NesRunFrame);
-
         // Play Audio (leave this loop when this buffer fills)
         if runtime_state.nes.apu.buffer_full {
           let buffer_size = runtime_state.nes.apu.output_buffer.len();
@@ -297,12 +295,23 @@ pub fn main() {
         device.queue(&buffer);
       }
 
-      // Process all the application-level events
-      let events_to_process = application_events.clone();
-      application_events.clear();
-      for event in events_to_process{
-        application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
-      }      
+      // Run one frame, by running 262 scanlines (so we can capture events inbetween)
+      while runtime_state.nes.ppu.current_scanline == 242 {
+        application_events.push(events::Event::NesRunScanline);
+        let events_to_process = application_events.clone();
+        application_events.clear();
+        for event in events_to_process {
+          application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+        }
+      }
+      while runtime_state.nes.ppu.current_scanline != 242 {
+        application_events.push(events::Event::NesRunScanline);
+        let events_to_process = application_events.clone();
+        application_events.clear();
+        for event in events_to_process {
+          application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+        }
+      }
 
       application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
     }
