@@ -59,29 +59,31 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   };
 }
 
-fn dump_frame(nes: &NesState, file_handle: &mut File) {
-  let mut rgba_pixels: [u8; 3 * 256 * 240] = [0; 3 * 256 * 240]; 
-  for x in 0 .. 256 {
-    for y in 0 .. 240 {
-      let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
-      let pixel_index = (256 * y + x) * 3;
-      rgba_pixels[pixel_index + 0] = NTSC_PAL[palette_index + 0];
-      rgba_pixels[pixel_index + 1] = NTSC_PAL[palette_index + 1];
-      rgba_pixels[pixel_index + 2] = NTSC_PAL[palette_index + 2];
-    }
+// Note: Later we should use the ui-common library, and dump panels instead of just the game screen. That
+// will be very flexible and useful.
+fn dump_frame(nes: &NesState, file_handle: &mut Option<File>) {
+  match file_handle {
+    Some(file) => {
+      let mut rgba_pixels: [u8; 3 * 256 * 240] = [0; 3 * 256 * 240]; 
+      for x in 0 .. 256 {
+        for y in 0 .. 240 {
+          let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
+          let pixel_index = (256 * y + x) * 3;
+          rgba_pixels[pixel_index + 0] = NTSC_PAL[palette_index + 0];
+          rgba_pixels[pixel_index + 1] = NTSC_PAL[palette_index + 1];
+          rgba_pixels[pixel_index + 2] = NTSC_PAL[palette_index + 2];
+        }
+      }
+      let _ = file.write_all(&rgba_pixels);
+    },
+    None => {}
   }
-  let _ = file_handle.write_all(&rgba_pixels);
 }
 
 fn run(nes: &mut NesState, frames: u64, options: &mut RuntimeOptions) {
   for _ in 0 .. frames {
     nes.run_until_vblank();
-    match &mut options.game_file {
-      Some(file) => {
-        dump_frame(nes, file);
-      },
-      None => {}
-    }
+    dump_frame(nes, &mut options.game_file);
   }
 }
 

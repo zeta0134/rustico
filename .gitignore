@@ -7,3 +7,5 @@
 *.raw
 *.mp4
 Cargo.lock
+
+pipe_test.sh
