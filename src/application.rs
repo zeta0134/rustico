@@ -11,6 +11,10 @@ pub struct RuntimeState {
     pub nes: NesState,
     pub running: bool,
     pub file_loaded: bool,
+    pub last_frame: u32,
+    pub last_scanline: u16,
+    pub last_apu_quarter_frame_count: u32,
+    pub last_apu_half_frame_count: u32,
 }
 
 impl RuntimeState {
@@ -19,6 +23,10 @@ impl RuntimeState {
             nes: NesState::new(Box::new(NoneMapper::new())),
             file_loaded: false,
             running: false,
+            last_frame: 0,
+            last_scanline: 0,
+            last_apu_quarter_frame_count: 0,
+            last_apu_half_frame_count: 0,
         }
     }
 
@@ -80,6 +88,27 @@ impl RuntimeState {
         *controllers[player_index] = new_controller_byte;
     }
 
+    pub fn collect_timing_events(&mut self) -> Vec<Event> {
+        let mut responses: Vec<Event> = Vec::new();
+        if self.nes.ppu.current_frame != self.last_frame {
+            responses.push(Event::NesNewFrame);
+            self.last_frame = self.nes.ppu.current_frame;
+        }
+        if self.nes.ppu.current_scanline != self.last_scanline {
+            responses.push(Event::NesNewScanline);
+            self.last_scanline = self.nes.ppu.current_scanline;
+        }
+        if self.nes.apu.quarter_frame_counter != self.last_apu_quarter_frame_count {
+            responses.push(Event::NesNewApuQuarterFrame);
+            self.last_apu_quarter_frame_count = self.nes.apu.quarter_frame_counter
+        }
+        if self.nes.apu.half_frame_counter != self.last_apu_half_frame_count {
+            responses.push(Event::NesNewApuHalfFrame);
+            self.last_apu_half_frame_count = self.nes.apu.half_frame_counter
+        }
+        return responses;
+    }
+
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
         let mut responses: Vec<Event> = Vec::new();
         match event {
@@ -99,15 +128,18 @@ impl RuntimeState {
             },
             Event::NesRunCycle => {
                 self.nes.cycle();
+                responses.extend(self.collect_timing_events());
             },
             Event::NesRunFrame => {
                 self.nes.run_until_vblank();
+                responses.extend(self.collect_timing_events());
             },
             Event::NesRunOpcode => {
                 self.nes.step();
             },
             Event::NesRunScanline => {
                 self.nes.run_until_hblank();
+                responses.extend(self.collect_timing_events());
             },
             Event::NesReset => {
                 self.nes.reset();
