@@ -127,7 +127,7 @@ impl PianoRollWindow {
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
             polling_counter: 1,
-            scroll_direction: ScrollDirection::RightToLeft,
+            scroll_direction: ScrollDirection::LeftToRight,
             key_size: KeySize::Small,
             polling_type: PollingType::PpuFrame,
             polling_period: 1,
@@ -438,7 +438,7 @@ impl PianoRollWindow {
         };
     }
 
-    fn draw_slice_horiz(canvas: &mut SimpleBuffer, slice: &ChannelSlice, x: u32, base_y: u32, dmc_y: u32, key_height: u32) {
+    fn draw_slice_horiz(canvas: &mut SimpleBuffer, slice: &ChannelSlice, x: u32, base_y: u32, key_height: u32) {
         if !slice.visible {return;}
         let effective_y = (base_y as f64) - (slice.y * (key_height as f64)) + 0.5;
 
@@ -477,11 +477,11 @@ impl PianoRollWindow {
         }
     }
 
-    fn draw_slices_horiz(&mut self, starting_x: u32, base_y: u32, dmc_y: u32, step_direction: i32) {
+    fn draw_slices_horiz(&mut self, starting_x: u32, base_y: u32, step_direction: i32) {
         let mut x = starting_x;
         for channel_slice in self.time_slices.iter() {
             for note in channel_slice.iter() {
-                PianoRollWindow::draw_slice_horiz(&mut self.canvas, &note, x, base_y, dmc_y, self.key_height);
+                PianoRollWindow::draw_slice_horiz(&mut self.canvas, &note, x, base_y, self.key_height);
             }
             // bail if we hit either screen edge:
             if x == 0 || x == (self.canvas.width - 1) {
@@ -522,9 +522,26 @@ impl PianoRollWindow {
         self.draw_waveform_string_horiz(0, waveform_string_pos, string_width);
         self.draw_piano_keys_horiz(string_width, bottom_key);
         //draw_speaker_key(&mut self.canvas, black_key);
-        self.draw_slices_horiz(string_width, bottom_key, waveform_string_pos, -1);
+        self.draw_slices_horiz(string_width, bottom_key, -1);
         self.draw_key_spots_horiz(string_width, bottom_key);
     }
+
+    fn draw_left_to_right(&mut self) {
+        let waveform_area_height = 32;
+        let waveform_string_pos = self.canvas.height - 16;
+        let key_width = 16;
+        let bottom_key = self.canvas.height - waveform_area_height;
+        let string_width = self.canvas.width - key_width;
+
+        self.draw_piano_strings_horiz(key_width, bottom_key, string_width);
+        self.draw_waveform_string_horiz(key_width, waveform_string_pos, string_width);
+        self.draw_piano_keys_horiz(0, bottom_key);
+
+        //draw_speaker_key(&mut self.canvas, black_key);
+
+        self.draw_slices_horiz(key_width, bottom_key, 1);
+        self.draw_key_spots_horiz(0, bottom_key);
+    }    
 
     fn draw(&mut self) {
         let width = self.canvas.width;
@@ -532,6 +549,7 @@ impl PianoRollWindow {
         drawing::rect(&mut self.canvas, 0, 0, width, height, Color::rgb(0,0,0));
         match self.scroll_direction {
             ScrollDirection::RightToLeft => {self.draw_right_to_left()},
+            ScrollDirection::LeftToRight => {self.draw_left_to_right()},
         _ => {/* unimplemented */}
         }
     }
