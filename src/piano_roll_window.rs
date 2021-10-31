@@ -13,6 +13,7 @@ use rusticnes_core::mmc::mapper::Mapper;
 
 use std::collections::VecDeque;
 
+#[derive(Clone, Copy)]
 pub enum NoteType {
     Frequency,
     Noise,
@@ -41,39 +42,39 @@ impl ChannelSlice {
 }
 
 
-fn draw_right_white_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-    drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
-    drawing::blend_rect(canvas, 240, y, 16, 1, color);
+fn draw_right_white_key_horiz(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color) {
+    drawing::blend_rect(canvas, x + 8, y + 1, 8, 1, color);
+    drawing::blend_rect(canvas, x + 1, y,    15, 1, color);
 }
 
-fn draw_center_white_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-    drawing::blend_rect(canvas, 240, y, 16, 1, color);
-    drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
-    drawing::blend_rect(canvas, 248, y + 1, 8, 1, color);
+fn draw_center_white_key_horiz(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color) {
+    drawing::blend_rect(canvas, x + 1, y,    15, 1, color);
+    drawing::blend_rect(canvas, x + 8, y - 1, 8, 1, color);
+    drawing::blend_rect(canvas, x + 8, y + 1, 8, 1, color);
 }
 
-fn draw_left_white_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-    drawing::blend_rect(canvas, 248, y - 1, 8, 1, color);
-    drawing::blend_rect(canvas, 240, y, 16, 1, color);
+fn draw_left_white_key_horiz(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color) {
+    drawing::blend_rect(canvas, x + 8, y - 1, 8, 1, color);
+    drawing::blend_rect(canvas, x + 1, y,    15, 1, color);
 }
 
-fn draw_black_key_horiz(canvas: &mut SimpleBuffer, y: u32, color: Color) {
-    drawing::blend_rect(canvas, 241, y - 1, 7, 1, color);
-    drawing::blend_rect(canvas, 240, y, 8, 1, color);
-    drawing::blend_rect(canvas, 241, y + 1, 7, 1, color);
+fn draw_black_key_horiz(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color) {
+    drawing::blend_rect(canvas, x + 1, y - 1, 7, 1, color);
+    drawing::blend_rect(canvas, x + 1, y,     7, 1, color);
+    drawing::blend_rect(canvas, x + 1, y + 1, 7, 1, color);
 }
 
-fn draw_speaker_key(canvas: &mut SimpleBuffer, color: Color) {
-    drawing::blend_rect(canvas, 240, 228, 2, 1, color);
-    drawing::blend_rect(canvas, 242, 226, 3, 5, color);
-    drawing::blend_rect(canvas, 245, 225, 1, 7, color);
-    drawing::blend_rect(canvas, 246, 224, 1, 9, color);
-    drawing::blend_rect(canvas, 247, 223, 1, 11, color);
-    drawing::blend_rect(canvas, 248, 222, 1, 13, color);
-    drawing::blend_rect(canvas, 250, 226, 1, 5, color);
-    drawing::blend_rect(canvas, 252, 224, 1, 9, color);
+fn draw_speaker_key_horiz(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32) {
+    drawing::blend_rect(canvas, x +  2, y + 6 - 8, 3, 5, color);
+    drawing::blend_rect(canvas, x +  5, y + 5 - 8, 1, 7, color);
+    drawing::blend_rect(canvas, x +  6, y + 4 - 8, 1, 9, color);
+    drawing::blend_rect(canvas, x +  7, y + 3 - 8, 1, 11, color);
+    drawing::blend_rect(canvas, x +  8, y + 2 - 8, 1, 13, color);
+    drawing::blend_rect(canvas, x + 10, y + 6 - 8, 1, 5, color);
+    drawing::blend_rect(canvas, x + 12, y + 4 - 8, 1, 9, color);
 }
 
+#[derive(Clone, Copy)]
 pub enum ScrollDirection {
     RightToLeft,
     LeftToRight,
@@ -81,12 +82,14 @@ pub enum ScrollDirection {
     BottomToTop
 }
 
+#[derive(Clone, Copy)]
 pub enum KeySize {
     Small,
     Medium,
     Large
 }
 
+#[derive(Clone, Copy)]
 pub enum PollingType {
     PpuFrame,
     PpuScanline,
@@ -109,17 +112,17 @@ pub struct PianoRollWindow {
     pub scroll_direction: ScrollDirection,
     pub key_size: KeySize,
     pub polling_type: PollingType,
-    pub polling_frequency: usize,
+    pub polling_period: usize,
 }
 
 impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
         return PianoRollWindow {
-            canvas: SimpleBuffer::new(480, 270),            
+            canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
             shown: true,
             keys: 109,
             key_height: 2,
-            roll_width: 240,
+            roll_width: 464,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
@@ -127,40 +130,47 @@ impl PianoRollWindow {
             scroll_direction: ScrollDirection::RightToLeft,
             key_size: KeySize::Small,
             polling_type: PollingType::PpuFrame,
-            polling_frequency: 1,
+            polling_period: 1,
         };
     }
 
-    fn draw_piano_strings(&mut self) {
+    fn draw_piano_strings_horiz(&mut self, x: u32, starting_y: u32, width: u32) {
         let white_string = Color::rgb(0x0C, 0x0C, 0x0C);
         let black_string = Color::rgb(0x06, 0x06, 0x06);
 
         let string_colors = [
             white_string, //C
-            white_string, //B
-            black_string, //Bb
-            white_string, //A
-            black_string, //Ab
-            white_string, //G
-            black_string, //Gb
-            white_string, //F
-            white_string, //E
-            black_string, //Eb
-            white_string, //D
             black_string, //Db
+            white_string, //D
+            black_string, //Eb
+            white_string, //E
+            white_string, //F
+            black_string, //Gb
+            white_string, //G
+            black_string, //Ab
+            white_string, //A
+            black_string, //Bb
+            white_string, //B
         ];
 
-        for i in 0 .. self.keys {
-            let string_color = string_colors[(i % 12) as usize];
-            let y = i * self.key_height;
-            drawing::rect(&mut self.canvas, 0, y, 240, 1, string_color);
+        let mut key_counter = 0;
+        let mut y = starting_y;
+        let safety_margin = 0 + self.key_height * 2;
+        while key_counter < self.keys && y > safety_margin {
+            let string_color = string_colors[(key_counter % 12) as usize];
+            drawing::rect(&mut self.canvas, x, y, width, 1, string_color);
+            y -= self.key_height;
+            key_counter += 1;
         }
-
-        // Draw one extra string for the waveform display
-        drawing::rect(&mut self.canvas, 0, 228, 240, 1, black_string);
     }
 
-    fn draw_piano_keys(&mut self) {
+    fn draw_waveform_string_horiz(&mut self, x: u32, y: u32, width: u32) {
+        let waveform_string = Color::rgb(0x06, 0x06, 0x06);
+        // Draw one extra string for the waveform display
+        drawing::rect(&mut self.canvas, x, y, width, 1, waveform_string);
+    }
+
+    fn draw_piano_keys_horiz(&mut self, x: u32, base_y: u32) {
         let white_key_border = Color::rgb(0x1C, 0x1C, 0x1C);
         let white_key = Color::rgb(0x20, 0x20, 0x20);
         let black_key = Color::rgb(0x00, 0x00, 0x00);
@@ -168,50 +178,50 @@ impl PianoRollWindow {
 
         let upper_key_pixels = [
           white_key, // C
-          white_key_border, 
-          white_key, // B
-          black_key, black_key, black_key, // Bb
-          white_key, // A
-          black_key, black_key, black_key, // Ab
-          white_key, // G
-          black_key, black_key, black_key, // Gb
-          white_key, // F
-          white_key_border,
-          white_key, // E
-          black_key, black_key, black_key, // Eb
-          white_key, // D
           black_key, black_key, black_key, // Db
+          white_key, // D
+          black_key, black_key, black_key, // Eb
+          white_key, // E
+          white_key_border,
+          white_key, // F
+          black_key, black_key, black_key, // Gb
+          white_key, // G
+          black_key, black_key, black_key, // Ab
+          white_key, // A
+          black_key, black_key, black_key, // Bb
+          white_key, // B
+          white_key_border, 
         ];
 
         let lower_key_pixels = [
           white_key, // C (bottom half)
+          white_key, // C (top half)
           white_key_border,
-          white_key, white_key, // B
+          white_key, white_key, white_key, // D
           white_key_border, 
-          white_key, white_key, white_key, // A
-          white_key_border, 
-          white_key, white_key, white_key, // G
+          white_key, white_key, // E
           white_key_border,
           white_key, white_key, // F
           white_key_border,
-          white_key, white_key, // E
+          white_key, white_key, white_key, // G
           white_key_border, 
-          white_key, white_key, white_key, // D
+          white_key, white_key, white_key, // A
+          white_key_border, 
+          white_key, white_key, // B
           white_key_border,
-          white_key, // C (top half)
         ];
 
-        drawing::rect(&mut self.canvas, 240, 0, 16, 240, top_edge);
-        for y in 0 .. self.keys * self.key_height {
+        let canvas_height = self.canvas.height;
+        drawing::rect(&mut self.canvas, x, 0, 16, canvas_height, top_edge);
+        for y in 0 .. self.keys * self.key_height - 1 {
             let pixel_index = y % upper_key_pixels.len() as u32;
-            drawing::rect(&mut self.canvas, 240, y, 8, 1, upper_key_pixels[pixel_index as usize]);
-            drawing::rect(&mut self.canvas, 248, y, 8, 1, lower_key_pixels[pixel_index as usize]);
+            drawing::rect(&mut self.canvas, x+0, base_y - y, 8, 1, upper_key_pixels[pixel_index as usize]);
+            drawing::rect(&mut self.canvas, x+8, base_y - y, 8, 1, lower_key_pixels[pixel_index as usize]);
         }
-        drawing::rect(&mut self.canvas, 240, 0, 1, 240, top_edge);
-        draw_speaker_key(&mut self.canvas, black_key);
+        drawing::rect(&mut self.canvas, x, 0, 1, canvas_height, top_edge);
     }
 
-    fn draw_key_spot(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32) {
+    fn draw_key_spot_horiz(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32, x: u32, starting_y: u32) {
         if !slice.visible {return;}
 
         match slice.note_type {
@@ -219,27 +229,27 @@ impl PianoRollWindow {
                 let mut base_color = slice.color;
                 let volume_percent = slice.thickness / 6.0;
                 base_color.set_alpha((volume_percent * 255.0) as u8);
-                draw_speaker_key(canvas, base_color);
+                draw_speaker_key_horiz(canvas, base_color, x, ((starting_y as f64) - slice.y * (key_height as f64)) as u32);
             },
             _ => {
                 let key_drawing_functions = [
                     draw_left_white_key_horiz,   //C
-                    draw_right_white_key_horiz,  //B
-                    draw_black_key_horiz,        //Bb
-                    draw_center_white_key_horiz, //A
-                    draw_black_key_horiz,        //Ab
-                    draw_center_white_key_horiz, //G
-                    draw_black_key_horiz,        //Gb
-                    draw_left_white_key_horiz,   //F
-                    draw_right_white_key_horiz,  //E
-                    draw_black_key_horiz,        //Eb
-                    draw_center_white_key_horiz, //D
                     draw_black_key_horiz,        //Db
+                    draw_center_white_key_horiz, //D
+                    draw_black_key_horiz,        //Eb
+                    draw_right_white_key_horiz,  //E
+                    draw_left_white_key_horiz,   //F
+                    draw_black_key_horiz,        //Gb
+                    draw_center_white_key_horiz, //G
+                    draw_black_key_horiz,        //Ab
+                    draw_center_white_key_horiz, //A
+                    draw_black_key_horiz,        //Bb
+                    draw_right_white_key_horiz,  //B
                 ];
 
                 let mut base_color = slice.color;
 
-                let note_key = ((slice.y + 1.5) / key_height as f64) - 1.0;
+                let note_key = slice.y;
                 let base_key = note_key.floor();
                 let adjacent_key = note_key.ceil();
 
@@ -248,16 +258,16 @@ impl PianoRollWindow {
                 let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
                 let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
-                let base_y = base_key * key_height as f64;
+                let base_y = (starting_y as f64) - base_key * key_height as f64;
                 if base_y > 1.0 && base_y < (canvas.height - 2) as f64 {
                     base_color.set_alpha((base_percent * 255.0) as u8);
-                    key_drawing_functions[base_key as usize % 12](canvas, base_y as u32, base_color);
+                    key_drawing_functions[base_key as usize % 12](canvas, x, base_y as u32, base_color);
                 }
 
-                let adjacent_y = adjacent_key * key_height as f64;
+                let adjacent_y = (starting_y as f64) - adjacent_key * key_height as f64;
                 if adjacent_y > 1.0 && adjacent_y < (canvas.height - 2) as f64 {
                     base_color.set_alpha((adjacent_percent * 255.0) as u8);
-                    key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_y as u32, base_color);
+                    key_drawing_functions[adjacent_key as usize % 12](canvas, x, adjacent_y as u32, base_color);
                 }
             }
         }        
@@ -268,9 +278,9 @@ impl PianoRollWindow {
         let lowest_log = self.lowest_frequency.ln();
         let range = highest_log - lowest_log;
         let note_log = note_frequency.ln();
-        let piano_roll_height = (self.keys * self.key_height) as f64;
+        let piano_roll_height = (self.keys) as f64;
         let coordinate = (note_log - lowest_log) * piano_roll_height / range;
-        return piano_roll_height - coordinate - 1.5;
+        return coordinate;
     }
 
     pub fn channel_colors(channel: &dyn AudioChannelState) -> Vec<Color> {
@@ -389,20 +399,16 @@ impl PianoRollWindow {
             PlaybackRate::LfsrRate{index, max} => {
                 note_type = NoteType::Noise;
 
+
                 // Arbitrarily map all noise frequencies to 16 "strings" since this is what the
                 // base 2A03 uses. Accuracy is much less important here.
                 let string_coord = (index as f64 / (max + 1) as f64) * 16.0;
-                let key_offset = string_coord * self.key_height as f64;
-
-                // Hrm. Experiment: let's try basing it around C0, so the notes match what you might
-                // enter in FamiTracker
-                let base_freq = 8.176;
-                let base_y = self.frequency_to_coordinate(base_freq);
-                y = base_y - key_offset;
+                let key_offset = string_coord as f64;
+                y = key_offset;
 
             },
             PlaybackRate::SampleRate{frequency: _} => {
-                y = 228.5;
+                y = -8.0;
                 note_type = NoteType::Waveform;
             }
         }
@@ -432,10 +438,12 @@ impl PianoRollWindow {
         };
     }
 
-    fn draw_slice(canvas: &mut SimpleBuffer, slice: &ChannelSlice, x: u32) {
+    fn draw_slice_horiz(canvas: &mut SimpleBuffer, slice: &ChannelSlice, x: u32, base_y: u32, dmc_y: u32, key_height: u32) {
         if !slice.visible {return;}
-        let top_edge = slice.y - (slice.thickness / 2.0);
-        let bottom_edge = slice.y + (slice.thickness / 2.0);
+        let effective_y = (base_y as f64) - (slice.y * (key_height as f64)) + 0.5;
+
+        let top_edge = effective_y - (slice.thickness / 2.0);
+        let bottom_edge = effective_y + (slice.thickness / 2.0);
         let top_floor = top_edge.floor();
         let bottom_floor = bottom_edge.floor();
 
@@ -469,22 +477,23 @@ impl PianoRollWindow {
         }
     }
 
-    fn draw_slices(&mut self) {
-        let mut x = 239;
+    fn draw_slices_horiz(&mut self, starting_x: u32, base_y: u32, dmc_y: u32, step_direction: i32) {
+        let mut x = starting_x;
         for channel_slice in self.time_slices.iter() {
             for note in channel_slice.iter() {
-                PianoRollWindow::draw_slice(&mut self.canvas, &note, x);    
+                PianoRollWindow::draw_slice_horiz(&mut self.canvas, &note, x, base_y, dmc_y, self.key_height);
             }
-            if x == 0 {
+            // bail if we hit either screen edge:
+            if x == 0 || x == (self.canvas.width - 1) {
                 return; //bail! don't draw offscreen
             }
-            x -= 1;
+            x = (x as i32 + step_direction) as u32;
         }
     }
 
-    fn draw_key_spots(&mut self) {
+    fn draw_key_spots_horiz(&mut self, x: u32, base_y: u32) {
         for note in self.time_slices.front().unwrap_or(&Vec::new()) {
-            PianoRollWindow::draw_key_spot(&mut self.canvas, &note, self.key_height);
+            PianoRollWindow::draw_key_spot_horiz(&mut self.canvas, &note, self.key_height, x, base_y);
         }
     }
 
@@ -502,12 +511,29 @@ impl PianoRollWindow {
         }
     }
 
+    fn draw_right_to_left(&mut self) {
+        let waveform_area_height = 32;
+        let waveform_string_pos = self.canvas.height - 16;
+        let key_width = 16;
+        let bottom_key = self.canvas.height - waveform_area_height;
+        let string_width = self.canvas.width - key_width;
+
+        self.draw_piano_strings_horiz(0, bottom_key, string_width);
+        self.draw_waveform_string_horiz(0, waveform_string_pos, string_width);
+        self.draw_piano_keys_horiz(string_width, bottom_key);
+        //draw_speaker_key(&mut self.canvas, black_key);
+        self.draw_slices_horiz(string_width, bottom_key, waveform_string_pos, -1);
+        self.draw_key_spots_horiz(string_width, bottom_key);
+    }
+
     fn draw(&mut self) {
-        drawing::rect(&mut self.canvas, 0, 0, 256, 240, Color::rgb(0,0,0));
-        self.draw_piano_strings();
-        self.draw_piano_keys();
-        self.draw_slices();
-        self.draw_key_spots();
+        let width = self.canvas.width;
+        let height = self.canvas.height;
+        drawing::rect(&mut self.canvas, 0, 0, width, height, Color::rgb(0,0,0));
+        match self.scroll_direction {
+            ScrollDirection::RightToLeft => {self.draw_right_to_left()},
+        _ => {/* unimplemented */}
+        }
     }
 }
 
