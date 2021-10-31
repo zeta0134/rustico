@@ -4,4 +4,6 @@
 
 *.nes
 *.png
+*.raw
+*.mp4
 Cargo.lock

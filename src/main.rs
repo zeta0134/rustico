@@ -16,7 +16,15 @@ use std::io::BufReader;
 use std::io::BufRead;
 
 pub struct RuntimeOptions {
-  pub game_file: File,
+  pub game_file: Option<File>,
+}
+
+impl RuntimeOptions {
+  pub fn new() -> RuntimeOptions {
+    return RuntimeOptions{
+      game_file: None,
+    }
+  }
 }
 
 fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
@@ -51,9 +59,29 @@ fn load_cartridge(nes: &mut NesState, cartridge_path: &str) {
   };
 }
 
-fn run(nes: &mut NesState, frames: u64) {
+fn dump_frame(nes: &NesState, file_handle: &mut File) {
+  let mut rgba_pixels: [u8; 3 * 256 * 240] = [0; 3 * 256 * 240]; 
+  for x in 0 .. 256 {
+    for y in 0 .. 240 {
+      let palette_index = ((nes.ppu.screen[y * 256 + x]) as usize) * 3;
+      let pixel_index = (256 * y + x) * 3;
+      rgba_pixels[pixel_index + 0] = NTSC_PAL[palette_index + 0];
+      rgba_pixels[pixel_index + 1] = NTSC_PAL[palette_index + 1];
+      rgba_pixels[pixel_index + 2] = NTSC_PAL[palette_index + 2];
+    }
+  }
+  let _ = file_handle.write_all(&rgba_pixels);
+}
+
+fn run(nes: &mut NesState, frames: u64, options: &mut RuntimeOptions) {
   for _ in 0 .. frames {
     nes.run_until_vblank();
+    match &mut options.game_file {
+      Some(file) => {
+        dump_frame(nes, file);
+      },
+      None => {}
+    }
   }
 }
 
@@ -61,7 +89,7 @@ fn reset(nes: &mut NesState) {
   nes.reset();
 }
 
-fn tap(nes: &mut NesState, button: &str, frames: u64) {
+fn tap(nes: &mut NesState, button: &str, frames: u64, options: &mut RuntimeOptions) {
   let button_index: u8 = match button {
     "a" => 0,
     "b" => 1,
@@ -74,7 +102,7 @@ fn tap(nes: &mut NesState, button: &str, frames: u64) {
     _ => panic!("Invalid button to tap: {}", button)
   };
   nes.p1_input |= 0x1 << button_index;
-  run(nes, frames);
+  run(nes, frames, options);
   nes.p1_input ^= 0x1 << button_index;
 }
 
@@ -156,6 +184,8 @@ fn command_file(nes: &mut NesState, command_path: &str) {
 }
 
 fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
+  let mut options = RuntimeOptions::new();
+
   while command_list.len() > 0 {
     let command = command_list.remove(0);
     match command.as_ref() {
@@ -165,7 +195,7 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
       },
       "run" | "frames" => {
         let frames: u64 = command_list.remove(0).parse().unwrap();
-        run(nes, frames);
+        run(nes, frames, &mut options);
       },
       "reset" => {
         reset(nes);
@@ -173,7 +203,7 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
       "tap" => {
         let button = command_list.remove(0);
         let frames: u64 = command_list.remove(0).parse().unwrap();
-        tap(nes, button.as_ref(), frames);
+        tap(nes, button.as_ref(), frames, &mut options);
       }
       "screenshot" => {
         let cartridge_path = command_list.remove(0);
@@ -187,6 +217,25 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
         let command_file_path = command_list.remove(0);
         command_file(nes, command_file_path.as_ref());
       },
+      "video" => {
+        let panel = command_list.remove(0);
+        let output_path = command_list.remove(0);
+        match panel.as_str() {
+          "game" => {
+            match File::create(&output_path) {
+              Err(why) => {
+                panic!("Couldn't open {}: {}", output_path, why);
+              },
+              Ok(file) => {
+                options.game_file = Some(file);
+              }
+            }
+          },
+          _ => {
+            println!("Unrecognized panel name {}, ignoring", panel);
+          }
+        }
+      }
       "#" => {
         // A comment! Everything on this line is discarded
         return;
