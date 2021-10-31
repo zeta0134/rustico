@@ -8,6 +8,8 @@ use rusticnes_core::cartridge::mapper_from_file;
 
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
+use rusticnes_ui_common::panel::Panel;
+use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
 
 use std::env;
 use std::fs::File;
@@ -20,7 +22,9 @@ use std::io::BufRead;
 
 pub struct CliRuntimeState {
   pub core: RusticNesRuntimeState,
+  pub piano_roll_panel: PianoRollWindow,
   pub game_file: Option<File>,
+  pub piano_file: Option<File>,
   pub audio_file: Option<File>,
 }
 
@@ -28,7 +32,9 @@ impl CliRuntimeState {
   pub fn new() -> CliRuntimeState {
     return CliRuntimeState{
       core: RusticNesRuntimeState::new(),
+      piano_roll_panel: PianoRollWindow::new(),
       game_file: None,
+      piano_file: None,
       audio_file: None,
     }
   }
@@ -37,9 +43,9 @@ impl CliRuntimeState {
 pub fn dispatch_event(state: &mut CliRuntimeState, event: events::Event) {
   let mut responses: Vec<events::Event> = Vec::new();
   // Process application events here, passing in a reference to core state
-  // (there aren't any yet!)
+  responses.extend(state.piano_roll_panel.handle_event(&state.core, event.clone()));
 
-  // Now process core state, passing in a reference to itself
+  // Now process core state, which needs only a reference to itself
   responses.extend(state.core.handle_event(event.clone()));
 
   // Finally, recursively dispatch any responses we got to this event, bubbling those up the chain
@@ -116,13 +122,39 @@ fn dump_audio(state: &mut CliRuntimeState) {
   }
 }
 
+fn dump_panel(file_handle: &mut Option<File>, panel: & dyn Panel) {
+  match file_handle {
+    Some(file) => {
+      let width = panel.active_canvas().width as usize;
+      let height = panel.active_canvas().height as usize;
+      let buffer_size = width * height * 3;
+      let mut buffer = vec!(0u8; buffer_size);
+      for x in 0 .. width {
+        for y in 0 .. height {
+          let pixel_index = (width * y + x) * 3;
+          let color = panel.active_canvas().get_pixel(x as u32, y as u32);
+          buffer[pixel_index + 0] = color.r();
+          buffer[pixel_index + 1] = color.g();
+          buffer[pixel_index + 2] = color.b();
+        }
+      }
+      let _ = file.write_all(&buffer);
+    }
+    None => {}
+  }
+}
 
 fn run(state: &mut CliRuntimeState, frames: u64) {
   for _ in 0 .. frames {
-    //state.core.nes.run_until_vblank();
+    // Run the core emulator for one frame
     dispatch_event(state, events::Event::NesRunFrame);
+    // Run each panel for one frame, simulating a draw step
+    dispatch_event(state, events::Event::Update);
+    dispatch_event(state, events::Event::RequestFrame);
+    // If there are any outstanding dump configurations, process those
     dump_frame(state);
     dump_audio(state);
+    dump_panel(&mut state.piano_file, &state.piano_roll_panel);
   }
 }
 
@@ -233,6 +265,7 @@ fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<Strin
         // TODO: implement this with the standard event instead
         let cartridge_path = command_list.remove(0);
         load_cartridge(&mut state.core.nes, cartridge_path.as_ref());
+        state.core.running = true;
       },
       "run" | "frames" => {
         let frames: u64 = command_list.remove(0).parse().unwrap();
@@ -262,19 +295,22 @@ fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<Strin
       "video" => {
         let panel = command_list.remove(0);
         let output_path = command_list.remove(0);
-        match panel.as_str() {
-          "game" => {
-            match File::create(&output_path) {
-              Err(why) => {
-                panic!("Couldn't open {}: {}", output_path, why);
-              },
-              Ok(file) => {
+        match File::create(&output_path) {
+          Err(why) => {
+            panic!("Couldn't open {}: {}", output_path, why);
+          },
+          Ok(file) => {
+            match panel.as_str() {
+              "game" => {    
                 state.game_file = Some(file);
+              },
+              "pianoroll" => {
+                state.piano_file = Some(file);
+              },
+              _ => {
+                println!("Unrecognized panel name {}, ignoring", panel);
               }
             }
-          },
-          _ => {
-            println!("Unrecognized panel name {}, ignoring", panel);
           }
         }
       },
