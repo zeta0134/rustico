@@ -10,6 +10,7 @@ use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::panel::Panel;
 use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
+use rusticnes_ui_common::event_window::EventWindow;
 
 use std::env;
 use std::fs::File;
@@ -23,9 +24,11 @@ use std::io::BufRead;
 pub struct CliRuntimeState {
   pub core: RusticNesRuntimeState,
   pub piano_roll_panel: PianoRollWindow,
+  pub event_viewer_panel: EventWindow,
   pub game_file: Option<File>,
   pub piano_file: Option<File>,
   pub audio_file: Option<File>,
+  pub event_file: Option<File>,
 }
 
 impl CliRuntimeState {
@@ -33,9 +36,11 @@ impl CliRuntimeState {
     return CliRuntimeState{
       core: RusticNesRuntimeState::new(),
       piano_roll_panel: PianoRollWindow::new(),
+      event_viewer_panel: EventWindow::new(),
       game_file: None,
       piano_file: None,
       audio_file: None,
+      event_file: None,
     }
   }
 }
@@ -44,6 +49,7 @@ pub fn dispatch_event(state: &mut CliRuntimeState, event: events::Event) {
   let mut responses: Vec<events::Event> = Vec::new();
   // Process application events here, passing in a reference to core state
   responses.extend(state.piano_roll_panel.handle_event(&state.core, event.clone()));
+  responses.extend(state.event_viewer_panel.handle_event(&state.core, event.clone()));
 
   // Now process core state, which needs only a reference to itself
   responses.extend(state.core.handle_event(event.clone()));
@@ -155,6 +161,7 @@ fn run(state: &mut CliRuntimeState, frames: u64) {
     dump_frame(state);
     dump_audio(state);
     dump_panel(&mut state.piano_file, &state.piano_roll_panel);
+    dump_panel(&mut state.event_file, &state.event_viewer_panel);
   }
 }
 
@@ -178,6 +185,7 @@ fn tap(state: &mut CliRuntimeState, button: &str, frames: u64) {
   state.core.nes.p1_input |= 0x1 << button_index;
   run(state, frames);
   state.core.nes.p1_input ^= 0x1 << button_index;
+  run(state, frames);
 }
 
 fn save_screenshot(nes: &NesState, output_path: &str) {
@@ -306,6 +314,9 @@ fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<Strin
               },
               "pianoroll" => {
                 state.piano_file = Some(file);
+              },
+              "events" => {
+                state.event_file = Some(file);
               },
               _ => {
                 println!("Unrecognized panel name {}, ignoring", panel);
