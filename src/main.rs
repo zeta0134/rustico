@@ -17,12 +17,14 @@ use std::io::BufRead;
 
 pub struct RuntimeOptions {
   pub game_file: Option<File>,
+  pub audio_file: Option<File>,
 }
 
 impl RuntimeOptions {
   pub fn new() -> RuntimeOptions {
     return RuntimeOptions{
       game_file: None,
+      audio_file: None,
     }
   }
 }
@@ -80,10 +82,27 @@ fn dump_frame(nes: &NesState, file_handle: &mut Option<File>) {
   }
 }
 
+fn dump_audio(nes: &mut NesState, file_handle: &mut Option<File>) {
+  match file_handle {
+    Some(file) => {
+      if nes.apu.buffer_full {
+        let buffer_size = nes.apu.output_buffer.len();
+        for i in 0 .. buffer_size {
+          let _ = file.write_all(&nes.apu.output_buffer[i].to_be_bytes());
+        }
+        nes.apu.buffer_full = false;
+      }
+    },
+    None => {}
+  }
+}
+
+
 fn run(nes: &mut NesState, frames: u64, options: &mut RuntimeOptions) {
   for _ in 0 .. frames {
     nes.run_until_vblank();
     dump_frame(nes, &mut options.game_file);
+    dump_audio(nes, &mut options.audio_file);
   }
 }
 
@@ -235,6 +254,17 @@ fn process_command_list(nes: &mut NesState, mut command_list: Vec<String>) {
           },
           _ => {
             println!("Unrecognized panel name {}, ignoring", panel);
+          }
+        }
+      },
+      "audio" => {
+        let output_path = command_list.remove(0);
+        match File::create(&output_path) {
+          Err(why) => {
+            panic!("Couldn't open {}: {}", output_path, why);
+          },
+          Ok(file) => {
+            options.audio_file = Some(file);
           }
         }
       }
