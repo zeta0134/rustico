@@ -571,7 +571,7 @@ impl PianoRollWindow {
 
             },
             PlaybackRate::SampleRate{frequency: _} => {
-                y = -8.0;
+                y = 0.0;
                 note_type = NoteType::Waveform;
             }
         }
@@ -640,6 +640,45 @@ impl PianoRollWindow {
         }
     }
 
+    fn draw_slice_vert(canvas: &mut SimpleBuffer, slice: &ChannelSlice, base_x: u32, y: u32, key_width: u32) {
+        if !slice.visible {return;}
+        let effective_x = (base_x as f64) + (slice.y * (key_width as f64)) + 0.5;
+
+        let left_edge = effective_x - (slice.thickness * (key_width as f64) / 4.0);
+        let right_edge = effective_x + (slice.thickness * (key_width as f64) / 4.0);
+        let left_floor = left_edge.floor();
+        let right_floor = right_edge.floor();
+
+        // sanity range check:
+        if left_edge < 0.0 || right_edge > canvas.width as f64 {
+            return;
+        }
+
+        let mut blended_color = slice.color;
+        if left_floor == right_floor {
+            // Special case: alpha here will be related to their distance. Draw one
+            // blended point and exit
+            let alpha = right_edge - left_edge;
+            blended_color.set_alpha((alpha * 255.0) as u8);
+            canvas.blend_pixel(left_floor as u32, y, blended_color);
+            return;
+        }
+        // Alpha blend the edges
+        let left_alpha = 1.0 - (left_edge - left_floor);
+        blended_color.set_alpha((left_alpha * 255.0) as u8);
+        canvas.blend_pixel(left_floor as u32, y, blended_color);
+
+        let right_alpha = right_edge - right_floor;
+        blended_color.set_alpha((right_alpha * 255.0) as u8);
+        canvas.blend_pixel(right_floor as u32, y, blended_color);
+
+        // If there is any distance at all between the edges, draw a solid color
+        // line between them
+        for x in (left_floor as u32) + 1 .. right_floor as u32 {
+            canvas.put_pixel(x, y, slice.color);
+        }
+    }
+
     fn draw_slices_horiz(&mut self, starting_x: u32, base_y: u32, step_direction: i32) {
         let mut x = starting_x;
         for channel_slice in self.time_slices.iter() {
@@ -651,6 +690,24 @@ impl PianoRollWindow {
                 return; //bail! don't draw offscreen
             }
             x = (x as i32 + step_direction) as u32;
+        }
+    }
+
+    fn draw_slices_vert(&mut self, base_x: u32, starting_y: u32, step_direction: i32, waveform_pos: u32) {
+        let mut y = starting_y;
+        for channel_slice in self.time_slices.iter() {
+            for note in channel_slice.iter() {
+                if note.note_type == NoteType::Waveform {
+                    PianoRollWindow::draw_slice_vert(&mut self.canvas, &note, waveform_pos, y, self.key_height);
+                } else {
+                    PianoRollWindow::draw_slice_vert(&mut self.canvas, &note, base_x, y, self.key_height);
+                }
+            }
+            // bail if we hit either screen edge:
+            if y == 0 || y == (self.canvas.height - 1) {
+                return; //bail! don't draw offscreen
+            }
+            y = (y as i32 + step_direction) as u32;
         }
     }
 
@@ -724,6 +781,7 @@ impl PianoRollWindow {
         self.draw_piano_keys_vert(leftmost_key, 0);
 
         // TODO: draw slices here!
+        self.draw_slices_vert(waveform_area_width, key_height, 1, waveform_string_pos);
         self.draw_key_spots_vert(leftmost_key, 0);
     }
 
