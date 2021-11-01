@@ -384,6 +384,58 @@ impl PianoRollWindow {
         }        
     }
 
+    fn draw_key_spot_vert(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_width: u32, starting_x: u32, y: u32) {
+        if !slice.visible {return;}
+
+        match slice.note_type {
+            NoteType::Waveform => {
+                let mut base_color = slice.color;
+                let volume_percent = slice.thickness / 6.0;
+                base_color.set_alpha((volume_percent * 255.0) as u8);
+                //draw_speaker_key_horiz(canvas, base_color, ((starting_x as f64) - slice.y * (key_width as f64)) as u32, y);
+            },
+            _ => {
+                let key_drawing_functions = [
+                    draw_left_white_key_vert,   //C
+                    draw_black_key_vert,        //Db
+                    draw_center_white_key_vert, //D
+                    draw_black_key_vert,        //Eb
+                    draw_right_white_key_vert,  //E
+                    draw_left_white_key_vert,   //F
+                    draw_black_key_vert,        //Gb
+                    draw_center_white_key_vert, //G
+                    draw_black_key_vert,        //Ab
+                    draw_center_white_key_vert, //A
+                    draw_black_key_vert,        //Bb
+                    draw_right_white_key_vert,  //B
+                ];
+
+                let mut base_color = slice.color;
+
+                let note_key = slice.y;
+                let base_key = note_key.floor();
+                let adjacent_key = note_key.ceil();
+
+                let base_volume_percent = slice.thickness / 6.0;
+                let adjusted_volume_percent = 0.05 + base_volume_percent * 0.95;
+                let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
+                let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
+
+                let base_x = (starting_x as f64) + base_key * key_width as f64;
+                if base_x > 1.0 && base_x < (canvas.width - key_width) as f64 {
+                    base_color.set_alpha((base_percent * 255.0) as u8);
+                    key_drawing_functions[base_key as usize % 12](canvas, base_x as u32, y, base_color, key_width);
+                }
+
+                let adjacent_x = (starting_x as f64) + adjacent_key * key_width as f64;
+                if adjacent_x > 1.0 && adjacent_x < (canvas.width - key_width) as f64 {
+                    base_color.set_alpha((adjacent_percent * 255.0) as u8);
+                    key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_x as u32, y, base_color, key_width);
+                }
+            }
+        }        
+    }
+
     fn frequency_to_coordinate(&self, note_frequency: f64) -> f64 {
         let highest_log = self.highest_frequency.ln();
         let lowest_log = self.lowest_frequency.ln();
@@ -608,6 +660,12 @@ impl PianoRollWindow {
         }
     }
 
+    fn draw_key_spots_vert(&mut self, base_x: u32, y: u32) {
+        for note in self.time_slices.front().unwrap_or(&Vec::new()) {
+            PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_height, base_x, y);
+        }
+    }
+
     fn update(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
         let mut channels = apu.channels();
         channels.extend(mapper.channels());
@@ -664,6 +722,9 @@ impl PianoRollWindow {
         self.draw_piano_strings_vert(waveform_area_width, key_height, string_height);
         self.draw_waveform_string_vert(waveform_string_pos, key_height, string_height);
         self.draw_piano_keys_vert(leftmost_key, 0);
+
+        // TODO: draw slices here!
+        self.draw_key_spots_vert(leftmost_key, 0);
     }
 
     fn draw(&mut self) {
