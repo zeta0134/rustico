@@ -97,6 +97,29 @@ fn draw_speaker_key_horiz(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u3
     drawing::blend_rect(canvas, x + 12, y + 4 - 8, 1, 9, color);
 }
 
+fn draw_left_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
+    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 15, color);
+    drawing::blend_rect(canvas, x + (key_thickness / 2), y + 9, key_thickness / 2, 7, color);
+}
+
+fn draw_center_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
+    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 8, color);
+    drawing::blend_rect(canvas, x - (key_thickness - 1), y + 9, (key_thickness * 2) - 1, 7, color);
+}
+
+fn draw_right_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
+    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 15, color);
+    drawing::blend_rect(canvas, x - (key_thickness - 1), y + 9, key_thickness / 2, 7, color);
+}
+
+fn draw_topmost_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
+    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness + ((key_thickness - 2) / 2), 15, color);
+}
+
+fn draw_black_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
+    drawing::blend_rect(canvas, x - (key_thickness / 2), y + 1, key_thickness + 1, 8, color);
+}
+
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
@@ -121,13 +144,13 @@ impl PianoRollWindow {
             canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
             shown: true,
             keys: 109,
-            key_height: 2,
+            key_height: 4,
             roll_width: 464,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
             polling_counter: 1,
-            scroll_direction: ScrollDirection::RightToLeft,
+            scroll_direction: ScrollDirection::TopToBottom,
             key_size: KeySize::Small,
             polling_type: PollingType::ApuQuarterFrame,
             polling_period: 1,
@@ -164,12 +187,50 @@ impl PianoRollWindow {
         }
     }
 
+    fn draw_piano_strings_vert(&mut self, starting_x: u32, y: u32, height: u32) {
+        let white_string = Color::rgb(0x0C, 0x0C, 0x0C);
+        let black_string = Color::rgb(0x06, 0x06, 0x06);
+
+        let string_colors = [
+            white_string, //C
+            black_string, //Db
+            white_string, //D
+            black_string, //Eb
+            white_string, //E
+            white_string, //F
+            black_string, //Gb
+            white_string, //G
+            black_string, //Ab
+            white_string, //A
+            black_string, //Bb
+            white_string, //B
+        ];
+
+        let mut key_counter = 0;
+        let mut x = starting_x;
+        let safety_margin = self.canvas.width - self.key_height * 2;
+        while key_counter < self.keys && x < safety_margin {
+            let string_color = string_colors[(key_counter % 12) as usize];
+            drawing::rect(&mut self.canvas, x, y, 1, height, string_color);
+            x += self.key_height; // TODO: it's not "height" anymore, more like key_size?
+            key_counter += 1;
+        }
+    }
+
     fn draw_waveform_string_horiz(&mut self, x: u32, y: u32, width: u32) {
         let waveform_string = Color::rgb(0x06, 0x06, 0x06);
         // Draw one extra string for the waveform display
         drawing::rect(&mut self.canvas, x, y, width, 1, waveform_string);
     }
 
+    fn draw_waveform_string_vert(&mut self, x: u32, y: u32, height: u32) {
+        let waveform_string = Color::rgb(0x06, 0x06, 0x06);
+        // Draw one extra string for the waveform display
+        drawing::rect(&mut self.canvas, x, y, 1, height, waveform_string);
+    }
+
+    // TOTO: this is hard-coded and isn't especially flexible. Shouldn't we use the key spot routines
+    // instead of this?
     fn draw_piano_keys_horiz(&mut self, x: u32, base_y: u32) {
         let white_key_border = Color::rgb(0x1C, 0x1C, 0x1C);
         let white_key = Color::rgb(0x20, 0x20, 0x20);
@@ -219,6 +280,56 @@ impl PianoRollWindow {
             drawing::rect(&mut self.canvas, x+8, base_y - y, 8, 1, lower_key_pixels[pixel_index as usize]);
         }
         drawing::rect(&mut self.canvas, x, 0, 1, canvas_height, top_edge);
+    }
+
+        // TOTO: this is hard-coded and isn't especially flexible. Shouldn't we use the key spot routines
+    // instead of this?
+    fn draw_piano_keys_vert(&mut self, base_x: u32, y: u32) {
+        let white_key_border = Color::rgb(0x1C, 0x1C, 0x1C);
+        let white_key = Color::rgb(0x20, 0x20, 0x20);
+        let black_key = Color::rgb(0x00, 0x00, 0x00);
+        let top_edge = Color::rgb(0x0A, 0x0A, 0x0A);
+
+        let key_colors = [
+          white_key, // C
+          black_key, // Db
+          white_key, // D
+          black_key, // Eb
+          white_key, // E
+          white_key, // F
+          black_key, // Gb
+          white_key, // G
+          black_key, // Ab
+          white_key, // A
+          black_key, // Bb
+          white_key, // B
+        ];
+
+        let key_drawing_functions = [
+            draw_left_white_key_vert,   //C
+            draw_black_key_vert,        //Db
+            draw_center_white_key_vert, //D
+            draw_black_key_vert,        //Eb
+            draw_right_white_key_vert,  //E
+            draw_left_white_key_vert,   //F
+            draw_black_key_vert,        //Gb
+            draw_center_white_key_vert, //G
+            draw_black_key_vert,        //Ab
+            draw_center_white_key_vert, //A
+            draw_black_key_vert,        //Bb
+            draw_right_white_key_vert,  //B
+        ];
+
+        let canvas_width = self.canvas.width;
+        drawing::rect(&mut self.canvas, 0, y, canvas_width, 16, top_edge);
+        drawing::rect(&mut self.canvas, base_x, y, self.keys * self.key_height, 16, white_key_border);
+        for key_index in 0 .. self.keys - 1 {
+            let x = base_x + key_index * self.key_height;
+            key_drawing_functions[key_index as usize % 12](&mut self.canvas, x, y, key_colors[key_index as usize % 12], self.key_height);
+        }
+        let topmost_x = base_x + (self.keys - 1) * self.key_height;
+        draw_topmost_white_key_vert(&mut self.canvas, topmost_x, y, white_key, self.key_height);
+        drawing::rect(&mut self.canvas, 0, y, canvas_width, 1, top_edge);
     }
 
     fn draw_key_spot_horiz(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_height: u32, x: u32, starting_y: u32) {
@@ -541,7 +652,19 @@ impl PianoRollWindow {
 
         self.draw_slices_horiz(key_width, bottom_key, 1);
         self.draw_key_spots_horiz(0, bottom_key);
-    }    
+    }
+
+    fn draw_top_to_bottom(&mut self) {
+        let waveform_area_width = 32;
+        let waveform_string_pos = 16;
+        let key_height = 16;
+        let leftmost_key = waveform_area_width;
+        let string_height = self.canvas.height - key_height;
+
+        self.draw_piano_strings_vert(waveform_area_width, key_height, string_height);
+        self.draw_waveform_string_vert(waveform_string_pos, key_height, string_height);
+        self.draw_piano_keys_vert(leftmost_key, 0);
+    }
 
     fn draw(&mut self) {
         let width = self.canvas.width;
@@ -550,6 +673,7 @@ impl PianoRollWindow {
         match self.scroll_direction {
             ScrollDirection::RightToLeft => {self.draw_right_to_left()},
             ScrollDirection::LeftToRight => {self.draw_left_to_right()},
+            ScrollDirection::TopToBottom => {self.draw_top_to_bottom()},
         _ => {/* unimplemented */}
         }
     }
