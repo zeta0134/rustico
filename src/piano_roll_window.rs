@@ -13,11 +13,34 @@ use rusticnes_core::mmc::mapper::Mapper;
 
 use std::collections::VecDeque;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum NoteType {
     Frequency,
     Noise,
     Waveform
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum ScrollDirection {
+    RightToLeft,
+    LeftToRight,
+    TopToBottom,
+    BottomToTop
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum KeySize {
+    Small,
+    Medium,
+    Large
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum PollingType {
+    PpuFrame,
+    PpuScanline,
+    ApuQuarterFrame,
+    ApuHalfFrame,
 }
 
 pub struct ChannelSlice {
@@ -74,29 +97,6 @@ fn draw_speaker_key_horiz(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u3
     drawing::blend_rect(canvas, x + 12, y + 4 - 8, 1, 9, color);
 }
 
-#[derive(Clone, Copy)]
-pub enum ScrollDirection {
-    RightToLeft,
-    LeftToRight,
-    TopToBottom,
-    BottomToTop
-}
-
-#[derive(Clone, Copy)]
-pub enum KeySize {
-    Small,
-    Medium,
-    Large
-}
-
-#[derive(Clone, Copy)]
-pub enum PollingType {
-    PpuFrame,
-    PpuScanline,
-    ApuQuarterFrame,
-    ApuHalfFrame,
-}
-
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
@@ -127,9 +127,9 @@ impl PianoRollWindow {
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
             polling_counter: 1,
-            scroll_direction: ScrollDirection::LeftToRight,
+            scroll_direction: ScrollDirection::RightToLeft,
             key_size: KeySize::Small,
-            polling_type: PollingType::PpuFrame,
+            polling_type: PollingType::ApuQuarterFrame,
             polling_period: 1,
         };
     }
@@ -570,8 +570,23 @@ impl Panel for PianoRollWindow {
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
         match event {
-            Event::Update => {
-                if runtime.running {
+            Event::NesNewFrame => {
+                if self.polling_type == PollingType::PpuFrame {
+                    self.update(&runtime.nes.apu, &*runtime.nes.mapper);
+                }
+            },
+            Event::NesNewScanline => {
+                if self.polling_type == PollingType::PpuScanline {
+                    self.update(&runtime.nes.apu, &*runtime.nes.mapper);
+                }
+            },
+            Event::NesNewApuQuarterFrame => {
+                if self.polling_type == PollingType::ApuQuarterFrame {
+                    self.update(&runtime.nes.apu, &*runtime.nes.mapper);
+                }
+            },
+            Event::NesNewApuHalfFrame => {
+                if self.polling_type == PollingType::ApuHalfFrame {
                     self.update(&runtime.nes.apu, &*runtime.nes.mapper);
                 }
             },
