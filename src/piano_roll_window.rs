@@ -97,6 +97,17 @@ fn draw_speaker_key_horiz(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u3
     drawing::blend_rect(canvas, x + 12, y + 4 - 8, 1, 9, color);
 }
 
+fn draw_speaker_key_vert(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32) {
+    drawing::blend_rect(canvas, x +  2, y + 6, 3, 5, color);
+    drawing::blend_rect(canvas, x +  5, y + 5, 1, 7, color);
+    drawing::blend_rect(canvas, x +  6, y + 4, 1, 9, color);
+    drawing::blend_rect(canvas, x +  7, y + 3, 1, 11, color);
+    drawing::blend_rect(canvas, x +  8, y + 2, 1, 13, color);
+    drawing::blend_rect(canvas, x + 10, y + 6, 1, 5, color);
+    drawing::blend_rect(canvas, x + 12, y + 4, 1, 9, color);
+}
+
+
 fn draw_left_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
     drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 15, color);
     drawing::blend_rect(canvas, x + (key_thickness / 2), y + 9, key_thickness / 2, 7, color);
@@ -717,9 +728,18 @@ impl PianoRollWindow {
         }
     }
 
-    fn draw_key_spots_vert(&mut self, base_x: u32, y: u32) {
+    fn draw_key_spots_vert(&mut self, base_x: u32, y: u32, waveform_pos: u32) {
         for note in self.time_slices.front().unwrap_or(&Vec::new()) {
-            PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_height, base_x, y);
+            if note.note_type == NoteType::Waveform {
+                if note.visible {
+                    let mut base_color = note.color;
+                    let volume_percent = note.thickness / 6.0;
+                    base_color.set_alpha((volume_percent * 255.0) as u8);
+                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1); 
+                }
+            } else {
+               PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_height, base_x, y);
+            }
         }
     }
 
@@ -782,7 +802,7 @@ impl PianoRollWindow {
 
         // TODO: draw slices here!
         self.draw_slices_vert(waveform_area_width, key_height, 1, waveform_string_pos);
-        self.draw_key_spots_vert(leftmost_key, 0);
+        self.draw_key_spots_vert(leftmost_key, 0, waveform_string_pos);
     }
 
     fn draw(&mut self) {
