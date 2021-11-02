@@ -162,7 +162,7 @@ impl PianoRollWindow {
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
             polling_counter: 1,
-            scroll_direction: ScrollDirection::PlayerPiano,
+            scroll_direction: ScrollDirection::TopToBottom,
             key_size: KeySize::Small,
             polling_type: PollingType::ApuQuarterFrame,
             polling_period: 1,
