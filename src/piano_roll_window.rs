@@ -25,7 +25,8 @@ pub enum ScrollDirection {
     RightToLeft,
     LeftToRight,
     TopToBottom,
-    BottomToTop
+    BottomToTop,
+    PlayerPiano
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -156,12 +157,12 @@ impl PianoRollWindow {
             shown: true,
             keys: 109,
             key_height: 4,
-            roll_width: 464,
+            roll_width: 254,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
             polling_counter: 1,
-            scroll_direction: ScrollDirection::TopToBottom,
+            scroll_direction: ScrollDirection::PlayerPiano,
             key_size: KeySize::Small,
             polling_type: PollingType::ApuQuarterFrame,
             polling_period: 1,
@@ -715,10 +716,11 @@ impl PianoRollWindow {
                 }
             }
             // bail if we hit either screen edge:
-            if y == 0 || y == (self.canvas.height - 1) {
+            if (y as i32 + step_direction) == 0 || y == (self.canvas.height - 1) {
                 return; //bail! don't draw offscreen
             }
             y = (y as i32 + step_direction) as u32;
+
         }
     }
 
@@ -730,6 +732,21 @@ impl PianoRollWindow {
 
     fn draw_key_spots_vert(&mut self, base_x: u32, y: u32, waveform_pos: u32) {
         for note in self.time_slices.front().unwrap_or(&Vec::new()) {
+            if note.note_type == NoteType::Waveform {
+                if note.visible {
+                    let mut base_color = note.color;
+                    let volume_percent = note.thickness / 6.0;
+                    base_color.set_alpha((volume_percent * 255.0) as u8);
+                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1); 
+                }
+            } else {
+               PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_height, base_x, y);
+            }
+        }
+    }
+
+    fn draw_key_spots_vert_inverted(&mut self, base_x: u32, y: u32, waveform_pos: u32) {
+        for note in self.time_slices.back().unwrap_or(&Vec::new()) {
             if note.note_type == NoteType::Waveform {
                 if note.visible {
                     let mut base_color = note.color;
@@ -800,9 +817,38 @@ impl PianoRollWindow {
         self.draw_waveform_string_vert(waveform_string_pos, key_height, string_height);
         self.draw_piano_keys_vert(leftmost_key, 0);
 
-        // TODO: draw slices here!
         self.draw_slices_vert(waveform_area_width, key_height, 1, waveform_string_pos);
         self.draw_key_spots_vert(leftmost_key, 0, waveform_string_pos);
+    }
+
+    fn draw_bottom_to_top(&mut self) {
+        let waveform_area_width = 32;
+        let waveform_string_pos = 16;
+        let key_height = 16;
+        let leftmost_key = waveform_area_width;
+        let string_height = self.canvas.height - key_height;
+
+        self.draw_piano_strings_vert(waveform_area_width, 0, string_height);
+        self.draw_waveform_string_vert(waveform_string_pos, 0, string_height);
+        self.draw_piano_keys_vert(leftmost_key, self.canvas.height - key_height);
+
+        self.draw_slices_vert(waveform_area_width, self.canvas.height - key_height, -1, waveform_string_pos);
+        self.draw_key_spots_vert(leftmost_key, self.canvas.height - key_height, waveform_string_pos);
+    }
+
+    fn draw_player_piano(&mut self) {
+        let waveform_area_width = 32;
+        let waveform_string_pos = 16;
+        let key_height = 16;
+        let leftmost_key = waveform_area_width;
+        let string_height = self.canvas.height - key_height;
+
+        self.draw_piano_strings_vert(waveform_area_width, 0, string_height);
+        self.draw_waveform_string_vert(waveform_string_pos, 0, string_height);
+        self.draw_piano_keys_vert(leftmost_key, self.canvas.height - key_height);
+
+        self.draw_slices_vert(waveform_area_width, 1, 1, waveform_string_pos);
+        self.draw_key_spots_vert_inverted(leftmost_key, self.canvas.height - key_height, waveform_string_pos);
     }
 
     fn draw(&mut self) {
@@ -813,7 +859,8 @@ impl PianoRollWindow {
             ScrollDirection::RightToLeft => {self.draw_right_to_left()},
             ScrollDirection::LeftToRight => {self.draw_left_to_right()},
             ScrollDirection::TopToBottom => {self.draw_top_to_bottom()},
-        _ => {/* unimplemented */}
+            ScrollDirection::BottomToTop => {self.draw_bottom_to_top()},
+            ScrollDirection::PlayerPiano => {self.draw_player_piano()}
         }
     }
 }
