@@ -26,6 +26,8 @@ use sdl2::video::WindowPos;
 
 use std::env;
 use std::fs::remove_file;
+use std::thread;
+use std::time;
 
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
@@ -349,6 +351,10 @@ pub fn main() {
           windows[i].canvas.window_mut().hide();
         }
       }
+    } else {
+      // sleep for a vanishingly tiny amount of time, so that we aren't hammering one CPU core with a constant busy loop
+      let sleepy_time = time::Duration::from_micros(100); // 0.1 milliseconds
+      thread::sleep(sleepy_time);
     }
   }
 
