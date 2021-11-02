@@ -289,31 +289,37 @@ pub fn main() {
             runtime_state.nes.apu.dump_sample_buffer();
           }
         }
+
+        // Run one frame, by running 262 scanlines (so we can capture events inbetween)
+        while runtime_state.nes.ppu.current_scanline == 242 {
+          application_events.push(events::Event::NesRunScanline);
+          let events_to_process = application_events.clone();
+          application_events.clear();
+          for event in events_to_process {
+            application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+          }
+        }
+        while runtime_state.nes.ppu.current_scanline != 242 {
+          application_events.push(events::Event::NesRunScanline);
+          let events_to_process = application_events.clone();
+          application_events.clear();
+          for event in events_to_process {
+            application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+          }
+        }
       } else {
         // we have to queue up *something*, so let's target around 60 Hz ish of silence
         let buffer = vec!(0i16; 44100 / 60);
         device.queue(&buffer);
       }
 
-      // Run one frame, by running 262 scanlines (so we can capture events inbetween)
-      while runtime_state.nes.ppu.current_scanline == 242 {
-        application_events.push(events::Event::NesRunScanline);
-        let events_to_process = application_events.clone();
-        application_events.clear();
-        for event in events_to_process {
-          application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
-        }
-      }
-      while runtime_state.nes.ppu.current_scanline != 242 {
-        application_events.push(events::Event::NesRunScanline);
-        let events_to_process = application_events.clone();
-        application_events.clear();
-        for event in events_to_process {
-          application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
-        }
-      }
-
+      // Run an update, and also flush out (unconditionally) any other queued events
       application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
+      let events_to_process = application_events.clone();
+      application_events.clear();
+      for event in events_to_process {
+        application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
+      }
     }
 
     // only present (and thus vsync) if there are new frames to draw
