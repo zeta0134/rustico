@@ -153,7 +153,13 @@ fn dump_panel(file_handle: &mut Option<File>, panel: & dyn Panel) {
 fn run(state: &mut CliRuntimeState, frames: u64) {
   for _ in 0 .. frames {
     // Run the core emulator for one frame
-    dispatch_event(state, events::Event::NesRunFrame);
+    // Just like the SDL build, we do this by running a bunch of individual scanlines
+    while state.core.nes.ppu.current_scanline == 242 {
+      dispatch_event(state, events::Event::NesRunScanline);
+    }
+    while state.core.nes.ppu.current_scanline != 242 {
+      dispatch_event(state, events::Event::NesRunScanline);
+    }
     // Run each panel for one frame, simulating a draw step
     dispatch_event(state, events::Event::Update);
     dispatch_event(state, events::Event::RequestFrame);
