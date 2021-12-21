@@ -252,6 +252,6 @@ impl Panel for ApuWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 1;
+        return 2;
     }
 }

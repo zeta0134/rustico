@@ -8,6 +8,7 @@ use panel::Panel;
 use rusticnes_core::apu::ApuState;
 use rusticnes_core::apu::AudioChannelState;
 use rusticnes_core::apu::PlaybackRate;
+use rusticnes_core::apu::RingBuffer;
 use rusticnes_core::apu::Timbre;
 use rusticnes_core::mmc::mapper::Mapper;
 
@@ -132,6 +133,14 @@ fn draw_black_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, 
     drawing::blend_rect(canvas, x - (key_thickness / 2), y + 1, key_thickness + 1, 8, color);
 }
 
+fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
+    let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
+    channels.extend(apu.channels());
+    channels.extend(mapper.channels());
+    channels.push(apu);
+    return channels;
+}
+
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
@@ -157,7 +166,7 @@ impl PianoRollWindow {
             shown: true,
             keys: 109,
             key_height: 4,
-            roll_width: 254,
+            roll_width: 222,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
@@ -555,6 +564,27 @@ impl PianoRollWindow {
         };
     }
 
+    fn channel_color(channel: &dyn AudioChannelState) -> Color {
+        let colors = PianoRollWindow::channel_colors(channel);
+        let mut color = colors[0]; // default to the first color
+        match channel.timbre() {
+            Some(Timbre::DutyIndex{index, max}) => {
+                let weight = index as f64 / (max + 1) as f64;
+                color = drawing::apply_gradient(colors, weight);
+            },
+            Some(Timbre::LsfrMode{index, max}) => {
+                let weight = index as f64 / (max + 1) as f64;
+                color = drawing::apply_gradient(colors, weight);  
+            },
+            Some(Timbre::PatchIndex{index, max}) => {
+                let weight = index as f64 / (max + 1) as f64;
+                color = drawing::apply_gradient(colors, weight);  
+            }
+            None => {},
+        }
+        return color;
+    }
+
     fn slice_from_channel(&self, channel: &dyn AudioChannelState) -> ChannelSlice {
         if !channel.playing() {
             return ChannelSlice::none();
@@ -774,6 +804,117 @@ impl PianoRollWindow {
         }
     }
 
+    pub fn find_edge(edge_buffer: &RingBuffer, window_size: usize) -> usize {
+        let start_index = (edge_buffer.index() - window_size) % edge_buffer.buffer().len();
+        let mut current_index = start_index;
+        for _i in 0 .. (window_size * 4) {
+            if edge_buffer.buffer()[current_index] != 0 {
+                // center the window on this sample
+                return (current_index - (window_size / 2)) % edge_buffer.buffer().len();
+            }
+            current_index = (current_index - 1) % edge_buffer.buffer().len();
+        }
+        // couldn't find an edge, so return the most recent slice
+        return start_index;
+    }
+
+    fn draw_vertical_antialiased_line(&mut self, x: u32, top_edge: f64, bottom_edge: f64, color: Color) {
+        let top_floor = top_edge.floor();
+        let bottom_floor = bottom_edge.floor();
+        let canvas = &mut self.canvas;
+
+        let mut blended_color = color;
+        if top_floor == bottom_floor {
+            // Special case: alpha here will be related to their distance. Draw one
+            // blended point and exit
+            let alpha = bottom_edge - top_edge;
+            blended_color.set_alpha((alpha * 255.0) as u8);
+            canvas.blend_pixel(x, top_floor as u32, blended_color);
+            return;
+        }
+        // Alpha blend the edges
+        let top_alpha = 1.0 - (top_edge - top_floor);
+        blended_color.set_alpha((top_alpha * 255.0) as u8);
+        if top_floor > 0.0 && (top_floor as u32) < canvas.height {
+            canvas.blend_pixel(x, top_floor as u32, blended_color);
+        }
+
+        let bottom_alpha = bottom_edge - bottom_floor;
+        blended_color.set_alpha((bottom_alpha * 255.0) as u8);
+        if bottom_floor > 0.0 && (bottom_floor as u32) < canvas.height {
+            canvas.blend_pixel(x, bottom_floor as u32, blended_color);
+        }
+
+        // If there is any distance at all between the edges, draw a solid color
+        // line between them
+        for y in (top_floor as u32) + 1 .. bottom_floor as u32 {
+            if y > 0 && y < canvas.height {
+                canvas.put_pixel(x, y, color);
+            }
+        }
+    }
+
+    fn scale_color(original_color: Color, scale_factor: f64) -> Color {
+        return Color::rgb(
+            (original_color.r() as f64 * scale_factor) as u8,
+            (original_color.g() as f64 * scale_factor) as u8,
+            (original_color.b() as f64 * scale_factor) as u8
+        );
+    }
+
+    fn draw_surfboard_background(&mut self, x: u32, y: u32, width: u32, height: u32, color: Color) {
+        let bg_color = PianoRollWindow::scale_color(color, 0.125);
+        for row in 0 .. height {
+            let weight = 1.0 - ((row as f64 * std::f64::consts::PI) / (height as f64)).sin(); 
+            let row_color = PianoRollWindow::scale_color(bg_color, weight);
+            drawing::rect(&mut self.canvas, x, y + row, width, 1, row_color);
+        }
+    }
+
+    fn draw_channel_surfboard(&mut self, channel: &dyn AudioChannelState, x: u32, y: u32, width: u32, height: u32) {
+        let color = PianoRollWindow::channel_color(channel);
+        self.draw_surfboard_background(x, y, width, height, color);
+
+        let speed = 4;
+        let first_sample_index = PianoRollWindow::find_edge(channel.edge_buffer(), (width * speed) as usize);
+        let sample_min = channel.min_sample();
+        let sample_max = channel.max_sample() + 1; // ???
+        let range = (sample_max as u32) - (sample_min as u32);
+        let sample_buffer = channel.sample_buffer().buffer();
+        let mut last_y = ((sample_buffer[first_sample_index] - sample_min) as f64 * height as f64) / range as f64;
+        for i in 0 .. width {
+            let dx = x + i;
+            let sample_index = (first_sample_index + (i * speed) as usize) % sample_buffer.len();
+            let sample = sample_buffer[sample_index];
+            let current_y = ((sample - sample_min) as f64 * height as f64) / range as f64;
+            // Todo: connect last_y to current_y
+            // (y'know, not this)
+            //self.canvas.put_pixel(dx, y + current_y, color);
+            let mut top_edge = current_y;
+            let mut bottom_edge = last_y;
+            if last_y < current_y {
+                top_edge = last_y;
+                bottom_edge = current_y;
+            }
+            let line_thickness = 0.5;
+            let glow_thickness = 2.5;
+            let glow_color = PianoRollWindow::scale_color(color, 0.25);
+            self.draw_vertical_antialiased_line(dx, y as f64 + top_edge - glow_thickness, y as f64 + bottom_edge + glow_thickness, glow_color);
+            self.draw_vertical_antialiased_line(dx, y as f64 + top_edge - line_thickness, y as f64 + bottom_edge + line_thickness, color);
+            last_y = current_y;
+        }
+    }
+
+    fn draw_audio_surfboard_horiz(&mut self, runtime: &RuntimeState, x: u32, y: u32, width: u32, height: u32) {
+        let channels = collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
+        let channel_width = width / (channels.len() as u32);
+        for i in 0 .. channels.len() {
+            let channel = channels[i];
+            let dx = x + (i as u32) * channel_width;
+            self.draw_channel_surfboard(channel, dx, y, channel_width, height);
+        }
+    }
+
     fn draw_right_to_left(&mut self) {
         let waveform_area_height = 32;
         let waveform_string_pos = self.canvas.height - 16;
@@ -806,19 +947,22 @@ impl PianoRollWindow {
         self.draw_key_spots_horiz(0, bottom_key);
     }
 
-    fn draw_top_to_bottom(&mut self) {
+    fn draw_top_to_bottom(&mut self, runtime: &RuntimeState) {
         let waveform_area_width = 32;
         let waveform_string_pos = 16;
         let key_height = 16;
         let leftmost_key = waveform_area_width;
-        let string_height = self.canvas.height - key_height;
+        let surfboard_height = 32;
+        let string_height = self.canvas.height - key_height - surfboard_height;
 
-        self.draw_piano_strings_vert(waveform_area_width, key_height, string_height);
-        self.draw_waveform_string_vert(waveform_string_pos, key_height, string_height);
-        self.draw_piano_keys_vert(leftmost_key, 0);
+        self.draw_piano_strings_vert(waveform_area_width, surfboard_height + key_height, string_height);
+        self.draw_waveform_string_vert(waveform_string_pos, surfboard_height + key_height, string_height);
+        self.draw_piano_keys_vert(leftmost_key, surfboard_height);
 
-        self.draw_slices_vert(waveform_area_width, key_height, 1, waveform_string_pos);
-        self.draw_key_spots_vert(leftmost_key, 0, waveform_string_pos);
+        self.draw_slices_vert(waveform_area_width, surfboard_height + key_height, 1, waveform_string_pos);
+        self.draw_key_spots_vert(leftmost_key, surfboard_height, waveform_string_pos);
+        
+        self.draw_audio_surfboard_horiz(runtime, 0, 0, self.canvas.width, surfboard_height);
     }
 
     fn draw_bottom_to_top(&mut self) {
@@ -851,14 +995,14 @@ impl PianoRollWindow {
         self.draw_key_spots_vert_inverted(leftmost_key, self.canvas.height - key_height, waveform_string_pos);
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, runtime: &RuntimeState) {
         let width = self.canvas.width;
         let height = self.canvas.height;
         drawing::rect(&mut self.canvas, 0, 0, width, height, Color::rgb(0,0,0));
         match self.scroll_direction {
             ScrollDirection::RightToLeft => {self.draw_right_to_left()},
             ScrollDirection::LeftToRight => {self.draw_left_to_right()},
-            ScrollDirection::TopToBottom => {self.draw_top_to_bottom()},
+            ScrollDirection::TopToBottom => {self.draw_top_to_bottom(runtime)},
             ScrollDirection::BottomToTop => {self.draw_bottom_to_top()},
             ScrollDirection::PlayerPiano => {self.draw_player_piano()}
         }
@@ -875,7 +1019,7 @@ impl Panel for PianoRollWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 3;
+        return 4;
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
@@ -900,7 +1044,7 @@ impl Panel for PianoRollWindow {
                     self.update(&runtime.nes.apu, &*runtime.nes.mapper);
                 }
             },
-            Event::RequestFrame => {self.draw()},
+            Event::RequestFrame => {self.draw(runtime)},
             Event::ShowPianoRollWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
