@@ -915,6 +915,29 @@ impl PianoRollWindow {
         }
     }
 
+    pub fn mouse_mutes_channel_horiz(&mut self, runtime: &RuntimeState, sx: u32, sy: u32, width: u32, height: u32, mouse_x: i32, mouse_y: i32) -> Vec<Event> {
+        let mut events: Vec<Event> = Vec::new();
+        if mouse_x < 0 || mouse_y < 0 {
+            return events;
+        }
+        let mx = mouse_x as u32;
+        let my = mouse_y as u32;
+        let channels = collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
+        let channel_width = width / (channels.len() as u32);
+        for i in 0 .. channels.len() {
+            let channel = channels[i];
+            let cx = sx + (i as u32) * channel_width;
+            if mx >= cx && mx < cx + channel_width && my >= sy && my < sy + height {
+               if channel.muted() {
+                    events.push(Event::UnmuteChannel(i))
+                } else {
+                    events.push(Event::MuteChannel(i))
+                } 
+            }
+        }
+        return events;
+    }
+
     fn draw_right_to_left(&mut self) {
         let waveform_area_height = 32;
         let waveform_string_pos = self.canvas.height - 16;
@@ -1007,6 +1030,18 @@ impl PianoRollWindow {
             ScrollDirection::PlayerPiano => {self.draw_player_piano()}
         }
     }
+
+    fn mouse_click(&mut self, runtime: &RuntimeState, mx: i32, my: i32) -> Vec<Event> {
+        match self.scroll_direction {
+            ScrollDirection::TopToBottom => {
+                return self.mouse_mutes_channel_horiz(runtime, 0, 0, self.canvas.width, 32, mx, my);
+            },
+            _ => {
+                /* unimplemented */
+                return Vec::new();
+            }
+        }
+    }
 }
 
 impl Panel for PianoRollWindow {
@@ -1023,6 +1058,7 @@ impl Panel for PianoRollWindow {
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
+        let mut events: Vec<Event> = Vec::new();
         match event {
             Event::NesNewFrame => {
                 if self.polling_type == PollingType::PpuFrame {
@@ -1044,12 +1080,13 @@ impl Panel for PianoRollWindow {
                     self.update(&runtime.nes.apu, &*runtime.nes.mapper);
                 }
             },
+            Event::MouseClick(x, y) => {events.extend(self.mouse_click(runtime, x, y));},
             Event::RequestFrame => {self.draw(runtime)},
             Event::ShowPianoRollWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
             _ => {}
         }
-        return Vec::<Event>::new();
+        return events;
     }
     
     fn active_canvas(&self) -> &SimpleBuffer {
