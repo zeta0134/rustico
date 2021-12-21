@@ -7,6 +7,7 @@ use events::Event;
 use panel::Panel;
 
 use rusticnes_core::apu::ApuState;
+use rusticnes_core::apu::RingBuffer;
 use rusticnes_core::mmc::mapper::Mapper;
 use rusticnes_core::apu::AudioChannelState;
 
@@ -20,20 +21,17 @@ pub struct ApuWindow {
     pub old_channels: usize,
 }
 
-pub fn find_rising_edge(audiobuffer: &[i16], start_index: usize) -> usize {
-    let mut last_sample = audiobuffer[start_index];
+pub fn find_edge(edge_buffer: &RingBuffer, window_size: usize) -> usize {
+    let start_index = (edge_buffer.index() - window_size) % edge_buffer.buffer().len();
     let mut current_index = start_index;
-    // look ahead 100 samples or so for an edge, from non-zero to zero. If we find one, return it
-    for _ in 0 .. 1000 {
-        let last_index = current_index;
-        current_index = (current_index + 1) % audiobuffer.len();
-        let current_sample = audiobuffer[current_index];
-        if current_sample != 0 && last_sample == 0 {
-            return last_index;
+    for _i in 0 .. (window_size * 4) {
+        if edge_buffer.buffer()[current_index] != 0 {
+            // center the window on this sample
+            return (current_index - (window_size / 2)) % edge_buffer.buffer().len();
         }
-        last_sample = current_sample;
+        current_index = (current_index - 1) % edge_buffer.buffer().len();
     }
-    // Couldn't find a falling edge, so return our original start index instead
+    // couldn't find an edge, so return the most recent slice
     return start_index;
 }
 
@@ -45,7 +43,7 @@ impl ApuWindow {
             canvas: SimpleBuffer::new(256, 1080),
             font: font,
             shown: false,
-            waveform_height: 32,
+            waveform_height: 64,
             text_height: 10,
             spacing: 2,
             old_channels: 5,
@@ -61,7 +59,7 @@ impl ApuWindow {
         let mut start_index = channel.sample_buffer().index() - ((width as usize) * 2) - 1000;
         start_index = start_index % audiobuffer.len();
         if align {
-            start_index = find_rising_edge(audiobuffer, start_index);
+            start_index = find_edge(channel.edge_buffer(), (width * 3) as usize);
         }
         
         let sample_min = channel.min_sample();
@@ -72,7 +70,7 @@ impl ApuWindow {
             last_y = height - 1;
         }
         for dx in x .. (x + width) {
-            let sample_index = (start_index + (dx * 2) as usize) % audiobuffer.len();
+            let sample_index = (start_index + (dx * 3) as usize) % audiobuffer.len();
             let sample = audiobuffer[sample_index];
             let current_x = dx as u32;
             let mut current_y = (((sample - sample_min) as u64 * height as u64) / range as u64) as u32;
@@ -254,6 +252,6 @@ impl Panel for ApuWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 2;
+        return 1;
     }
 }
