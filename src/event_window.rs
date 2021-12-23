@@ -64,12 +64,12 @@ fn longest(strings: &Vec<String>)  -> usize {
     return length;
 }
 
-fn freshness(scanline: u16, cycle: u16, current_scanline: u16, current_cycle: u16) -> f64 {
+fn freshness(scanline: u16, cycle: u16, current_scanline: u16, current_cycle: u16) -> f32 {
     let test_progress = (scanline as u32) * 341 + (cycle as u32);
     let current_progress = (current_scanline as u32) * 341 + (current_cycle as u32);
     let max_distance = 262 * 341;
     let distance = (test_progress + max_distance - current_progress) % max_distance;
-    return (distance as f64) / (max_distance as f64);
+    return (distance as f32) / (max_distance as f32);
 }
 
 impl EventWindow {

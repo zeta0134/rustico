@@ -47,8 +47,8 @@ pub enum PollingType {
 
 pub struct ChannelSlice {
     pub visible: bool,
-    pub y: f64,
-    pub thickness: f64,
+    pub y: f32,
+    pub thickness: f32,
     pub color: Color,
     pub note_type: NoteType,
 
@@ -147,8 +147,8 @@ pub struct PianoRollWindow {
     pub keys: u32,
     pub key_height: u32,
     pub roll_width: u32,
-    pub lowest_frequency: f64,
-    pub highest_frequency: f64,
+    pub lowest_frequency: f32,
+    pub highest_frequency: f32,
     pub time_slices: VecDeque<Vec<ChannelSlice>>,
     pub polling_counter: usize,
 
@@ -361,7 +361,7 @@ impl PianoRollWindow {
                 let mut base_color = slice.color;
                 let volume_percent = slice.thickness / 6.0;
                 base_color.set_alpha((volume_percent * 255.0) as u8);
-                draw_speaker_key_horiz(canvas, base_color, x, ((starting_y as f64) - slice.y * (key_height as f64)) as u32);
+                draw_speaker_key_horiz(canvas, base_color, x, ((starting_y as f32) - slice.y * (key_height as f32)) as u32);
             },
             _ => {
                 let key_drawing_functions = [
@@ -390,14 +390,14 @@ impl PianoRollWindow {
                 let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
                 let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
-                let base_y = (starting_y as f64) - base_key * key_height as f64;
-                if base_y > 1.0 && base_y < (canvas.height - 2) as f64 {
+                let base_y = (starting_y as f32) - base_key * key_height as f32;
+                if base_y > 1.0 && base_y < (canvas.height - 2) as f32 {
                     base_color.set_alpha((base_percent * 255.0) as u8);
                     key_drawing_functions[base_key as usize % 12](canvas, x, base_y as u32, base_color);
                 }
 
-                let adjacent_y = (starting_y as f64) - adjacent_key * key_height as f64;
-                if adjacent_y > 1.0 && adjacent_y < (canvas.height - 2) as f64 {
+                let adjacent_y = (starting_y as f32) - adjacent_key * key_height as f32;
+                if adjacent_y > 1.0 && adjacent_y < (canvas.height - 2) as f32 {
                     base_color.set_alpha((adjacent_percent * 255.0) as u8);
                     key_drawing_functions[adjacent_key as usize % 12](canvas, x, adjacent_y as u32, base_color);
                 }
@@ -413,7 +413,7 @@ impl PianoRollWindow {
                 let mut base_color = slice.color;
                 let volume_percent = slice.thickness / 6.0;
                 base_color.set_alpha((volume_percent * 255.0) as u8);
-                //draw_speaker_key_horiz(canvas, base_color, ((starting_x as f64) - slice.y * (key_width as f64)) as u32, y);
+                //draw_speaker_key_horiz(canvas, base_color, ((starting_x as f32) - slice.y * (key_width as f32)) as u32, y);
             },
             _ => {
                 let key_drawing_functions = [
@@ -442,14 +442,14 @@ impl PianoRollWindow {
                 let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
                 let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
-                let base_x = (starting_x as f64) + base_key * key_width as f64;
-                if base_x > 1.0 && base_x < (canvas.width - key_width) as f64 {
+                let base_x = (starting_x as f32) + base_key * key_width as f32;
+                if base_x > 1.0 && base_x < (canvas.width - key_width) as f32 {
                     base_color.set_alpha((base_percent * 255.0) as u8);
                     key_drawing_functions[base_key as usize % 12](canvas, base_x as u32, y, base_color, key_width);
                 }
 
-                let adjacent_x = (starting_x as f64) + adjacent_key * key_width as f64;
-                if adjacent_x > 1.0 && adjacent_x < (canvas.width - key_width) as f64 {
+                let adjacent_x = (starting_x as f32) + adjacent_key * key_width as f32;
+                if adjacent_x > 1.0 && adjacent_x < (canvas.width - key_width) as f32 {
                     base_color.set_alpha((adjacent_percent * 255.0) as u8);
                     key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_x as u32, y, base_color, key_width);
                 }
@@ -457,12 +457,12 @@ impl PianoRollWindow {
         }        
     }
 
-    fn frequency_to_coordinate(&self, note_frequency: f64) -> f64 {
+    fn frequency_to_coordinate(&self, note_frequency: f32) -> f32 {
         let highest_log = self.highest_frequency.ln();
         let lowest_log = self.lowest_frequency.ln();
         let range = highest_log - lowest_log;
         let note_log = note_frequency.ln();
-        let piano_roll_height = (self.keys) as f64;
+        let piano_roll_height = (self.keys) as f32;
         let coordinate = (note_log - lowest_log) * piano_roll_height / range;
         return coordinate;
     }
@@ -569,15 +569,15 @@ impl PianoRollWindow {
         let mut color = colors[0]; // default to the first color
         match channel.timbre() {
             Some(Timbre::DutyIndex{index, max}) => {
-                let weight = index as f64 / (max + 1) as f64;
+                let weight = index as f32 / (max + 1) as f32;
                 color = drawing::apply_gradient(colors, weight);
             },
             Some(Timbre::LsfrMode{index, max}) => {
-                let weight = index as f64 / (max + 1) as f64;
+                let weight = index as f32 / (max + 1) as f32;
                 color = drawing::apply_gradient(colors, weight);  
             },
             Some(Timbre::PatchIndex{index, max}) => {
-                let weight = index as f64 / (max + 1) as f64;
+                let weight = index as f32 / (max + 1) as f32;
                 color = drawing::apply_gradient(colors, weight);  
             }
             None => {},
@@ -590,8 +590,8 @@ impl PianoRollWindow {
             return ChannelSlice::none();
         }
 
-        let y: f64;
-        let thickness: f64 = channel.amplitude() * 6.0;
+        let y: f32;
+        let thickness: f32 = channel.amplitude() * 6.0;
         let colors = PianoRollWindow::channel_colors(channel);
         let mut color = colors[0]; // default to the first color
         let note_type: NoteType;
@@ -607,8 +607,8 @@ impl PianoRollWindow {
 
                 // Arbitrarily map all noise frequencies to 16 "strings" since this is what the
                 // base 2A03 uses. Accuracy is much less important here.
-                let string_coord = (index as f64 / (max + 1) as f64) * 16.0;
-                let key_offset = string_coord as f64;
+                let string_coord = (index as f32 / (max + 1) as f32) * 16.0;
+                let key_offset = string_coord as f32;
                 y = key_offset;
 
             },
@@ -620,15 +620,15 @@ impl PianoRollWindow {
         
         match channel.timbre() {
             Some(Timbre::DutyIndex{index, max}) => {
-                let weight = index as f64 / (max + 1) as f64;
+                let weight = index as f32 / (max + 1) as f32;
                 color = drawing::apply_gradient(colors, weight);
             },
             Some(Timbre::LsfrMode{index, max}) => {
-                let weight = index as f64 / (max + 1) as f64;
+                let weight = index as f32 / (max + 1) as f32;
                 color = drawing::apply_gradient(colors, weight);  
             },
             Some(Timbre::PatchIndex{index, max}) => {
-                let weight = index as f64 / (max + 1) as f64;
+                let weight = index as f32 / (max + 1) as f32;
                 color = drawing::apply_gradient(colors, weight);  
             }
             None => {},
@@ -645,7 +645,7 @@ impl PianoRollWindow {
 
     fn draw_slice_horiz(canvas: &mut SimpleBuffer, slice: &ChannelSlice, x: u32, base_y: u32, key_height: u32) {
         if !slice.visible {return;}
-        let effective_y = (base_y as f64) - (slice.y * (key_height as f64)) + 0.5;
+        let effective_y = (base_y as f32) - (slice.y * (key_height as f32)) + 0.5;
 
         let top_edge = effective_y - (slice.thickness / 2.0);
         let bottom_edge = effective_y + (slice.thickness / 2.0);
@@ -653,7 +653,7 @@ impl PianoRollWindow {
         let bottom_floor = bottom_edge.floor();
 
         // sanity range check:
-        if top_edge < 0.0 || bottom_edge > canvas.height as f64 {
+        if top_edge < 0.0 || bottom_edge > canvas.height as f32 {
             return;
         }
 
@@ -684,15 +684,15 @@ impl PianoRollWindow {
 
     fn draw_slice_vert(canvas: &mut SimpleBuffer, slice: &ChannelSlice, base_x: u32, y: u32, key_width: u32) {
         if !slice.visible {return;}
-        let effective_x = (base_x as f64) + (slice.y * (key_width as f64)) + 0.5;
+        let effective_x = (base_x as f32) + (slice.y * (key_width as f32)) + 0.5;
 
-        let left_edge = effective_x - (slice.thickness * (key_width as f64) / 4.0);
-        let right_edge = effective_x + (slice.thickness * (key_width as f64) / 4.0);
+        let left_edge = effective_x - (slice.thickness * (key_width as f32) / 4.0);
+        let right_edge = effective_x + (slice.thickness * (key_width as f32) / 4.0);
         let left_floor = left_edge.floor();
         let right_floor = right_edge.floor();
 
         // sanity range check:
-        if left_edge < 0.0 || right_edge > canvas.width as f64 {
+        if left_edge < 0.0 || right_edge > canvas.width as f32 {
             return;
         }
 
@@ -818,7 +818,7 @@ impl PianoRollWindow {
         return start_index;
     }
 
-    fn draw_vertical_antialiased_line(&mut self, x: u32, top_edge: f64, bottom_edge: f64, color: Color) {
+    fn draw_vertical_antialiased_line(&mut self, x: u32, top_edge: f32, bottom_edge: f32, color: Color) {
         let top_floor = top_edge.floor();
         let bottom_floor = bottom_edge.floor();
         let canvas = &mut self.canvas;
@@ -854,18 +854,18 @@ impl PianoRollWindow {
         }
     }
 
-    fn scale_color(original_color: Color, scale_factor: f64) -> Color {
+    fn scale_color(original_color: Color, scale_factor: f32) -> Color {
         return Color::rgb(
-            (original_color.r() as f64 * scale_factor) as u8,
-            (original_color.g() as f64 * scale_factor) as u8,
-            (original_color.b() as f64 * scale_factor) as u8
+            (original_color.r() as f32 * scale_factor) as u8,
+            (original_color.g() as f32 * scale_factor) as u8,
+            (original_color.b() as f32 * scale_factor) as u8
         );
     }
 
     fn draw_surfboard_background(&mut self, x: u32, y: u32, width: u32, height: u32, color: Color) {
         let bg_color = PianoRollWindow::scale_color(color, 0.125);
         for row in 0 .. height {
-            let weight = 1.0 - ((row as f64 * std::f64::consts::PI) / (height as f64)).sin(); 
+            let weight = 1.0 - ((row as f32 * std::f32::consts::PI) / (height as f32)).sin(); 
             let row_color = PianoRollWindow::scale_color(bg_color, weight);
             drawing::rect(&mut self.canvas, x, y + row, width, 1, row_color);
         }
@@ -881,12 +881,12 @@ impl PianoRollWindow {
         let sample_max = channel.max_sample() + 1; // ???
         let range = (sample_max as u32) - (sample_min as u32);
         let sample_buffer = channel.sample_buffer().buffer();
-        let mut last_y = ((sample_buffer[first_sample_index] - sample_min) as f64 * height as f64) / range as f64;
+        let mut last_y = ((sample_buffer[first_sample_index] - sample_min) as f32 * height as f32) / range as f32;
         for i in 0 .. width {
             let dx = x + i;
             let sample_index = (first_sample_index + (i * speed) as usize) % sample_buffer.len();
             let sample = sample_buffer[sample_index];
-            let current_y = ((sample - sample_min) as f64 * height as f64) / range as f64;
+            let current_y = ((sample - sample_min) as f32 * height as f32) / range as f32;
             // Todo: connect last_y to current_y
             // (y'know, not this)
             //self.canvas.put_pixel(dx, y + current_y, color);
@@ -899,8 +899,8 @@ impl PianoRollWindow {
             let line_thickness = 0.5;
             let glow_thickness = 2.5;
             let glow_color = PianoRollWindow::scale_color(color, 0.25);
-            self.draw_vertical_antialiased_line(dx, y as f64 + top_edge - glow_thickness, y as f64 + bottom_edge + glow_thickness, glow_color);
-            self.draw_vertical_antialiased_line(dx, y as f64 + top_edge - line_thickness, y as f64 + bottom_edge + line_thickness, color);
+            self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - glow_thickness, y as f32 + bottom_edge + glow_thickness, glow_color);
+            self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - line_thickness, y as f32 + bottom_edge + line_thickness, color);
             last_y = current_y;
         }
     }
