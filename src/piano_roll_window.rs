@@ -491,7 +491,7 @@ impl PianoRollWindow {
                 "Noise"    => {
                     vec!(
                         Color::rgb(192, 192, 192),
-                        Color::rgb(192, 255, 255)
+                        Color::rgb(128, 240, 255)
                     )
                 },
                 "DMC"      => {vec!(Color::rgb(96,  32, 192))},
