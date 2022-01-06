@@ -1,0 +1,31 @@
+name: Package
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: ./package.sh
+    - name: Upload Linux Package
+      uses: actions/upload-artifact@2.3.1
+      with:
+        name: RusticNES-SDL.Linux.x86_64
+        path: packages/rusticnes-sdl-*.Linux.x86_64.tar.gz
+    - name: Upload Windows Package
+      uses: actions/upload-artifact@2.3.1
+      with:
+        name: RusticNES-SDL.Windows.x86_64
+        path: packages/rusticnes-sdl-*.Windows.x86_64.zip
+    
