@@ -163,7 +163,7 @@ impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
         return PianoRollWindow {
             canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
-            shown: true,
+            shown: false,
             keys: 109,
             key_height: 4,
             roll_width: 222,
