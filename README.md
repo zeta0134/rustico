@@ -5,10 +5,22 @@ The interface for the emulator is undergoing heavy development. I will try my be
 
 ## Usage Instructions
 
-Build and run the project with:
+Install dependencies `gtk3`, `sdl2`, and if you intend to package for Windows, also `mingw-w64`. On Debian systems:
+
+```
+sudo apt install libgtk-3-dev libsdl2-dev mingw-w64
+```
+
+Now you can build and run the project with:
 
 ```
 cargo run --release
+```
+
+And produce archives for Linux and Windows with:
+
+```
+./package.sh
 ```
 
 ![Game Window](http://rusticnes.nicholasflynt.com/documentation/game_window.png) 
