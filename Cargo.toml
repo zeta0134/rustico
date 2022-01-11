@@ -8,5 +8,5 @@ build = "build.rs"
 image = "0.19"
 sdl2 = "0.34.5"
 nfd2 = "0.2.3"
-rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core" }
-rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common" }
+rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "9fd62606a6b1865506919e0b7273b01dab94f8d6" }
+rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev = "e9ad9a0edcf742e8dfb3ad5490808f069a10282b" }
