@@ -1054,7 +1054,7 @@ impl Panel for PianoRollWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 4;
+        return 2;
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
