@@ -3,7 +3,7 @@
 nsf_file="$1"
 raw_video_file="$(basename "$nsf_file" .nsf)_video.raw"
 raw_audio_file="$(basename "$nsf_file" .nsf)_audio.raw"
-final_output="$(basename "$nsf_file" .nsf).mp4"
+final_output="$(basename "$nsf_file" .nsf)_discord.mp4"
 
 requested_duration_seconds="${2:-60}"
 fade_duration="${3:-4}"
@@ -37,11 +37,11 @@ echo "=== Converting $raw_video_file and $raw_audio_file to $final_output ... ==
 ffmpeg \
   -y -f rawvideo -pix_fmt rgb24 -s 480x270 -r 60.0988 -i "$raw_video_file" \
   -f s16be -i "$raw_audio_file" \
-  -c:v libx264 -crf 15 -preset veryslow -pix_fmt yuv420p \
-  -vf "scale=1920:1080:flags=neighbor, scale=out_color_matrix=bt709, fps=fps=60, fade=t=out:st=$fade_start:d=$fade_duration" \
+  -c:v libx264 -crf 21 -preset veryslow -pix_fmt yuv420p \
+  -vf "scale=480:270:flags=neighbor, scale=out_color_matrix=bt709, fps=fps=60, fade=t=out:st=$fade_start:d=$fade_duration" \
   -af "afade=t=out:st=$fade_start:d=$fade_duration" \
   -color_range 1 -colorspace bt709 -color_trc bt709 -color_primaries bt709 -movflags faststart \
-  -c:a aac -b:a 384k \
+  -c:a aac -b:a 192k \
   "$final_output"
 
 echo "=== Cleaning up temporary files ... ==="
