@@ -3,6 +3,7 @@
 **/*.rs.bk
 
 *.nes
+*.nsf
 *.png
 *.raw
 *.mp4
