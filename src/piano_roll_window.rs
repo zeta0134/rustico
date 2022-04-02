@@ -178,23 +178,20 @@ fn draw_topmost_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color:
 
 fn draw_black_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32, base_key_length: u32) {
     drawing::blend_rect(canvas, 
-        x - (key_thickness / 2), 
+        x - (key_thickness / 2),
         upper_key_lpos(y),
-        key_thickness + 1, 
+        key_thickness + 1,
         upper_key_length(base_key_length),
         color);
 }
 
-fn draw_speaker_key_vert(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32, base_key_length: u32) {
-    let offset = (base_key_length - 16) / 2;
-    let dy = y + offset;
-    drawing::blend_rect(canvas, x +  2, dy + 6, 3, 5, color);
-    drawing::blend_rect(canvas, x +  5, dy + 5, 1, 7, color);
-    drawing::blend_rect(canvas, x +  6, dy + 4, 1, 9, color);
-    drawing::blend_rect(canvas, x +  7, dy + 3, 1, 11, color);
-    drawing::blend_rect(canvas, x +  8, dy + 2, 1, 13, color);
-    drawing::blend_rect(canvas, x + 10, dy + 6, 1, 5, color);
-    drawing::blend_rect(canvas, x + 12, dy + 4, 1, 9, color);
+fn draw_speaker_key_vert(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32, key_thickness: u32, base_key_length: u32) {
+    drawing::blend_rect(canvas, 
+        x - (key_thickness / 2),
+        upper_key_lpos(y),
+        key_thickness + 1,
+        full_key_length(base_key_length),
+        color);
 }
 
 fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
@@ -228,12 +225,13 @@ impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
         return PianoRollWindow {
             //canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
-            canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
+            //canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
+            canvas: SimpleBuffer::new(1920, 1080), // actually 1080p
             shown: true,
             keys: 109,
-            key_thickness: 8,
-            key_length: 48,
-            surfboard_height: 32,
+            key_thickness: 16,
+            key_length: 64,
+            surfboard_height: 64,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
@@ -838,7 +836,7 @@ impl PianoRollWindow {
                     let mut base_color = note.color;
                     let volume_percent = note.thickness / 6.0;
                     base_color.set_alpha((volume_percent * 255.0) as u8);
-                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1, self.key_length); 
+                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos, y - 1, self.key_thickness, self.key_length); 
                 }
             } else {
                PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_thickness, self.key_length, base_x, y);
@@ -853,7 +851,7 @@ impl PianoRollWindow {
                     let mut base_color = note.color;
                     let volume_percent = note.thickness / 6.0;
                     base_color.set_alpha((volume_percent * 255.0) as u8);
-                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1, self.key_length); 
+                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos, y - 1, self.key_thickness, self.key_length); 
                 }
             } else {
                PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_thickness, self.key_length, base_x, y);
@@ -1042,18 +1040,19 @@ impl PianoRollWindow {
     }
 
     fn draw_top_to_bottom(&mut self, runtime: &RuntimeState) {
-        let waveform_area_width = 32;
-        let waveform_string_pos = 16;
+        let waveform_area_width = self.key_thickness * 4;
+        let waveform_string_pos = self.key_thickness * 2;
+        let waveform_margin = self.key_thickness / 2;
         let key_height = self.key_length;
-        let leftmost_key = waveform_area_width;
-        let surfboard_height = 32;
+        let leftmost_key = waveform_area_width + waveform_margin;
+        let surfboard_height = self.surfboard_height;
         let string_height = self.canvas.height - key_height - surfboard_height;
 
-        self.draw_piano_strings_vert(waveform_area_width, surfboard_height + key_height, string_height);
+        self.draw_piano_strings_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, string_height);
         self.draw_waveform_string_vert(waveform_string_pos, surfboard_height + key_height, string_height);
         self.draw_piano_keys_vert(leftmost_key, surfboard_height);
 
-        self.draw_slices_vert(waveform_area_width, surfboard_height + key_height, 1, waveform_string_pos);
+        self.draw_slices_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, 1, waveform_string_pos);
         self.draw_key_spots_vert(leftmost_key, surfboard_height, waveform_string_pos);
         
         self.draw_audio_surfboard_horiz(runtime, 0, 0, self.canvas.width, surfboard_height);
