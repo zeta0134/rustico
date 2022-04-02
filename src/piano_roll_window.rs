@@ -99,38 +99,102 @@ fn draw_speaker_key_horiz(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u3
     drawing::blend_rect(canvas, x + 12, y + 4 - 8, 1, 9, color);
 }
 
-fn draw_speaker_key_vert(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32) {
-    drawing::blend_rect(canvas, x +  2, y + 6, 3, 5, color);
-    drawing::blend_rect(canvas, x +  5, y + 5, 1, 7, color);
-    drawing::blend_rect(canvas, x +  6, y + 4, 1, 9, color);
-    drawing::blend_rect(canvas, x +  7, y + 3, 1, 11, color);
-    drawing::blend_rect(canvas, x +  8, y + 2, 1, 13, color);
-    drawing::blend_rect(canvas, x + 10, y + 6, 1, 5, color);
-    drawing::blend_rect(canvas, x + 12, y + 4, 1, 9, color);
+// various utility functions for key drawing. The 1px offsets generally account for the
+// 1px border along the top and between keys.
+fn full_key_length(base_key_length: u32) -> u32 {
+    return base_key_length - 1;
 }
 
-
-fn draw_left_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
-    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 15, color);
-    drawing::blend_rect(canvas, x + (key_thickness / 2), y + 9, key_thickness / 2, 7, color);
+fn upper_key_length(base_key_length: u32) -> u32 {
+    return base_key_length / 2;
 }
 
-fn draw_center_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
-    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 8, color);
-    drawing::blend_rect(canvas, x - (key_thickness - 1), y + 9, (key_thickness * 2) - 1, 7, color);
+fn lower_key_length(base_key_length: u32) -> u32 {
+    return (base_key_length / 2) - 1;
 }
 
-fn draw_right_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
-    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness - 1, 15, color);
-    drawing::blend_rect(canvas, x - (key_thickness - 1), y + 9, key_thickness / 2, 7, color);
+fn upper_key_lpos(l: u32) -> u32 {
+    return l + 1;
 }
 
-fn draw_topmost_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
-    drawing::blend_rect(canvas, x - ((key_thickness - 2) / 2), y + 1, key_thickness + ((key_thickness - 2) / 2), 15, color);
+fn lower_key_lpos(l: u32, base_key_length: u32) -> u32 {
+    return l + 1 + upper_key_length(base_key_length);
 }
 
-fn draw_black_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32) {
-    drawing::blend_rect(canvas, x - (key_thickness / 2), y + 1, key_thickness + 1, 8, color);
+fn draw_left_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32, base_key_length: u32) {
+    drawing::blend_rect(
+        canvas, 
+        x - ((key_thickness - 2) / 2), 
+        upper_key_lpos(y),
+        key_thickness - 1, 
+        full_key_length(base_key_length),
+        color);
+    drawing::blend_rect(canvas, 
+        x + (key_thickness / 2), 
+        lower_key_lpos(y, base_key_length), 
+        key_thickness / 2, 
+        lower_key_length(base_key_length), 
+        color);
+}
+
+fn draw_center_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32, base_key_length: u32) {
+    drawing::blend_rect(canvas, 
+        x - ((key_thickness - 2) / 2), 
+        upper_key_lpos(y),
+        key_thickness - 1, 
+        upper_key_length(base_key_length), 
+        color);
+    drawing::blend_rect(canvas, 
+        x - (key_thickness - 1), 
+        lower_key_lpos(y, base_key_length),
+        (key_thickness * 2) - 1, 
+        lower_key_length(base_key_length),
+        color);
+}
+
+fn draw_right_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32, base_key_length: u32) {
+    drawing::blend_rect(canvas, 
+        x - ((key_thickness - 2) / 2), 
+        upper_key_lpos(y),
+        key_thickness - 1, 
+        full_key_length(base_key_length),
+        color);
+    drawing::blend_rect(canvas, 
+        x - (key_thickness - 1), 
+        lower_key_lpos(y, base_key_length),
+        key_thickness / 2, 
+        lower_key_length(base_key_length), 
+        color);
+}
+
+fn draw_topmost_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32, base_key_length: u32) {
+    drawing::blend_rect(canvas, 
+        x - ((key_thickness - 2) / 2), 
+        upper_key_lpos(y),
+        key_thickness + ((key_thickness - 2) / 2), 
+        full_key_length(base_key_length),
+        color);
+}
+
+fn draw_black_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Color, key_thickness: u32, base_key_length: u32) {
+    drawing::blend_rect(canvas, 
+        x - (key_thickness / 2), 
+        upper_key_lpos(y),
+        key_thickness + 1, 
+        upper_key_length(base_key_length),
+        color);
+}
+
+fn draw_speaker_key_vert(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32, base_key_length: u32) {
+    let offset = (base_key_length - 16) / 2;
+    let dy = y + offset;
+    drawing::blend_rect(canvas, x +  2, dy + 6, 3, 5, color);
+    drawing::blend_rect(canvas, x +  5, dy + 5, 1, 7, color);
+    drawing::blend_rect(canvas, x +  6, dy + 4, 1, 9, color);
+    drawing::blend_rect(canvas, x +  7, dy + 3, 1, 11, color);
+    drawing::blend_rect(canvas, x +  8, dy + 2, 1, 13, color);
+    drawing::blend_rect(canvas, x + 10, dy + 6, 1, 5, color);
+    drawing::blend_rect(canvas, x + 12, dy + 4, 1, 9, color);
 }
 
 fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
@@ -145,8 +209,9 @@ pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
     pub keys: u32,
-    pub key_height: u32,
-    pub roll_width: u32,
+    pub key_thickness: u32,
+    pub key_length: u32,
+    pub surfboard_height: u32,
     pub lowest_frequency: f32,
     pub highest_frequency: f32,
     pub time_slices: VecDeque<Vec<ChannelSlice>>,
@@ -162,11 +227,13 @@ pub struct PianoRollWindow {
 impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
         return PianoRollWindow {
-            canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
-            shown: false,
+            //canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
+            canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
+            shown: true,
             keys: 109,
-            key_height: 4,
-            roll_width: 222,
+            key_thickness: 8,
+            key_length: 48,
+            surfboard_height: 32,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
@@ -176,6 +243,10 @@ impl PianoRollWindow {
             polling_type: PollingType::ApuQuarterFrame,
             polling_period: 1,
         };
+    }
+
+    fn roll_width(&self) -> u32 {
+        return self.canvas.height - self.key_length - self.surfboard_height;
     }
 
     fn draw_piano_strings_horiz(&mut self, x: u32, starting_y: u32, width: u32) {
@@ -199,11 +270,11 @@ impl PianoRollWindow {
 
         let mut key_counter = 0;
         let mut y = starting_y;
-        let safety_margin = 0 + self.key_height * 2;
+        let safety_margin = 0 + self.key_thickness * 2;
         while key_counter < self.keys && y > safety_margin {
             let string_color = string_colors[(key_counter % 12) as usize];
             drawing::rect(&mut self.canvas, x, y, width, 1, string_color);
-            y -= self.key_height;
+            y -= self.key_thickness;
             key_counter += 1;
         }
     }
@@ -229,11 +300,11 @@ impl PianoRollWindow {
 
         let mut key_counter = 0;
         let mut x = starting_x;
-        let safety_margin = self.canvas.width - self.key_height * 2;
+        let safety_margin = self.canvas.width - self.key_thickness * 2;
         while key_counter < self.keys && x < safety_margin {
             let string_color = string_colors[(key_counter % 12) as usize];
             drawing::rect(&mut self.canvas, x, y, 1, height, string_color);
-            x += self.key_height; // TODO: it's not "height" anymore, more like key_size?
+            x += self.key_thickness; // TODO: it's not "height" anymore, more like key_size?
             key_counter += 1;
         }
     }
@@ -295,7 +366,7 @@ impl PianoRollWindow {
 
         let canvas_height = self.canvas.height;
         drawing::rect(&mut self.canvas, x, 0, 16, canvas_height, top_edge);
-        for y in 0 .. self.keys * self.key_height - 1 {
+        for y in 0 .. self.keys * self.key_thickness - 1 {
             let pixel_index = y % upper_key_pixels.len() as u32;
             drawing::rect(&mut self.canvas, x+0, base_y - y, 8, 1, upper_key_pixels[pixel_index as usize]);
             drawing::rect(&mut self.canvas, x+8, base_y - y, 8, 1, lower_key_pixels[pixel_index as usize]);
@@ -342,14 +413,14 @@ impl PianoRollWindow {
         ];
 
         let canvas_width = self.canvas.width;
-        drawing::rect(&mut self.canvas, 0, y, canvas_width, 16, top_edge);
-        drawing::rect(&mut self.canvas, base_x, y, self.keys * self.key_height, 16, white_key_border);
+        drawing::rect(&mut self.canvas, 0, y, canvas_width, self.key_length, top_edge);
+        drawing::rect(&mut self.canvas, base_x, y, self.keys * self.key_thickness, self.key_length, white_key_border);
         for key_index in 0 .. self.keys - 1 {
-            let x = base_x + key_index * self.key_height;
-            key_drawing_functions[key_index as usize % 12](&mut self.canvas, x, y, key_colors[key_index as usize % 12], self.key_height);
+            let x = base_x + key_index * self.key_thickness;
+            key_drawing_functions[key_index as usize % 12](&mut self.canvas, x, y, key_colors[key_index as usize % 12], self.key_thickness, self.key_length);
         }
-        let topmost_x = base_x + (self.keys - 1) * self.key_height;
-        draw_topmost_white_key_vert(&mut self.canvas, topmost_x, y, white_key, self.key_height);
+        let topmost_x = base_x + (self.keys - 1) * self.key_thickness;
+        draw_topmost_white_key_vert(&mut self.canvas, topmost_x, y, white_key, self.key_thickness, self.key_length);
         drawing::rect(&mut self.canvas, 0, y, canvas_width, 1, top_edge);
     }
 
@@ -405,7 +476,7 @@ impl PianoRollWindow {
         }        
     }
 
-    fn draw_key_spot_vert(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_width: u32, starting_x: u32, y: u32) {
+    fn draw_key_spot_vert(canvas: &mut SimpleBuffer, slice: &ChannelSlice, key_thickness: u32, key_length: u32, starting_x: u32, y: u32) {
         if !slice.visible {return;}
 
         match slice.note_type {
@@ -442,16 +513,16 @@ impl PianoRollWindow {
                 let base_percent = (1.0 - (note_key % 1.0)) * adjusted_volume_percent;
                 let adjacent_percent = (note_key % 1.0) * adjusted_volume_percent;
 
-                let base_x = (starting_x as f32) + base_key * key_width as f32;
-                if base_x > 1.0 && base_x < (canvas.width - key_width) as f32 {
+                let base_x = (starting_x as f32) + base_key * key_thickness as f32;
+                if base_x > 1.0 && base_x < (canvas.width - key_thickness) as f32 {
                     base_color.set_alpha((base_percent * 255.0) as u8);
-                    key_drawing_functions[base_key as usize % 12](canvas, base_x as u32, y, base_color, key_width);
+                    key_drawing_functions[base_key as usize % 12](canvas, base_x as u32, y, base_color, key_thickness, key_length);
                 }
 
-                let adjacent_x = (starting_x as f32) + adjacent_key * key_width as f32;
-                if adjacent_x > 1.0 && adjacent_x < (canvas.width - key_width) as f32 {
+                let adjacent_x = (starting_x as f32) + adjacent_key * key_thickness as f32;
+                if adjacent_x > 1.0 && adjacent_x < (canvas.width - key_thickness) as f32 {
                     base_color.set_alpha((adjacent_percent * 255.0) as u8);
-                    key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_x as u32, y, base_color, key_width);
+                    key_drawing_functions[adjacent_key as usize % 12](canvas, adjacent_x as u32, y, base_color, key_thickness, key_length);
                 }
             }
         }        
@@ -725,7 +796,7 @@ impl PianoRollWindow {
         let mut x = starting_x;
         for channel_slice in self.time_slices.iter() {
             for note in channel_slice.iter() {
-                PianoRollWindow::draw_slice_horiz(&mut self.canvas, &note, x, base_y, self.key_height);
+                PianoRollWindow::draw_slice_horiz(&mut self.canvas, &note, x, base_y, self.key_thickness);
             }
             // bail if we hit either screen edge:
             if x == 0 || x == (self.canvas.width - 1) {
@@ -740,9 +811,9 @@ impl PianoRollWindow {
         for channel_slice in self.time_slices.iter() {
             for note in channel_slice.iter() {
                 if note.note_type == NoteType::Waveform {
-                    PianoRollWindow::draw_slice_vert(&mut self.canvas, &note, waveform_pos, y, self.key_height);
+                    PianoRollWindow::draw_slice_vert(&mut self.canvas, &note, waveform_pos, y, self.key_thickness);
                 } else {
-                    PianoRollWindow::draw_slice_vert(&mut self.canvas, &note, base_x, y, self.key_height);
+                    PianoRollWindow::draw_slice_vert(&mut self.canvas, &note, base_x, y, self.key_thickness);
                 }
             }
             // bail if we hit either screen edge:
@@ -756,7 +827,7 @@ impl PianoRollWindow {
 
     fn draw_key_spots_horiz(&mut self, x: u32, base_y: u32) {
         for note in self.time_slices.front().unwrap_or(&Vec::new()) {
-            PianoRollWindow::draw_key_spot_horiz(&mut self.canvas, &note, self.key_height, x, base_y);
+            PianoRollWindow::draw_key_spot_horiz(&mut self.canvas, &note, self.key_thickness, x, base_y);
         }
     }
 
@@ -767,10 +838,10 @@ impl PianoRollWindow {
                     let mut base_color = note.color;
                     let volume_percent = note.thickness / 6.0;
                     base_color.set_alpha((volume_percent * 255.0) as u8);
-                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1); 
+                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1, self.key_length); 
                 }
             } else {
-               PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_height, base_x, y);
+               PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_thickness, self.key_length, base_x, y);
             }
         }
     }
@@ -782,10 +853,10 @@ impl PianoRollWindow {
                     let mut base_color = note.color;
                     let volume_percent = note.thickness / 6.0;
                     base_color.set_alpha((volume_percent * 255.0) as u8);
-                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1); 
+                    draw_speaker_key_vert(&mut self.canvas, base_color, waveform_pos - 8, y - 1, self.key_length); 
                 }
             } else {
-               PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_height, base_x, y);
+               PianoRollWindow::draw_key_spot_vert(&mut self.canvas, &note, self.key_thickness, self.key_length, base_x, y);
             }
         }
     }
@@ -799,7 +870,7 @@ impl PianoRollWindow {
         }
         self.time_slices.push_front(frame_notes);
 
-        while self.time_slices.len() > self.roll_width as usize {
+        while self.time_slices.len() > self.roll_width() as usize {
             self.time_slices.pop_back();
         }
     }
@@ -973,7 +1044,7 @@ impl PianoRollWindow {
     fn draw_top_to_bottom(&mut self, runtime: &RuntimeState) {
         let waveform_area_width = 32;
         let waveform_string_pos = 16;
-        let key_height = 16;
+        let key_height = self.key_length;
         let leftmost_key = waveform_area_width;
         let surfboard_height = 32;
         let string_height = self.canvas.height - key_height - surfboard_height;
@@ -1054,7 +1125,7 @@ impl Panel for PianoRollWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 2;
+        return 1;
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
