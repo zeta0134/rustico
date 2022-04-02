@@ -49,7 +49,11 @@ fn cpu_register_color(address: u16) -> Color {
         0x2006 => Color::rgb(61, 45, 255),
         0x2007 => Color::rgb(255, 6, 13),
 
-        0x4014 => Color::rgb(255, 255, 0),
+        0x4000 ..= 0x4013  => Color::rgb(255, 192, 0),
+
+        0x4014 => Color::rgb(255, 0, 255),
+        0x4015 => Color::rgb(255, 0, 255),
+        0x4017 => Color::rgb(255, 0, 255),
         _ => Color::rgb(192, 192, 192)
     }
 }
