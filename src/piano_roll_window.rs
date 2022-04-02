@@ -218,7 +218,7 @@ pub struct PianoRollWindow {
     pub scroll_direction: ScrollDirection,
     pub key_size: KeySize,
     pub polling_type: PollingType,
-    pub polling_period: usize,
+    pub speed_multiplier: u32,
 }
 
 impl PianoRollWindow {
@@ -231,7 +231,7 @@ impl PianoRollWindow {
             keys: 109,
             key_thickness: 16,
             key_length: 64,
-            surfboard_height: 64,
+            surfboard_height: 128,
             lowest_frequency: 8.176, // ~C0
             highest_frequency: 4434.92209563, // ~C#8
             time_slices: VecDeque::new(),
@@ -239,7 +239,7 @@ impl PianoRollWindow {
             scroll_direction: ScrollDirection::TopToBottom,
             key_size: KeySize::Small,
             polling_type: PollingType::ApuQuarterFrame,
-            polling_period: 1,
+            speed_multiplier: 4,
         };
     }
 
@@ -862,11 +862,14 @@ impl PianoRollWindow {
     fn update(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
         let mut channels = apu.channels();
         channels.extend(mapper.channels());
-        let mut frame_notes: Vec<ChannelSlice> = Vec::new();
-        for channel in channels {
-            frame_notes.push(self.slice_from_channel(channel));
+
+        for _i in 0 .. self.speed_multiplier {
+            let mut frame_notes: Vec<ChannelSlice> = Vec::new();
+            for channel in &channels {
+                frame_notes.push(self.slice_from_channel(*channel));
+            }
+            self.time_slices.push_front(frame_notes);
         }
-        self.time_slices.push_front(frame_notes);
 
         while self.time_slices.len() > self.roll_width() as usize {
             self.time_slices.pop_back();
