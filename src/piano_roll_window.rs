@@ -239,7 +239,7 @@ impl PianoRollWindow {
             scroll_direction: ScrollDirection::TopToBottom,
             key_size: KeySize::Small,
             polling_type: PollingType::ApuQuarterFrame,
-            speed_multiplier: 4,
+            speed_multiplier: 6,
         };
     }
 
