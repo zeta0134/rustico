@@ -205,7 +205,7 @@ impl PpuWindow {
             for y in 0 .. 8 {
                 let sprite_index = y * 8 + x;
                 let sprite_y =     nes.ppu.oam[sprite_index * 4 + 0];
-                let mut sprite_tile =  nes.ppu.oam[sprite_index * 4 + 1];
+                let sprite_tile =  nes.ppu.oam[sprite_index * 4 + 1];
                 let sprite_flags = nes.ppu.oam[sprite_index * 4 + 2];
                 let sprite_x =     nes.ppu.oam[sprite_index * 4 + 3];
                 
@@ -222,16 +222,16 @@ impl PpuWindow {
                     if (sprite_tile & 0b1) != 0 {
                         pattern_address = 0x1000;
                     }
-                    sprite_tile &= 0b1111_1110;
+                    let large_sprite_tile = sprite_tile & 0b1111_1110;
 
                     drawing::rect(&mut self.canvas, 
                         cell_x, cell_y,
                         18, 34, 
                         Color::rgb(255, 255, 255));
-                    draw_2x_tile(& *nes.mapper, pattern_address, sprite_tile as u16, &mut self.canvas, 
+                    draw_2x_tile(& *nes.mapper, pattern_address, large_sprite_tile as u16, &mut self.canvas, 
                         cell_x + 1, cell_y + 1,
                         &self.palette_cache[(palette_index + 4) as usize]);
-                    draw_2x_tile(& *nes.mapper, pattern_address, (sprite_tile + 1) as u16, &mut self.canvas, 
+                    draw_2x_tile(& *nes.mapper, pattern_address, (large_sprite_tile + 1) as u16, &mut self.canvas, 
                         cell_x + 1, cell_y + 1 + 16,
                         &self.palette_cache[(palette_index + 4) as usize]);
                 } else {
