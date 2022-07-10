@@ -336,12 +336,16 @@ pub fn main() {
           let ty = windows[i].panel.active_canvas().height;
           textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap()
         }
+        // Don't mind these rust-isms
+        let borrowed_window = &mut windows[i];
+        let title = borrowed_window.panel.title();
+        let _ = borrowed_window.canvas.window_mut().set_title(title);
       }
 
       // Draw all windows
       for i in 0 .. windows.len() {
         if windows[i].panel.shown() {
-          windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame);
+          application_events.extend(windows[i].panel.handle_event(&runtime_state, events::Event::RequestFrame));
           windows[i].canvas.set_draw_color(Color::RGB(255, 255, 255));
           let _ = textures[i].update(None, &windows[i].panel.active_canvas().buffer, (windows[i].panel.active_canvas().width * 4) as usize);
           let _ = windows[i].canvas.copy(&textures[i], None, None);
