@@ -59,5 +59,7 @@ pub enum Event {
     ShowTestWindow,
     StandardControllerPress(usize, StandardControllerButton),
     StandardControllerRelease(usize, StandardControllerButton),
+    ToggleFpsDisplay,
+    ToggleNtscFilter,
     Update,
 }

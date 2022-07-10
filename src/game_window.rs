@@ -31,13 +31,13 @@ impl GameWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return GameWindow {
-            canvas: SimpleBuffer::new(240*2, 224*2),
+            canvas: SimpleBuffer::new(240, 224),
             font: font,
             shown: true,
-            scale: 1,
+            scale: 2,
             display_overscan: false,
-            ntsc_filter: true,
-            display_fps: true,
+            ntsc_filter: false,
+            display_fps: false,
 
             frame_duration: Instant::now(),
             durations: [0f32; 60],
@@ -64,12 +64,16 @@ impl GameWindow {
         for x in overscan .. 256 - overscan {
             for y in overscan .. 240 - overscan {
                 if self.ntsc_filter {
-                    let color_left = Color::from_raw(nes.ppu.filtered_screen[(y * 512 + x * 2) as usize]);
-                    let color_right = Color::from_raw(nes.ppu.filtered_screen[(y * 512 + x * 2 + 1) as usize]);
-                    self.canvas.put_pixel((x - overscan) * 2,     (y - overscan) * 2, color_left);
-                    self.canvas.put_pixel((x - overscan) * 2 + 1, (y - overscan) * 2, color_right);
-                    self.canvas.put_pixel((x - overscan) * 2,     (y - overscan) * 2 + 1, color_left);
-                    self.canvas.put_pixel((x - overscan) * 2 + 1, (y - overscan) * 2 + 1, color_right);
+                    let scale = self.scale;
+                    let base_x = x * scale;
+                    let base_y = y * 256 * scale;
+
+                    for sx in 0 .. self.scale {
+                        let column_color = Color::from_raw(nes.ppu.filtered_screen[(base_y + base_x + sx) as usize]);
+                        for sy in 0 .. self.scale {
+                            self.canvas.put_pixel((x - overscan) * scale + sx, (y - overscan) * scale + sy, column_color);        
+                        }
+                    }
                 } else {
                     let palette_index = ((nes.ppu.screen[(y * 256 + x) as usize]) as usize) * 3;
                     self.canvas.put_pixel(
@@ -94,24 +98,36 @@ impl GameWindow {
         if self.scale < 5 {
             self.scale += 1;
         }
+        self.update_canvas_size();
     }
 
     fn decrease_scale(&mut self) {
         if self.scale > 1 {
             self.scale -= 1;
         }
+        self.update_canvas_size();
     }
 
     fn toggle_overscan(&mut self) {
-        if self.display_overscan {
-            // Hide overscan:
-            self.canvas = SimpleBuffer::new(240 * 2, 224 * 2);
-            self.display_overscan = false;
-        } else {
-            // Show overscan
-            self.canvas = SimpleBuffer::new(256 * 2, 240 * 2);
-            self.display_overscan = true;
-        }
+        self.display_overscan = !self.display_overscan;
+        self.update_canvas_size();
+    }
+
+    fn toggle_fps(&mut self) {
+        self.display_fps = !self.display_fps;
+    }
+
+    fn toggle_ntsc_filter(&mut self) {
+        self.ntsc_filter = !self.ntsc_filter;
+        self.update_canvas_size();   
+    }
+
+    fn update_canvas_size(&mut self) {
+        let base_width = if self.display_overscan {256} else {240};
+        let base_height = if self.display_overscan {240} else {224};
+        let scaled_width = if self.ntsc_filter {base_width * self.scale} else {base_width};
+        let scaled_height = if self.ntsc_filter {base_height * self.scale} else {base_height};
+        self.canvas = SimpleBuffer::new(scaled_width, scaled_height);
     }
 }
 
@@ -133,7 +149,7 @@ impl Panel for GameWindow {
                 // Technically this will have us drawing one frame behind the filter. To fix
                 // this, we'd need Application to manage filters instead.
                 if self.ntsc_filter {
-                    responses.push(Event::NesRenderNTSC(512));
+                    responses.push(Event::NesRenderNTSC(256 * (self.scale as usize)));
                 }
             },
             Event::ShowGameWindow => {self.shown = true},
@@ -142,6 +158,8 @@ impl Panel for GameWindow {
             Event::GameIncreaseScale => {self.increase_scale();}
             Event::GameDecreaseScale => {self.decrease_scale();}
             Event::GameToggleOverscan => {self.toggle_overscan();}
+            Event::ToggleFpsDisplay => {self.toggle_fps();}
+            Event::ToggleNtscFilter => {self.toggle_ntsc_filter();}
             _ => {}
         }
         return responses;
@@ -152,6 +170,10 @@ impl Panel for GameWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return self.scale;
+        if self.ntsc_filter {
+            return 1; // we handle scale in software
+        } else {
+            return self.scale;
+        }
     }
 }
