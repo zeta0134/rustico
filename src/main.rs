@@ -236,6 +236,9 @@ pub fn main() {
                       Keycode::Comma => {application_events.push(events::Event::MemoryViewerPreviousPage);},
                       Keycode::Slash => {application_events.push(events::Event::MemoryViewerNextBus);},
 
+                      Keycode::N => {application_events.push(events::Event::ToggleNtscFilter);},
+                      Keycode::F => {application_events.push(events::Event::ToggleFpsDisplay);},
+
                       Keycode::S => {application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));},
 
                       Keycode::P => {application_events.push(events::Event::NesToggleEmulation);}
@@ -257,7 +260,7 @@ pub fn main() {
 
                       Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {application_events.push(events::Event::GameIncreaseScale);},
                       Keycode::KpMinus | Keycode::Minus => {application_events.push(events::Event::GameDecreaseScale);},
-                      Keycode::KpMultiply=> {application_events.push(events::Event::GameToggleOverscan);},
+                      Keycode::KpMultiply => {application_events.push(events::Event::GameToggleOverscan);},
                       _ => ()
                     }
                   }
@@ -329,12 +332,13 @@ pub fn main() {
       // Update window sizes
       for i in 0 .. windows.len() {
         if windows[i].needs_resize() {
-          let (wx, wy) = windows[i].size();
+          let (wx, wy) = windows[i].window_size();
           let _ = windows[i].canvas.window_mut().set_size(wx, wy);
 
-          let tx = windows[i].panel.active_canvas().width;
-          let ty = windows[i].panel.active_canvas().height;
-          textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap()
+          let (tx, ty) = windows[i].canvas_size();
+          textures[i] = texture_creators[i].create_texture(PixelFormatEnum::ABGR8888, TextureAccess::Streaming, tx, ty).unwrap();
+          windows[i].texture_size_x = tx;
+          windows[i].texture_size_y = ty;
         }
         // Don't mind these rust-isms
         let borrowed_window = &mut windows[i];
