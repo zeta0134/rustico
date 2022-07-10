@@ -134,6 +134,9 @@ impl RuntimeState {
                 self.nes.run_until_vblank();
                 responses.extend(self.collect_timing_events());
             },
+            Event::NesRenderNTSC(width) => {
+                self.nes.ppu.render_ntsc(width);
+            },
             Event::NesRunOpcode => {
                 self.nes.step();
             },

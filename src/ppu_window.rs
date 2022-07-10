@@ -255,14 +255,14 @@ impl PpuWindow {
                 drawing::rect(&mut self.canvas, 
                     cell_x + 19, cell_y, 
                     16, 32, bg_color);
-                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y,
-                    sprite_x as u32, 2, text_color);
-                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 8,
+                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 0,
                     sprite_y as u32, 2, text_color);
-                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 16,
+                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 8,
                     sprite_tile as u32, 2, text_color);
-                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 24,
+                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 16,
                     sprite_flags as u32, 2, text_color);
+                drawing::hex(&mut self.canvas, &self.font, cell_x + 19, cell_y + 24,
+                    sprite_x as u32, 2, text_color);
             }
         }
     }

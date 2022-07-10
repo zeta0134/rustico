@@ -37,6 +37,7 @@ pub enum Event {
     NesNewFrame,
     NesNewScanline,
     NesPauseEmulation,
+    NesRenderNTSC(usize),
     NesResumeEmulation,
     NesReset,
     NesRunCycle,

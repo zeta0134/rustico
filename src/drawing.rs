@@ -27,6 +27,17 @@ impl Color {
         }   
     }
 
+    pub fn from_raw(argb: u32) -> Color {
+        return Color {
+            data: [
+                ((argb & 0x00FF0000) >> 16) as u8,
+                ((argb & 0x0000FF00) >> 8)  as u8,
+                ((argb & 0x000000FF) >> 0)  as u8,
+                ((argb & 0xFF000000) >> 24) as u8
+            ]
+        }
+    }
+
     pub fn from_slice(color_data: &[u8]) -> Color {
         return Color {
             data: [
