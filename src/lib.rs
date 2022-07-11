@@ -1,5 +1,6 @@
 extern crate image;
 extern crate rusticnes_core;
+extern crate toml;
 
 pub mod application;
 pub mod events;
@@ -16,3 +17,4 @@ pub mod memory_window;
 pub mod test_window;
 pub mod piano_roll_window;
 pub mod ppu_window;
+pub mod settings;

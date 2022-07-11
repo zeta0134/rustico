@@ -14,6 +14,7 @@ pub enum StandardControllerButton {
 
 #[derive(Clone)]
 pub enum Event {
+    ApplyBooleanSetting(String, bool),
     CloseWindow,
     CartridgeLoaded(String),
     CartridgeRejected(String, String),
@@ -59,7 +60,8 @@ pub enum Event {
     ShowTestWindow,
     StandardControllerPress(usize, StandardControllerButton),
     StandardControllerRelease(usize, StandardControllerButton),
-    ToggleFpsDisplay,
-    ToggleNtscFilter,
+    ToggleBooleanSetting(String),
+    ToggleFpsDisplay, // Deprecated
+    ToggleNtscFilter, //  Deprecated
     Update,
 }

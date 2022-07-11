@@ -108,20 +108,6 @@ impl GameWindow {
         self.update_canvas_size();
     }
 
-    fn toggle_overscan(&mut self) {
-        self.display_overscan = !self.display_overscan;
-        self.update_canvas_size();
-    }
-
-    fn toggle_fps(&mut self) {
-        self.display_fps = !self.display_fps;
-    }
-
-    fn toggle_ntsc_filter(&mut self) {
-        self.ntsc_filter = !self.ntsc_filter;
-        self.update_canvas_size();   
-    }
-
     fn update_canvas_size(&mut self) {
         let base_width = if self.display_overscan {256} else {240};
         let base_height = if self.display_overscan {240} else {224};
@@ -157,9 +143,15 @@ impl Panel for GameWindow {
 
             Event::GameIncreaseScale => {self.increase_scale();}
             Event::GameDecreaseScale => {self.decrease_scale();}
-            Event::GameToggleOverscan => {self.toggle_overscan();}
-            Event::ToggleFpsDisplay => {self.toggle_fps();}
-            Event::ToggleNtscFilter => {self.toggle_ntsc_filter();}
+            
+            Event::ApplyBooleanSetting(path, value) => {
+                match path.as_str() {
+                    "video.fps" => {self.display_fps = value},
+                    "video.ntsc_filter" => {self.ntsc_filter = value; self.update_canvas_size()},
+                    "video.overscan" => {self.display_overscan = value; self.update_canvas_size()},
+                    _ => {}
+                }
+            }
             _ => {}
         }
         return responses;
