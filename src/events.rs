@@ -14,6 +14,10 @@ pub enum StandardControllerButton {
 
 #[derive(Clone)]
 pub enum Event {
+    ApplyBooleanSetting(String, bool),
+    ApplyFloatSetting(String, f64),
+    ApplyIntegerSetting(String, i64),
+    ApplyStringSetting(String, String),
     CloseWindow,
     CartridgeLoaded(String),
     CartridgeRejected(String, String),
@@ -37,6 +41,7 @@ pub enum Event {
     NesNewFrame,
     NesNewScanline,
     NesPauseEmulation,
+    NesRenderNTSC(usize),
     NesResumeEmulation,
     NesReset,
     NesRunCycle,
@@ -58,5 +63,10 @@ pub enum Event {
     ShowTestWindow,
     StandardControllerPress(usize, StandardControllerButton),
     StandardControllerRelease(usize, StandardControllerButton),
+    StoreBooleanSetting(String, bool),
+    StoreFloatSetting(String, f64),
+    StoreIntegerSetting(String, i64),
+    StoreStringSetting(String, String),
+    ToggleBooleanSetting(String),
     Update,
 }
