@@ -13,8 +13,10 @@ use events::Event;
 const DEFAULT_CONFIG: &str = r#"
 [video]
 ntsc_filter = true
-overscan = true
-fps = true
+simulate_overscan = true
+display_fps = true
+scale_factor = 2
+
 "#;
 
 pub struct RusticNesSettings {
@@ -56,6 +58,9 @@ impl RusticNesSettings {
             },
             Value::Boolean(boolean_value) => {
                 events.push(Event::ApplyBooleanSetting(prefix, boolean_value));
+            },
+            Value::Integer(integer_value) => {
+                events.push(Event::ApplyIntegerSetting(prefix, integer_value));
             },
             _ => {
                 /* Unimplemented! */
@@ -144,6 +149,16 @@ impl RusticNesSettings {
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
         let mut events: Vec<Event> = Vec::new();
         match event {
+            Event::StoreBooleanSetting(path, value) => {
+                self.ensure_path_exists(path.clone(), Value::from(false));
+                self.set(path.clone(), Value::from(value));
+                events.push(Event::ApplyBooleanSetting(path, value));
+            },
+            Event::StoreIntegerSetting(path, value) => {
+                self.ensure_path_exists(path.clone(), Value::from(false));
+                self.set(path.clone(), Value::from(value));
+                events.push(Event::ApplyIntegerSetting(path, value));
+            },
             Event::ToggleBooleanSetting(path) => {
                 self.ensure_path_exists(path.clone(), Value::from(false));
                 let current_value = self.get(path.clone()).unwrap().as_bool().unwrap();
