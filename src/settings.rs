@@ -18,15 +18,18 @@ display_fps = false
 scale_factor = 2
 
 [piano_roll]
-canvas_width = 1920
-canvas_height = 1080
-key_length = 64
-key_thickness = 16
+canvas_width = 1280
+canvas_height = 720
+key_length = 32
+key_thickness = 11
 octave_count = 9
 scale_factor = 1
-speed_multiplier = 6
+speed_multiplier = 4
 starting_octave = 0
-waveform_height = 128
+waveform_height = 64
+
+[piano_roll.colors]
+test = 0x4567
 
 "#;
 
