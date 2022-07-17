@@ -132,7 +132,7 @@ fn draw_left_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: Co
         full_key_length(base_key_length),
         color);
     drawing::blend_rect(canvas, 
-        x + (key_thickness / 2), 
+        x + ((key_thickness + 1) / 2), 
         lower_key_lpos(y, base_key_length), 
         key_thickness / 2, 
         lower_key_length(base_key_length), 
@@ -162,9 +162,9 @@ fn draw_right_white_key_vert(canvas: &mut SimpleBuffer, x: u32, y: u32, color: C
         full_key_length(base_key_length),
         color);
     drawing::blend_rect(canvas, 
-        x - (key_thickness - 1), 
+        x - (key_thickness - 1),
         lower_key_lpos(y, base_key_length),
-        key_thickness / 2, 
+        (key_thickness + 1) / 2, 
         lower_key_length(base_key_length), 
         color);
 }
