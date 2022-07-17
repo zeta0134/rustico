@@ -17,6 +17,15 @@ simulate_overscan = false
 display_fps = false
 scale_factor = 2
 
+[piano_roll]
+canvas_width = 1920
+canvas_height = 1080
+key_thickness = 16
+key_length = 64
+scale_factor = 1
+speed_multiplier = 6
+waveform_height = 128
+
 "#;
 
 pub struct RusticNesSettings {

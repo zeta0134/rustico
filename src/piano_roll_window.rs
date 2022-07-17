@@ -5,6 +5,8 @@ use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
 
+use regex::Regex;
+
 use rusticnes_core::apu::ApuState;
 use rusticnes_core::apu::AudioChannelState;
 use rusticnes_core::apu::PlaybackRate;
@@ -202,42 +204,95 @@ fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dy
     return channels;
 }
 
+fn midi_frequency(midi_index: u32) -> f32 {
+    return 440.0 * (2.0_f32).powf(((midi_index as f32) - 69.0) / 12.0);
+}
+
+fn midi_index(note_name: &str) -> Result<u32, String> {
+     let re = Regex::new(r"([A-Ga-g])([BbSs#]?)(\d+)").unwrap();
+     if re.is_match(note_name) {
+        let captures = re.captures(note_name).unwrap();
+
+        let letter_name = captures[1].to_string().to_ascii_lowercase();
+        let letter_index = match letter_name.as_str() {
+            "c" => 0,
+            "d" => 2,
+            "e" => 4,
+            "f" => 5,
+            "g" => 7,
+            "a" => 9,
+            "b" => 11,
+            _ => 0 // should be unreachable
+        };
+
+        let modifier: i32 = match &captures[2] {
+            "B" => -1,
+            "b" => -1,
+            "S" => 1,
+            "s" => 1,
+            "#" => 1,
+            _ => 0
+        };
+
+        let octave_number: i32 = captures[3].parse().expect("Invalid octave number");
+        let octave_index = octave_number * 12;
+
+        let note_index = octave_index + letter_index + modifier;
+        if note_index >= 0 {
+            return Ok((note_index) as u32);
+        } else {
+            return Err(format!("Invalid MIDI index: {}", note_index));
+        }
+     } else {
+        return Err(format!("Invalid MIDI name: {}", note_name));
+     }
+}
+
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
+    pub scale: u32,
     pub keys: u32,
-    pub key_thickness: u32,
-    pub key_length: u32,
-    pub surfboard_height: u32,
     pub lowest_frequency: f32,
+    pub lowest_index: u32,
     pub highest_frequency: f32,
+    pub highest_index: u32,
     pub time_slices: VecDeque<Vec<ChannelSlice>>,
     pub polling_counter: usize,
 
     // user-configurable options
+    pub key_thickness: u32,
+    pub key_length: u32,
+    pub surfboard_height: u32,
     pub scroll_direction: ScrollDirection,
-    pub key_size: KeySize,
     pub polling_type: PollingType,
     pub speed_multiplier: u32,
 }
 
 impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
+        println!("TESTING");
+        println!("Midi name C0 produces: index {}, freq {}", midi_index("C0").unwrap(), midi_frequency(midi_index("C0").unwrap()));
+        println!("Midi name Cs8 produces: index {}, freq {}", midi_index("Cs9").unwrap(), midi_frequency(midi_index("Cs9").unwrap()));
+
+
         return PianoRollWindow {
             //canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
             //canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
             canvas: SimpleBuffer::new(1920, 1080), // actually 1080p
             shown: true,
+            scale: 1,
             keys: 109,
             key_thickness: 16,
             key_length: 64,
             surfboard_height: 128,
-            lowest_frequency: 8.176, // ~C0
-            highest_frequency: 4434.92209563, // ~C#8
+            lowest_frequency: midi_frequency(midi_index("C0").unwrap()), // ~C0
+            lowest_index: midi_index("C0").unwrap(),
+            highest_frequency: midi_frequency(midi_index("Cs9").unwrap()), // ~C#8
+            highest_index: midi_index("Cs9").unwrap(),
             time_slices: VecDeque::new(),
             polling_counter: 1,
             scroll_direction: ScrollDirection::TopToBottom,
-            key_size: KeySize::Small,
             polling_type: PollingType::ApuQuarterFrame,
             speed_multiplier: 6,
         };
@@ -372,7 +427,7 @@ impl PianoRollWindow {
         drawing::rect(&mut self.canvas, x, 0, 1, canvas_height, top_edge);
     }
 
-        // TOTO: this is hard-coded and isn't especially flexible. Shouldn't we use the key spot routines
+    // TOTO: this is hard-coded and isn't especially flexible. Shouldn't we use the key spot routines
     // instead of this?
     fn draw_piano_keys_vert(&mut self, base_x: u32, y: u32) {
         let white_key_border = Color::rgb(0x1C, 0x1C, 0x1C);
@@ -1115,6 +1170,39 @@ impl PianoRollWindow {
             }
         }
     }
+
+    fn set_canvas_height(&mut self, height: u32, width: u32) {
+        self.canvas = SimpleBuffer::new(height, width);
+    }
+
+    fn set_starting_octave(&mut self, octave_number: u32) {
+        let note_name = format!("C{}", octave_number);
+
+        let key_index = midi_index(&note_name).unwrap();
+        let key_freq = midi_frequency(key_index);
+        let highest_index = key_index + self.keys;
+        let highest_freq = midi_frequency(highest_index);
+
+        println!("New highest index: {}, new highest freq: {}", highest_index, highest_freq);
+
+        self.lowest_index = key_index;
+        self.lowest_frequency = key_freq;
+        self.highest_index = highest_index;
+        self.highest_frequency = highest_freq;
+    }
+
+    fn set_octave_count(&mut self, octave_count: u32) {
+        let key_count = octave_count * 12 + 1;
+
+        let highest_index = self.lowest_index + key_count;
+        let highest_freq = midi_frequency(highest_index);
+
+        println!("New highest index: {}, new highest freq: {}", highest_index, highest_freq);
+
+        self.keys = key_count;
+        self.highest_index = highest_index;
+        self.highest_frequency = highest_freq;
+    }
 }
 
 impl Panel for PianoRollWindow {
@@ -1127,7 +1215,7 @@ impl Panel for PianoRollWindow {
     }
 
     fn scale_factor(&self) -> u32 {
-        return 1;
+        return self.scale;
     }
 
     fn handle_event(&mut self, runtime: &RuntimeState, event: Event) -> Vec<Event> {
@@ -1157,6 +1245,21 @@ impl Panel for PianoRollWindow {
             Event::RequestFrame => {self.draw(runtime)},
             Event::ShowPianoRollWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
+
+            Event::ApplyIntegerSetting(path, value) => {
+                match path.as_str() {
+                    "piano_roll.canvas_width" => {self.set_canvas_height(value as u32, self.canvas.height)},
+                    "piano_roll.canvas_height" => {self.set_canvas_height(self.canvas.width, value as u32)},
+                    "piano_roll.key_thickness" => {self.key_thickness = value as u32},
+                    "piano_roll.key_length" => {self.key_length = value as u32},
+                    "piano_roll.octave_count" => {self.set_octave_count(value as u32)},
+                    "piano_roll.scale_factor" => {self.scale = value as u32},
+                    "piano_roll.speed_multiplier" => {self.speed_multiplier = value as u32},
+                    "piano_roll.starting_octave" => {self.set_starting_octave(value as u32)},
+                    "piano_roll.waveform_height" => {self.surfboard_height = value as u32},
+                    _ => {}
+                }
+            },
             _ => {}
         }
         return events;

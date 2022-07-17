@@ -1,4 +1,5 @@
 extern crate image;
+extern crate regex;
 extern crate rusticnes_core;
 extern crate toml;
 

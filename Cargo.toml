@@ -6,4 +6,5 @@ authors = ["Nicholas Flynt <zeta0134@reploid.cafe>"]
 [dependencies]
 image = "0.19"
 toml = "0.5"
+regex = "1.6"
 rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core" }
