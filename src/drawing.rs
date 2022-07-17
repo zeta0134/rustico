@@ -2,6 +2,8 @@ use image;
 use image::Pixel;
 use image::RgbaImage;
 
+use csscolorparser;
+
 fn blend_component(a: u8, b: u8, alpha: u8) -> u8 {
     return (
         (a as u16 * (255 - alpha as u16) / 255) + 
@@ -46,6 +48,25 @@ impl Color {
                 color_data[2],
                 color_data[3]
             ]
+        }
+    }
+
+    pub fn from_string(color_string: &str) -> Result<Color, String> {
+        match csscolorparser::parse(color_string) {
+            Ok(css_color) => {
+                let rgba8_color = css_color.to_rgba8();
+                return Ok(Color {
+                    data: [
+                        rgba8_color[0],
+                        rgba8_color[1],
+                        rgba8_color[2],
+                        rgba8_color[3]
+                    ]
+                });        
+            },
+            Err(e) => {
+                return Err(e.to_string());
+            }
         }
     }
 

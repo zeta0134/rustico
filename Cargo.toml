@@ -4,6 +4,7 @@ version = "0.0.1"
 authors = ["Nicholas Flynt <zeta0134@reploid.cafe>"]
 
 [dependencies]
+csscolorparser = "0.6.1"
 image = "0.19"
 toml = "0.5"
 regex = "1.6"

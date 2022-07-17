@@ -28,9 +28,6 @@ speed_multiplier = 4
 starting_octave = 0
 waveform_height = 64
 
-[piano_roll.colors]
-test = 0x4567
-
 "#;
 
 pub struct RusticNesSettings {

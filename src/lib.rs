@@ -1,3 +1,4 @@
+extern crate csscolorparser;
 extern crate image;
 extern crate regex;
 extern crate rusticnes_core;

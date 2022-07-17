@@ -15,6 +15,7 @@ use rusticnes_core::apu::Timbre;
 use rusticnes_core::mmc::mapper::Mapper;
 
 use std::collections::VecDeque;
+use std::collections::hash_map::HashMap;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum NoteType {
@@ -248,6 +249,83 @@ fn midi_index(note_name: &str) -> Result<u32, String> {
      }
 }
 
+pub fn default_channel_colors() -> HashMap<String, HashMap<String, Vec<Color>>> {
+    let mut channel_colors: HashMap<String, HashMap<String, Vec<Color>>> = HashMap::new();
+
+    let mut apu_colors: HashMap<String, Vec<Color>> = HashMap::new();
+    apu_colors.insert("Pulse 1".to_string(), vec!(
+        Color::rgb(0xFF, 0xA0, 0xA0),   // 12.5
+        Color::rgb(0xFF, 0x40, 0xFF),   // 25
+        Color::rgb(0xFF, 0x40, 0x40),   // 50
+        Color::rgb(0xFF, 0x40, 0xFF))); // 75 (same as 25)
+    apu_colors.insert("Pulse 2".to_string(), vec!(
+        Color::rgb(0xFF, 0xE0, 0xA0),   // 12.5
+        Color::rgb(0xFF, 0xC0, 0x40),   // 25
+        Color::rgb(0xFF, 0xFF, 0x40),   // 50
+        Color::rgb(0xFF, 0xC0, 0x40))); // 75 (same as 25)
+    apu_colors.insert("Triangle".to_string(), vec!(Color::rgb(0x40, 0xFF, 0x40)));
+    apu_colors.insert("Noise".to_string(), vec!(
+        Color::rgb(192, 192, 192),
+        Color::rgb(128, 240, 255)));
+    apu_colors.insert("DMC".to_string(), vec!(Color::rgb(96,  32, 192)));
+
+    let mut vrc6_colors: HashMap<String, Vec<Color>> = HashMap::new();
+    vrc6_colors.insert("Pulse 1".to_string(), vec!(
+        Color::rgb(0xf2, 0xbb, 0xd8),   // 6.25%
+        Color::rgb(0xdb, 0xa0, 0xbf),   // 12.5%
+        Color::rgb(0xc4, 0x86, 0xa6),   // 18.75%
+        Color::rgb(0xad, 0x6c, 0x8d),   // 25%
+        Color::rgb(0x97, 0x51, 0x74),   // 31.25%
+        Color::rgb(0x80, 0x37, 0x5b),   // 37.5%
+        Color::rgb(0x69, 0x1d, 0x42),   // 43.75%
+        Color::rgb(0x53, 0x03, 0x2a))); // 50%
+    vrc6_colors.insert("Pulse 2".to_string(), vec!(
+        Color::rgb(0xe8, 0xa7, 0xe7),   // 6.25%
+        Color::rgb(0xd2, 0x8f, 0xd1),   // 12.5%
+        Color::rgb(0xbd, 0x78, 0xbb),   // 18.75%
+        Color::rgb(0xa7, 0x60, 0xa6),   // 25%
+        Color::rgb(0x92, 0x49, 0x90),   // 31.25%
+        Color::rgb(0x7c, 0x31, 0x7b),   // 37.5%
+        Color::rgb(0x67, 0x1a, 0x65),   // 43.75%
+        Color::rgb(0x52, 0x03, 0x50))); // 50%
+    vrc6_colors.insert("Sawtooth".to_string(), vec!(
+        Color::rgb(0x07, 0x7d, 0x5a),   // Normal
+        Color::rgb(0x9f, 0xb8, 0xed))); // Distortion
+
+    let mut mmc5_colors: HashMap<String, Vec<Color>> = HashMap::new();
+    mmc5_colors.insert("Pulse 1".to_string(), vec!(Color::rgb(224, 24, 64)));
+    mmc5_colors.insert("Pulse 2".to_string(), vec!(Color::rgb(180, 12, 40)));
+    mmc5_colors.insert("PCM".to_string(), vec!(Color::rgb(224, 24, 64)));
+
+    let mut s5b_colors: HashMap<String, Vec<Color>> = HashMap::new();
+    s5b_colors.insert("A".to_string(), vec!(Color::rgb(32, 144, 204)));
+    s5b_colors.insert("B".to_string(), vec!(Color::rgb(24, 104, 228)));
+    s5b_colors.insert("C".to_string(), vec!(Color::rgb(16, 64, 248)));
+
+    let mut n163_colors: HashMap<String, Vec<Color>> = HashMap::new();
+    // TODO: Fix these. Even for defaults they're too dark and ugly.
+    let wavetable_gradient = vec!(
+        Color::rgb(0x66, 0x0e, 0x0e),
+        Color::rgb(0xc9, 0x9c, 0x9c),
+    );
+    n163_colors.insert("NAMCO 1".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 2".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 3".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 4".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 5".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 6".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 7".to_string(), wavetable_gradient.clone());
+    n163_colors.insert("NAMCO 8".to_string(), wavetable_gradient.clone());
+
+    channel_colors.insert("2A03".to_string(), apu_colors);
+    channel_colors.insert("VRC6".to_string(), vrc6_colors);
+    channel_colors.insert("MMC5".to_string(), mmc5_colors);
+    channel_colors.insert("YM2149F".to_string(), s5b_colors);
+    channel_colors.insert("N163".to_string(), n163_colors);
+
+    return channel_colors;
+}
+
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
     pub shown: bool,
@@ -267,6 +345,9 @@ pub struct PianoRollWindow {
     pub scroll_direction: ScrollDirection,
     pub polling_type: PollingType,
     pub speed_multiplier: u32,
+
+    // Keyed on: chip name, then channel name within that chip
+    pub channel_colors: HashMap<String, HashMap<String, Vec<Color>>>,
 }
 
 impl PianoRollWindow {
@@ -295,6 +376,7 @@ impl PianoRollWindow {
             scroll_direction: ScrollDirection::TopToBottom,
             polling_type: PollingType::ApuQuarterFrame,
             speed_multiplier: 6,
+            channel_colors: default_channel_colors(),
         };
     }
 
@@ -591,105 +673,33 @@ impl PianoRollWindow {
         return coordinate;
     }
 
-    pub fn channel_colors(channel: &dyn AudioChannelState) -> Vec<Color> {
+    pub fn channel_colors(&self, channel: &dyn AudioChannelState) -> Vec<Color> {
         if channel.muted() {
             return vec!(Color::rgb(32, 32, 32));
         }
-        return match channel.chip().as_str() {
-            "2A03" => match channel.name().as_str() {
-                "Pulse 1"  => {
-                    vec!(                        
-                        Color::rgb(0xFF, 0xA0, 0xA0), // 12.5
-                        Color::rgb(0xFF, 0x40, 0xFF), // 25
-                        Color::rgb(0xFF, 0x40, 0x40), // 50
-                        Color::rgb(0xFF, 0x40, 0xFF)) // 75 (same as 25)
-                },
-                "Pulse 2"  => {
-                    vec!(                        
-                        Color::rgb(0xFF, 0xE0, 0xA0), // 12.5
-                        Color::rgb(0xFF, 0xC0, 0x40), // 25
-                        Color::rgb(0xFF, 0xFF, 0x40), // 50
-                        Color::rgb(0xFF, 0xC0, 0x40)) // 75 (same as 25)
-                },
-                "Triangle" => {vec!(Color::rgb(0x40, 0xFF, 0x40))},
-                "Noise"    => {
-                    vec!(
-                        Color::rgb(192, 192, 192),
-                        Color::rgb(128, 240, 255)
-                    )
-                },
-                "DMC"      => {vec!(Color::rgb(96,  32, 192))},
-                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
-            },
-            "MMC5" => match channel.name().as_str() {
-                "Pulse 1" => {vec!(Color::rgb(224, 24, 64))},
-                "Pulse 2" => {vec!(Color::rgb(180, 12, 40))},
-                "PCM" => {vec!(Color::rgb(224, 24, 64))},
-                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
-            },
-            "YM2149F" => match channel.name().as_str() {
-                "A" => {vec!(Color::rgb(32, 144, 204))},
-                "B" => {vec!(Color::rgb(24, 104, 228))},
-                "C" => {vec!(Color::rgb(16, 64, 248))},
-                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
-            },
-            "VRC6" => match channel.name().as_str() {
-                "Pulse 1"  => {
-                    vec!(                        
-                        Color::rgb(0xf2, 0xbb, 0xd8), // 6.25%
-                        Color::rgb(0xdb, 0xa0, 0xbf), // 12.5%
-                        Color::rgb(0xc4, 0x86, 0xa6), // 18.75%
-                        Color::rgb(0xad, 0x6c, 0x8d), // 25%
-                        Color::rgb(0x97, 0x51, 0x74), // 31.25%
-                        Color::rgb(0x80, 0x37, 0x5b), // 37.5%
-                        Color::rgb(0x69, 0x1d, 0x42), // 43.75%
-                        Color::rgb(0x53, 0x03, 0x2a)) // 50%
-                },
-                "Pulse 2"  => {
-                    vec!(                        
-                        Color::rgb(0xe8, 0xa7, 0xe7), // 6.25%
-                        Color::rgb(0xd2, 0x8f, 0xd1), // 12.5%
-                        Color::rgb(0xbd, 0x78, 0xbb), // 18.75%
-                        Color::rgb(0xa7, 0x60, 0xa6), // 25%
-                        Color::rgb(0x92, 0x49, 0x90), // 31.25%
-                        Color::rgb(0x7c, 0x31, 0x7b), // 37.5%
-                        Color::rgb(0x67, 0x1a, 0x65), // 43.75%
-                        Color::rgb(0x52, 0x03, 0x50)) // 50%
-                },
-                "Sawtooth" => {
-                    vec!(
-                        Color::rgb(0x07, 0x7d, 0x5a),   // Normal
-                        Color::rgb(0x9f, 0xb8, 0xed))
-                }, // Distortion
-                _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
-            },
-            "N163" => {
-                let wavetable_gradient = vec!(
-                    Color::rgb(0x66, 0x0e, 0x0e),
-                    Color::rgb(0xc9, 0x9c, 0x9c),
-                );
-                match channel.name().as_str() {
-                    
-                    "NAMCO 1" => {wavetable_gradient},
-                    "NAMCO 2" => {wavetable_gradient},
-                    "NAMCO 3" => {wavetable_gradient},
-                    "NAMCO 4" => {wavetable_gradient},
-                    "NAMCO 5" => {wavetable_gradient},
-                    "NAMCO 6" => {wavetable_gradient},
-                    "NAMCO 7" => {wavetable_gradient},
-                    "NAMCO 8" => {wavetable_gradient},
-                    _ => {vec!(Color::rgb(192,  192, 192))} // default, should be unreachable
+
+        match self.channel_colors.get(&channel.chip()) {
+            Some(chip_colors) => {
+                match chip_colors.get(&channel.name()) {
+                    Some(color_gradient) => {
+                        return color_gradient.clone();
+                    },
+                    None => {
+                        // Known chip, but unknown channel within this chip. Weird!
+                        // Default to a different grey
+                        return vec!(Color::rgb(192,  192, 192));
+                    }
                 }
             },
-            _ => {
-                // Unknown expansion audio, we'll default it to grey
-                vec!(Color::rgb(224, 224, 224))
-            } 
-        };
+            None => {
+                // No color is defined for this whole chip. Is it new? Use a default color.
+                return vec!(Color::rgb(224, 224, 224));
+            }
+        }
     }
 
-    fn channel_color(channel: &dyn AudioChannelState) -> Color {
-        let colors = PianoRollWindow::channel_colors(channel);
+    fn channel_color(&self, channel: &dyn AudioChannelState) -> Color {
+        let colors = self.channel_colors(channel);
         let mut color = colors[0]; // default to the first color
         match channel.timbre() {
             Some(Timbre::DutyIndex{index, max}) => {
@@ -716,7 +726,7 @@ impl PianoRollWindow {
 
         let y: f32;
         let thickness: f32 = channel.amplitude() * 6.0;
-        let colors = PianoRollWindow::channel_colors(channel);
+        let colors = self.channel_colors(channel);
         let mut color = colors[0]; // default to the first color
         let note_type: NoteType;
 
@@ -999,7 +1009,7 @@ impl PianoRollWindow {
     }
 
     fn draw_channel_surfboard(&mut self, channel: &dyn AudioChannelState, x: u32, y: u32, width: u32, height: u32) {
-        let color = PianoRollWindow::channel_color(channel);
+        let color = self.channel_color(channel);
         self.draw_surfboard_background(x, y, width, height, color);
 
         let speed = 4;
