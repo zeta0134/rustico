@@ -42,7 +42,7 @@ impl RusticNesSettings {
     pub fn save(&self, filename: &OsString) {
         let config_str = toml::to_string(&self.root).unwrap();
         fs::write(filename, config_str).expect("Unable to write settings!");
-        println!("Wrote settings to {}", filename.clone().into_string().expect("Somehow invalid config path!"));
+        println!("Wrote settings to {:?}", filename);
     }
 
     fn _emit_events(value: Value, prefix: String) -> Vec<Event> {
