@@ -56,12 +56,10 @@ impl RusticNesSettings {
                     events.extend(RusticNesSettings::_emit_events(table[key].clone(), new_prefix));
                 }
             },
-            Value::Boolean(boolean_value) => {
-                events.push(Event::ApplyBooleanSetting(prefix, boolean_value));
-            },
-            Value::Integer(integer_value) => {
-                events.push(Event::ApplyIntegerSetting(prefix, integer_value));
-            },
+            Value::Boolean(boolean_value) => {events.push(Event::ApplyBooleanSetting(prefix, boolean_value));},
+            Value::Float(float_value) => {events.push(Event::ApplyFloatSetting(prefix, float_value));},
+            Value::Integer(integer_value) => {events.push(Event::ApplyIntegerSetting(prefix, integer_value));},
+            Value::String(string_value) => {events.push(Event::ApplyStringSetting(prefix, string_value));},
             _ => {
                 /* Unimplemented! */
             }
@@ -154,10 +152,20 @@ impl RusticNesSettings {
                 self.set(path.clone(), Value::from(value));
                 events.push(Event::ApplyBooleanSetting(path, value));
             },
+            Event::StoreFloatSetting(path, value) => {
+                self.ensure_path_exists(path.clone(), Value::from(false));
+                self.set(path.clone(), Value::from(value));
+                events.push(Event::ApplyFloatSetting(path, value));
+            },
             Event::StoreIntegerSetting(path, value) => {
                 self.ensure_path_exists(path.clone(), Value::from(false));
                 self.set(path.clone(), Value::from(value));
                 events.push(Event::ApplyIntegerSetting(path, value));
+            },
+            Event::StoreStringSetting(path, value) => {
+                self.ensure_path_exists(path.clone(), Value::from(false));
+                self.set(path.clone(), Value::from(value.clone()));
+                events.push(Event::ApplyStringSetting(path, value.clone()));
             },
             Event::ToggleBooleanSetting(path) => {
                 self.ensure_path_exists(path.clone(), Value::from(false));
