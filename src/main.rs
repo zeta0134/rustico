@@ -259,7 +259,7 @@ pub fn main() {
                       Keycode::Slash => {application_events.push(events::Event::MemoryViewerNextBus);},
 
                       Keycode::N => {application_events.push(events::Event::ToggleBooleanSetting("video.ntsc_filter".to_string()));},
-                      Keycode::F => {application_events.push(events::Event::ToggleBooleanSetting("video.fps".to_string()));},
+                      Keycode::F => {application_events.push(events::Event::ToggleBooleanSetting("video.display_fps".to_string()));},
 
                       Keycode::S => {application_events.push(events::Event::RequestSramSave(cartridge_state.sram_path.clone()));},
 
@@ -282,7 +282,7 @@ pub fn main() {
 
                       Keycode::Equals | Keycode::KpPlus | Keycode::Plus => {application_events.push(events::Event::GameIncreaseScale);},
                       Keycode::KpMinus | Keycode::Minus => {application_events.push(events::Event::GameDecreaseScale);},
-                      Keycode::KpMultiply => {application_events.push(events::Event::ToggleBooleanSetting("video.overscan".to_string()));},
+                      Keycode::KpMultiply => {application_events.push(events::Event::ToggleBooleanSetting("video.simulate_overscan".to_string()));},
                       _ => ()
                     }
                   }
