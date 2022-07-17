@@ -146,9 +146,9 @@ impl Panel for GameWindow {
             
             Event::ApplyBooleanSetting(path, value) => {
                 match path.as_str() {
-                    "video.fps" => {self.display_fps = value},
+                    "video.display_fps" => {self.display_fps = value},
                     "video.ntsc_filter" => {self.ntsc_filter = value; self.update_canvas_size()},
-                    "video.overscan" => {self.display_overscan = value; self.update_canvas_size()},
+                    "video.simulate_overscan" => {self.display_overscan = value; self.update_canvas_size()},
                     _ => {}
                 }
             }
