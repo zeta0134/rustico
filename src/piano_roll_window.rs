@@ -1162,7 +1162,7 @@ impl PianoRollWindow {
     fn mouse_click(&mut self, runtime: &RuntimeState, mx: i32, my: i32) -> Vec<Event> {
         match self.scroll_direction {
             ScrollDirection::TopToBottom => {
-                return self.mouse_mutes_channel_horiz(runtime, 0, 0, self.canvas.width, 32, mx, my);
+                return self.mouse_mutes_channel_horiz(runtime, 0, 0, self.canvas.width, self.surfboard_height, mx, my);
             },
             _ => {
                 /* unimplemented */
