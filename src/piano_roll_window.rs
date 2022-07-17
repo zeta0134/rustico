@@ -1213,6 +1213,56 @@ impl PianoRollWindow {
         self.highest_index = highest_index;
         self.highest_frequency = highest_freq;
     }
+
+    fn apply_color_string(&mut self, chip_name: &str, channel_name: &str, setting_name: &str, color_string: String) {
+        let setting_to_index_mapping = HashMap::from([
+            // Triangle, DMC, a few other simple chips
+            ("constant", 0),
+            // 2A03, MMC5 and VRC6 pulses
+            ("duty0", 0),
+            ("duty1", 1),
+            ("duty2", 2),
+            ("duty3", 3),
+            ("duty4", 3),
+            ("duty5", 3),
+            ("duty6", 3),
+            ("duty7", 3),
+            // Noise
+            ("mode0", 0),
+            ("mode1", 1),
+            // Two-color gradients (N163)
+            ("gradient_low", 0),
+            ("gradient_high", 1),
+        ]);
+
+        match self.channel_colors.get_mut(chip_name) {
+            Some(chip_colors) => {
+                match chip_colors.get_mut(channel_name) {
+                    Some(channel_gradient) => {
+                        match setting_to_index_mapping.get(setting_name) {
+                            Some(setting_index) => {
+                                match Color::from_string(&color_string) {
+                                    Ok(color) => {channel_gradient[*setting_index] = color},
+                                    Err(_) => {
+                                        println!("Warning: Invalid color string {}, ignoring.", color_string);
+                                    }
+                                }
+                            },
+                            None => {
+                                println!("Warning: setting {} does not correspond to any color slot for channel {} on chip {}", setting_name, channel_name, chip_name);
+                            }
+                        }
+                    },
+                    None => {
+                        println!("Warning: Failed to apply color string {} to unknown channel {}", color_string, channel_name);
+                    }
+                }
+            },
+            None => {
+                println!("Warning: Failed to apply color string {} to unknown audio chip {}", color_string, chip_name);
+            }
+        }
+    }
 }
 
 impl Panel for PianoRollWindow {
@@ -1270,6 +1320,13 @@ impl Panel for PianoRollWindow {
                     _ => {}
                 }
             },
+
+            Event::ApplyStringSetting(path, value) => {
+                let components = path.split(".").collect::<Vec<&str>>();
+                if components.len() == 5 && components[0] == "piano_roll" && components[1] == "colors" {
+                    self.apply_color_string(components[2], components[3], components[4], value);
+                }
+            }
             _ => {}
         }
         return events;

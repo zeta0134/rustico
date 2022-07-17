@@ -10,7 +10,7 @@ use toml::map::Map;
 use events::Event;
 
 
-const DEFAULT_CONFIG: &str = r#"
+const DEFAULT_CONFIG: &str = r###"
 [video]
 ntsc_filter = false
 simulate_overscan = false
@@ -28,7 +28,29 @@ speed_multiplier = 4
 starting_octave = 0
 waveform_height = 64
 
-"#;
+[piano_roll.colors.2A03.DMC]
+constant = "rgb(96, 32, 192)"
+
+[piano_roll.colors.2A03.Noise]
+mode0 = "rgb(192, 192, 192)"
+mode1 = "rgb(128, 240, 255)"
+
+[piano_roll.colors.2A03."Pulse 1"]
+duty0 = "hsv(340, 25%, 100%)"
+duty1 = "hsv(350, 55%, 100%)"
+duty2 = "hsv(360, 75%, 100%)"
+duty3 = "hsv(350, 55%, 100%)"
+
+[piano_roll.colors.2A03."Pulse 2"]
+duty0 = "hsv(40, 25%, 100%)"
+duty1 = "hsv(50, 55%, 100%)"
+duty2 = "hsv(60, 75%, 100%)"
+duty3 = "hsv(50, 55%, 100%)"
+
+[piano_roll.colors.2A03.Triangle]
+constant = "#40FF40"
+
+"###;
 
 pub struct RusticNesSettings {
     pub root: Value
