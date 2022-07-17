@@ -16,7 +16,7 @@ pub struct GameWindow {
     pub font: Font,
     pub shown: bool,
     pub scale: u32,
-    pub display_overscan: bool,
+    pub simulate_overscan: bool,
     pub ntsc_filter: bool,
     pub display_fps: bool,
 
@@ -35,7 +35,7 @@ impl GameWindow {
             font: font,
             shown: true,
             scale: 2,
-            display_overscan: false,
+            simulate_overscan: false,
             ntsc_filter: false,
             display_fps: false,
 
@@ -58,7 +58,7 @@ impl GameWindow {
     }
 
     fn draw(&mut self, nes: &NesState) {
-        let overscan: u32 = if self.display_overscan {0} else {8};
+        let overscan: u32 = if self.simulate_overscan {8} else {0};
 
         // Update the game screen
         for x in overscan .. 256 - overscan {
@@ -109,8 +109,8 @@ impl GameWindow {
     }
 
     fn update_canvas_size(&mut self) {
-        let base_width = if self.display_overscan {256} else {240};
-        let base_height = if self.display_overscan {240} else {224};
+        let base_width = if self.simulate_overscan {240} else {256};
+        let base_height = if self.simulate_overscan {224} else {240};
         let scaled_width = if self.ntsc_filter {base_width * self.scale} else {base_width};
         let scaled_height = if self.ntsc_filter {base_height * self.scale} else {base_height};
         self.canvas = SimpleBuffer::new(scaled_width, scaled_height);
@@ -154,7 +154,7 @@ impl Panel for GameWindow {
                 match path.as_str() {
                     "video.display_fps" => {self.display_fps = value},
                     "video.ntsc_filter" => {self.ntsc_filter = value; self.update_canvas_size()},
-                    "video.simulate_overscan" => {self.display_overscan = value; self.update_canvas_size()},
+                    "video.simulate_overscan" => {self.simulate_overscan = value; self.update_canvas_size()},
                     _ => {}
                 }
             },

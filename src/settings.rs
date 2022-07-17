@@ -12,9 +12,9 @@ use events::Event;
 
 const DEFAULT_CONFIG: &str = r#"
 [video]
-ntsc_filter = true
-simulate_overscan = true
-display_fps = true
+ntsc_filter = false
+simulate_overscan = false
+display_fps = false
 scale_factor = 2
 
 "#;
