@@ -95,7 +95,7 @@ impl GameWindow {
     }
 
     fn increase_scale(&mut self) {
-        if self.scale < 5 {
+        if self.scale < 8 {
             self.scale += 1;
         }
         self.update_canvas_size();
@@ -141,9 +141,15 @@ impl Panel for GameWindow {
             Event::ShowGameWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
 
-            Event::GameIncreaseScale => {self.increase_scale();}
-            Event::GameDecreaseScale => {self.decrease_scale();}
-            
+            Event::GameIncreaseScale => {
+                self.increase_scale();
+                responses.push(Event::StoreIntegerSetting("video.scale_factor".to_string(), self.scale as i64));
+            },
+            Event::GameDecreaseScale => {
+                self.decrease_scale();
+                responses.push(Event::StoreIntegerSetting("video.scale_factor".to_string(), self.scale as i64));
+            },
+
             Event::ApplyBooleanSetting(path, value) => {
                 match path.as_str() {
                     "video.display_fps" => {self.display_fps = value},
@@ -151,7 +157,18 @@ impl Panel for GameWindow {
                     "video.simulate_overscan" => {self.display_overscan = value; self.update_canvas_size()},
                     _ => {}
                 }
-            }
+            },
+            Event::ApplyIntegerSetting(path, value) => {
+                match path.as_str() {
+                    "video.scale_factor" => {
+                        if value > 0 && value < 8 {
+                            self.scale = value as u32;
+                            self.update_canvas_size();
+                        }
+                    },
+                    _ => {}
+                }
+            },
             _ => {}
         }
         return responses;
