@@ -180,7 +180,7 @@ pub fn main() {
             },
             _ => {}
           }
-          
+
           if sdl_context.keyboard().focused_window_id().is_some() {
             let focused_window_id = sdl_context.keyboard().focused_window_id().unwrap();
             let mut application_focused = false;
@@ -227,7 +227,6 @@ pub fn main() {
                         dump_audio = !dump_audio;
                         if dump_audio {
                           let _ = remove_file("audiodump.raw");
-                          let _ = remove_file("hq_audiodump.raw");
                           println!("Beginning audio dump...");
                         } else {
                           println!("Audio dump stopped.");
