@@ -1,6 +1,7 @@
 // Don't pop up a console automatically on Windows builds
 #![windows_subsystem = "windows"]
 
+extern crate dirs;
 extern crate image;
 extern crate nfd2;
 extern crate sdl2;
@@ -25,9 +26,11 @@ use sdl2::video::WindowContext;
 use sdl2::video::WindowPos;
 
 use std::env;
+use std::fs;
 use std::fs::remove_file;
 use std::thread;
 use std::time;
+use std::ffi::OsString;
 
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
@@ -61,9 +64,23 @@ pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut Rus
 pub fn main() {
   let version = env!("CARGO_PKG_VERSION");
   println!("Welcome to RusticNES {}", version);
+
+  let config_path: OsString = match dirs::config_dir() {
+    Some(mut path) => {
+      path.push("rusticnes");
+      match fs::create_dir_all(&path) {
+        Ok(_) => {},
+        Err(e) => {println!("ERROR: {}\nFailed to create settings dir {}, settings will likely fail to save!", e, path.display())}
+      };
+      path.push("settings.toml");
+      path.into_os_string()
+    },
+    None => {"rusticnes_settings.toml".into()}
+  };
+
   let mut runtime_state = RusticNesRuntimeState::new();
   let mut cartridge_state = CartridgeManager::new();
-  let mut runtime_settings = RusticNesSettings::load("test.toml");
+  let mut runtime_settings = RusticNesSettings::load(&config_path);
 
   let sdl_context = sdl2::init().unwrap();
   let audio_subsystem = sdl_context.audio().unwrap();
@@ -382,6 +399,6 @@ pub fn main() {
     }
   }
 
-  runtime_settings.save("test.toml");
+  runtime_settings.save(&config_path);
 }
 

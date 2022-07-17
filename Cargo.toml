@@ -5,6 +5,7 @@ authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
 build = "build.rs"
 
 [dependencies]
+dirs = "4.0"
 image = "0.19"
 sdl2 = "0.34.5"
 nfd2 = "0.2.3"
