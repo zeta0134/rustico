@@ -1,4 +1,5 @@
 // Standard Library
+use std::ffi::OsString;
 use std::fs;
 
 // Third-party
@@ -21,7 +22,7 @@ pub struct RusticNesSettings {
 }
 
 impl RusticNesSettings {
-    pub fn load(filename: &str) -> RusticNesSettings {
+    pub fn load(filename: &OsString) -> RusticNesSettings {
         match fs::read_to_string(filename) {
             Ok(config_str) => {
                 let config_from_file = config_str.parse::<Value>().unwrap();
@@ -38,9 +39,10 @@ impl RusticNesSettings {
         }
     }
 
-    pub fn save(&self, filename: &str) {
+    pub fn save(&self, filename: &OsString) {
         let config_str = toml::to_string(&self.root).unwrap();
         fs::write(filename, config_str).expect("Unable to write settings!");
+        println!("Wrote settings to {}", filename.clone().into_string().expect("Somehow invalid config path!"));
     }
 
     fn _emit_events(value: Value, prefix: String) -> Vec<Event> {
