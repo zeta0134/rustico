@@ -1217,7 +1217,7 @@ impl PianoRollWindow {
     fn apply_color_string(&mut self, chip_name: &str, channel_name: &str, setting_name: &str, color_string: String) {
         let setting_to_index_mapping = HashMap::from([
             // Triangle, DMC, a few other simple chips
-            ("constant", 0),
+            ("static", 0),
             // 2A03, MMC5 and VRC6 pulses
             ("duty0", 0),
             ("duty1", 1),
