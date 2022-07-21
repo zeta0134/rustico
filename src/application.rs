@@ -3,9 +3,13 @@ use std::rc::Rc;
 use events::Event;
 use events::StandardControllerButton;
 
+use settings::SettingsState;
+
 use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
 use rusticnes_core::cartridge::mapper_from_file;
+
+
 
 pub struct RuntimeState {
     pub nes: NesState,
@@ -15,6 +19,7 @@ pub struct RuntimeState {
     pub last_scanline: u16,
     pub last_apu_quarter_frame_count: u32,
     pub last_apu_half_frame_count: u32,
+    pub settings: SettingsState,
 }
 
 impl RuntimeState {
@@ -27,6 +32,7 @@ impl RuntimeState {
             last_scanline: 0,
             last_apu_quarter_frame_count: 0,
             last_apu_half_frame_count: 0,
+            settings: SettingsState::new(),
         }
     }
 
@@ -111,6 +117,7 @@ impl RuntimeState {
 
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
         let mut responses: Vec<Event> = Vec::new();
+        responses.extend(self.settings.handle_event(event.clone()));
         match event {
             Event::MuteChannel(channel_index) => {
                 self.nes.apu.mute_channel(&mut *self.nes.mapper, channel_index);

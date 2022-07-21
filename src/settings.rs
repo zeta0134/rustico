@@ -122,24 +122,26 @@ static = "rgb(16, 64, 248)"
 
 "###;
 
-pub struct RusticNesSettings {
+pub struct SettingsState {
     pub root: Value
 }
 
-impl RusticNesSettings {
-    pub fn load(filename: &OsString) -> RusticNesSettings {
+impl SettingsState {
+    pub fn new() -> SettingsState {
+        let default_config = DEFAULT_CONFIG.parse::<Value>().unwrap();
+        return SettingsState {
+            root: default_config
+        }
+    }
+
+    pub fn load(&mut self, filename: &OsString) {
         match fs::read_to_string(filename) {
             Ok(config_str) => {
                 let config_from_file = config_str.parse::<Value>().unwrap();
-                return RusticNesSettings {
-                    root: config_from_file
-                }
+                self.root = config_from_file;
             },
             Err(_) => {
-                let default_config = DEFAULT_CONFIG.parse::<Value>().unwrap();
-                return RusticNesSettings {
-                    root: default_config
-                }
+                println!("Failed to load settings from: {:?}", filename);
             }
         }
     }
@@ -156,7 +158,7 @@ impl RusticNesSettings {
             Value::Table(table) => {
                 for key in table.keys() {
                     let new_prefix = if prefix == "" {key.to_string()} else {format!("{}.{}", prefix, key)};
-                    events.extend(RusticNesSettings::_emit_events(table[key].clone(), new_prefix));
+                    events.extend(SettingsState::_emit_events(table[key].clone(), new_prefix));
                 }
             },
             Value::Boolean(boolean_value) => {events.push(Event::ApplyBooleanSetting(prefix, boolean_value));},
@@ -171,7 +173,7 @@ impl RusticNesSettings {
     }
 
     pub fn apply_settings(&self) -> Vec<Event> {
-        return RusticNesSettings::_emit_events(self.root.clone(), "".to_string());
+        return SettingsState::_emit_events(self.root.clone(), "".to_string());
     }
 
     fn _ensure_path_exists(path: String, current_table: &mut Map<String, Value>, default_value: Value) {
@@ -191,13 +193,13 @@ impl RusticNesSettings {
             }
             let child_table = current_table[components[0]].as_table_mut().unwrap();
             let remaining_path = components[1..].join(".");
-            RusticNesSettings::_ensure_path_exists(remaining_path, child_table, default_value);
+            SettingsState::_ensure_path_exists(remaining_path, child_table, default_value);
         }
     }
 
     pub fn ensure_path_exists(&mut self, path: String, default_value: Value) {
         let root_table = self.root.as_table_mut().unwrap();
-        RusticNesSettings::_ensure_path_exists(path, root_table, default_value);
+        SettingsState::_ensure_path_exists(path, root_table, default_value);
     }
 
     pub fn _get(path: String, current_table: &Map<String, Value>) -> Option<&Value> {
@@ -212,7 +214,7 @@ impl RusticNesSettings {
                 if child.is_table() {
                     let child_table = current_table[components[0]].as_table().unwrap();
                     let remaining_path = components[1..].join(".");
-                    return RusticNesSettings::_get(remaining_path, child_table);
+                    return SettingsState::_get(remaining_path, child_table);
                 }
             }
         }
@@ -221,7 +223,7 @@ impl RusticNesSettings {
 
     pub fn get(&self, path: String) -> Option<&Value> {
         let root_table = self.root.as_table().unwrap();
-        return RusticNesSettings::_get(path, root_table);
+        return SettingsState::_get(path, root_table);
     }
 
     pub fn _set(path: String, current_table: &mut Map<String, Value>, new_value: Value) {
@@ -236,7 +238,7 @@ impl RusticNesSettings {
                 if child.is_table() {
                     let child_table = current_table[components[0]].as_table_mut().unwrap();
                     let remaining_path = components[1..].join(".");
-                    RusticNesSettings::_set(remaining_path, child_table, new_value);
+                    SettingsState::_set(remaining_path, child_table, new_value);
                 }
             }
         }
@@ -244,7 +246,7 @@ impl RusticNesSettings {
 
     pub fn set(&mut self, path: String, new_value: Value) {
         let root_table = self.root.as_table_mut().unwrap();
-        return RusticNesSettings::_set(path, root_table, new_value);
+        return SettingsState::_set(path, root_table, new_value);
     }
 
     pub fn handle_event(&mut self, event: Event) -> Vec<Event> {
