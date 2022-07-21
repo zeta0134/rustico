@@ -42,12 +42,11 @@ use rusticnes_ui_common::event_window::EventWindow;
 use rusticnes_ui_common::memory_window::MemoryWindow;
 use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
 use rusticnes_ui_common::ppu_window::PpuWindow;
-use rusticnes_ui_common::settings::RusticNesSettings;
 
 use cartridge_manager::CartridgeManager;
 use platform_window::PlatformWindow;
 
-pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut RusticNesRuntimeState, cartridge_state: &mut CartridgeManager, settings_state: &mut RusticNesSettings, event: events::Event) -> Vec<events::Event> {
+pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut RusticNesRuntimeState, cartridge_state: &mut CartridgeManager, event: events::Event) -> Vec<events::Event> {
   let mut responses: Vec<events::Event> = Vec::new();
   for i in 0 .. windows.len() {
     // Note: Windows get an immutable reference to everything other than themselves
@@ -55,7 +54,6 @@ pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut Rus
   }
   // ... but RuntimeState needs a mutable reference to itself
   responses.extend(runtime_state.handle_event(event.clone()));
-  responses.extend(settings_state.handle_event(event.clone()));
   // Platform specific state, this is not passed to applications on purpose
   responses.extend(cartridge_state.handle_event(event.clone()));
   return responses;
@@ -80,7 +78,7 @@ pub fn main() {
 
   let mut runtime_state = RusticNesRuntimeState::new();
   let mut cartridge_state = CartridgeManager::new();
-  let mut runtime_settings = RusticNesSettings::load(&config_path);
+  runtime_state.settings.load(&config_path);
 
   let sdl_context = sdl2::init().unwrap();
   let audio_subsystem = sdl_context.audio().unwrap();
@@ -135,7 +133,7 @@ pub fn main() {
   }
 
   // Apply settings (default or otherwise)
-  application_events.extend(runtime_settings.apply_settings());
+  application_events.extend(runtime_state.settings.apply_settings());
 
   'running: loop {
     if !windows[0].panel.shown() {
@@ -323,7 +321,7 @@ pub fn main() {
           let events_to_process = application_events.clone();
           application_events.clear();
           for event in events_to_process {
-            application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, &mut runtime_settings, event));
+            application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
           }
         }
         while runtime_state.nes.ppu.current_scanline != 242 {
@@ -331,7 +329,7 @@ pub fn main() {
           let events_to_process = application_events.clone();
           application_events.clear();
           for event in events_to_process {
-            application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, &mut runtime_settings, event));
+            application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
           }
         }
       } else {
@@ -341,11 +339,11 @@ pub fn main() {
       }
 
       // Run an update, and also flush out (unconditionally) any other queued events
-      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, &mut runtime_settings, events::Event::Update));
+      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, events::Event::Update));
       let events_to_process = application_events.clone();
       application_events.clear();
       for event in events_to_process {
-        application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, &mut runtime_settings, event));
+        application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
       }
     }
 
@@ -394,10 +392,10 @@ pub fn main() {
     let events_to_process = application_events.clone();
     application_events.clear();
     for event in events_to_process{
-      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, &mut runtime_settings, event));
+      application_events.extend(dispatch_event(&mut windows, &mut runtime_state, &mut cartridge_state, event));
     }
   }
 
-  runtime_settings.save(&config_path);
+  runtime_state.settings.save(&config_path);
 }
 
