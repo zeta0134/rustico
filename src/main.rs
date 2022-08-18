@@ -281,6 +281,13 @@ fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<Strin
         load_cartridge(&mut state.core.nes, cartridge_path.as_ref());
         state.core.running = true;
       },
+      "config"  => {
+        let config_path = command_list.remove(0);
+        state.core.settings.load(&config_path.into());
+        for event in state.core.settings.apply_settings() {
+          dispatch_event(state, event);
+        }
+      }
       "run" | "frames" => {
         let frames: u64 = command_list.remove(0).parse().unwrap();
         run(state, frames);
