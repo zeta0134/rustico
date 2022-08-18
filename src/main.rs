@@ -289,6 +289,11 @@ fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<Strin
         // TODO: implement this with the standard event instead
         reset(&mut state.core.nes);
       }
+      "track" => {
+        let track_index: u8 = command_list.remove(0).parse().unwrap();
+        state.core.nes.mapper.nsf_set_track(track_index);
+        state.core.nes.mapper.nsf_manual_mode();
+      }
       "tap" => {
         let button = command_list.remove(0);
         let frames: u64 = command_list.remove(0).parse().unwrap();
