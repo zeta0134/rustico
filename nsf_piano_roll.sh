@@ -7,7 +7,8 @@ fade_duration="4"
 video_end_padding="1"
 video_crf="15"
 audio_bitrate="384k"
-video_scale="4"
+video_scale="1"
+track_index="1"
 
 while (( $# > 1 )); do
   case $1 in
@@ -18,6 +19,7 @@ while (( $# > 1 )); do
     --crf) shift; video_crf="$1" ;;
     --audio-bitrate) shift; audio_bitrate="$1" ;;
     --scale) shift; video_scale="$1" ;;
+    --track) shift; track_index="$1" ;;
     *) nsf_file="$1" ;;
   esac;
   shift
@@ -70,6 +72,7 @@ echo ""
 echo "=== Capturing $duration_frames of Piano Roll output from $nsf_file ... ==="
 cargo run --release -- \
   cartridge "$nsf_file" \
+  track "$track_index" \
   config "$base_config" \
   config "configs/piano_roll_colors.toml" \
   video pianoroll "$raw_video_file" audio "$raw_audio_file" \
