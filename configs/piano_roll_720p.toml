@@ -1,0 +1,10 @@
+[piano_roll]
+canvas_width = 1280
+canvas_height = 720
+key_length = 32
+key_thickness = 11
+octave_count = 9
+scale_factor = 1
+speed_multiplier = 4
+starting_octave = 0
+waveform_height = 64
