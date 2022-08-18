@@ -361,7 +361,7 @@ impl PianoRollWindow {
             //canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
             //canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
             canvas: SimpleBuffer::new(1920, 1080), // actually 1080p
-            shown: true,
+            shown: false,
             scale: 1,
             keys: 109,
             key_thickness: 16,
