@@ -345,6 +345,8 @@ pub struct PianoRollWindow {
     pub scroll_direction: ScrollDirection,
     pub polling_type: PollingType,
     pub speed_multiplier: u32,
+    pub surfboard_line_thickness: f32,
+    pub surfboard_glow_thickness: f32,
 
     // Keyed on: chip name, then channel name within that chip
     pub channel_colors: HashMap<String, HashMap<String, Vec<Color>>>,
@@ -377,6 +379,8 @@ impl PianoRollWindow {
             polling_type: PollingType::ApuQuarterFrame,
             speed_multiplier: 6,
             channel_colors: default_channel_colors(),
+            surfboard_line_thickness: 0.5,
+            surfboard_glow_thickness: 2.5,
         };
     }
 
@@ -1024,20 +1028,15 @@ impl PianoRollWindow {
             let sample_index = (first_sample_index + (i * speed) as usize) % sample_buffer.len();
             let sample = sample_buffer[sample_index];
             let current_y = ((sample - sample_min) as f32 * height as f32) / range as f32;
-            // Todo: connect last_y to current_y
-            // (y'know, not this)
-            //self.canvas.put_pixel(dx, y + current_y, color);
             let mut top_edge = current_y;
             let mut bottom_edge = last_y;
             if last_y < current_y {
                 top_edge = last_y;
                 bottom_edge = current_y;
             }
-            let line_thickness = 0.5;
-            let glow_thickness = 2.5;
             let glow_color = PianoRollWindow::scale_color(color, 0.25);
-            self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - glow_thickness, y as f32 + bottom_edge + glow_thickness, glow_color);
-            self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - line_thickness, y as f32 + bottom_edge + line_thickness, color);
+            self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - self.surfboard_glow_thickness, y as f32 + bottom_edge + self.surfboard_glow_thickness, glow_color);
+            self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - self.surfboard_line_thickness, y as f32 + bottom_edge + self.surfboard_line_thickness, color);
             last_y = current_y;
         }
     }
@@ -1317,6 +1316,16 @@ impl Panel for PianoRollWindow {
                     "piano_roll.speed_multiplier" => {self.speed_multiplier = value as u32},
                     "piano_roll.starting_octave" => {self.set_starting_octave(value as u32)},
                     "piano_roll.waveform_height" => {self.surfboard_height = value as u32},
+                    "piano_roll.oscilloscope_glow_thickness" => {self.surfboard_glow_thickness = value as f32},
+                    "piano_roll.oscilloscope_line_thickness" => {self.surfboard_line_thickness = value as f32},
+                    _ => {}
+                }
+            },
+
+            Event::ApplyFloatSetting(path, value) => {
+                match path.as_str() {
+                    "piano_roll.oscilloscope_glow_thickness" => {self.surfboard_glow_thickness = value as f32},
+                    "piano_roll.oscilloscope_line_thickness" => {self.surfboard_line_thickness = value as f32},
                     _ => {}
                 }
             },
