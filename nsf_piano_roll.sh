@@ -25,7 +25,7 @@ while (( $# > 1 )); do
   shift
 done
 
-raw_video_file="$(basename "$nsf_file" .nsf)_video.raw"
+intermediate_video_file="$(basename "$nsf_file" .nsf)_intermediate_video.mp4"
 raw_audio_file="$(basename "$nsf_file" .nsf)_audio.raw"
 final_output="${nsf_file%.*}.mp4"
 
@@ -58,7 +58,7 @@ echo "Video Quality (CRF): $video_crf"
 echo "Audio Quality: $audio_bitrate"
 echo ""
 echo "=== Derived Options ==="
-echo "Raw Video: $raw_video_file"
+echo "Intermediate Video: $intermediate_video_file"
 echo "Raw Audio: $raw_audio_file"
 echo "Final: $final_output"
 echo "Actual Duration (Seconds): $actual_duration_seconds"
@@ -69,28 +69,45 @@ echo "Video Width: $output_width"
 echo "Config: $base_config"
 echo ""
 
-echo "=== Capturing $duration_frames of Piano Roll output from $nsf_file ... ==="
+# Make a named pipe to funnel the video stream through. This prevents us from needing
+# to store the uncompressed (and very large) generated video frames to disk while
+# the render is going.
+
+# Note that we *are* still writing the uncompressed audio to disk, as we can't reliably
+# use two named pipes here without risking starvation.
+
+rm __videopipe || true # if a previous run failed, the old pipe may still exist in a weird state
+mkfifo __videopipe
+
+echo "=== Capturing $duration_frames frames of Piano Roll output from $nsf_file ... ==="
 cargo run --release -- \
   cartridge "$nsf_file" \
   track "$track_index" \
   config "$base_config" \
   config "configs/piano_roll_colors.toml" \
-  video pianoroll "$raw_video_file" audio "$raw_audio_file" \
-  frames $duration_frames
+  video pianoroll __videopipe audio "$raw_audio_file" \
+  frames $duration_frames &
 
-echo "=== Converting $raw_video_file and $raw_audio_file to $final_output ... ==="
+echo "=== Converting captured video to $intermediate_video_file ... ==="
 # piano roll settings
-ffmpeg \
-  -y -f rawvideo -pix_fmt rgb24 -s "${render_width}x${render_height}" -r 60.0988 -i "$raw_video_file" \
-  -f s16be -i "$raw_audio_file" \
+ffmpeg -y \
+  -f rawvideo -pix_fmt rgb24 -s "${render_width}x${render_height}" -r 60.0988 -i __videopipe \
   -c:v libx264 -crf "$video_crf" -preset veryslow -pix_fmt yuv420p \
   -vf "scale=${output_width}:${output_height}:flags=neighbor, scale=out_color_matrix=bt709, fps=fps=60, fade=t=out:st=$fade_start:d=$fade_duration" \
-  -af "loudnorm, afade=t=out:st=$fade_start:d=$fade_duration" \
   -color_range 1 -colorspace bt709 -color_trc bt709 -color_primaries bt709 -movflags faststart \
+  "$intermediate_video_file"
+
+echo "=== Combining intermediate video and captured audio $raw_audio_file ... ==="
+ffmpeg -y \
+  -i "$intermediate_video_file" \
+  -f s16be -i "$raw_audio_file" \
+  -af "loudnorm, afade=t=out:st=$fade_start:d=$fade_duration" \
   -c:a aac -b:a "$audio_bitrate" \
   "$final_output"
 
 echo "=== Cleaning up temporary files ... ==="
-rm "$raw_video_file"
+rm "$intermediate_video_file"
 rm "$raw_audio_file"
+rm __videopipe
 
+echo "=== Success! ==="
