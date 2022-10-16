@@ -8,3 +8,5 @@ scale_factor = 1
 speed_multiplier = 6
 starting_octave = 0
 waveform_height = 128
+oscilloscope_glow_thickness = 4.5
+oscilloscope_line_thickness = 2.0
