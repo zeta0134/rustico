@@ -146,6 +146,11 @@ impl SettingsState {
         }
     }
 
+    pub fn load_str(&mut self, config_str: &str) {
+        let config = config_str.parse::<Value>().unwrap();
+        self.root = config;
+    }
+
     pub fn save(&self, filename: &OsString) {
         let config_str = toml::to_string(&self.root).unwrap();
         fs::write(filename, config_str).expect("Unable to write settings!");
