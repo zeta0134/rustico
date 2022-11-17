@@ -1125,19 +1125,23 @@ impl PianoRollWindow {
         self.draw_audio_surfboard_horiz(runtime, 0, 0, self.canvas.width, surfboard_height);
     }
 
-    fn draw_bottom_to_top(&mut self) {
-        let waveform_area_width = 32;
-        let waveform_string_pos = 16;
-        let key_height = 16;
-        let leftmost_key = waveform_area_width;
-        let string_height = self.canvas.height - key_height;
+    fn draw_bottom_to_top(&mut self, runtime: &RuntimeState) {
+        let waveform_area_width = self.key_thickness * 4;
+        let waveform_string_pos = self.key_thickness * 2;
+        let waveform_margin = self.key_thickness / 2;
+        let key_height = self.key_length;
+        let leftmost_key = waveform_area_width + waveform_margin;
+        let surfboard_height = self.surfboard_height;
+        let string_height = self.canvas.height - key_height - surfboard_height;
 
-        self.draw_piano_strings_vert(waveform_area_width, 0, string_height);
+        self.draw_piano_strings_vert(waveform_area_width + waveform_margin, 0, string_height);
         self.draw_waveform_string_vert(waveform_string_pos, 0, string_height);
         self.draw_piano_keys_vert(leftmost_key, self.canvas.height - key_height);
 
-        self.draw_slices_vert(waveform_area_width, self.canvas.height - key_height, -1, waveform_string_pos);
+        self.draw_slices_vert(waveform_area_width + waveform_margin, self.canvas.height - key_height, -1, waveform_string_pos);
         self.draw_key_spots_vert(leftmost_key, self.canvas.height - key_height, waveform_string_pos);
+
+        self.draw_audio_surfboard_horiz(runtime, 0, 0, self.canvas.width, surfboard_height);
     }
 
     fn draw_player_piano(&mut self) {
@@ -1163,7 +1167,7 @@ impl PianoRollWindow {
             ScrollDirection::RightToLeft => {self.draw_right_to_left()},
             ScrollDirection::LeftToRight => {self.draw_left_to_right()},
             ScrollDirection::TopToBottom => {self.draw_top_to_bottom(runtime)},
-            ScrollDirection::BottomToTop => {self.draw_bottom_to_top()},
+            ScrollDirection::BottomToTop => {self.draw_bottom_to_top(runtime)},
             ScrollDirection::PlayerPiano => {self.draw_player_piano()}
         }
     }
