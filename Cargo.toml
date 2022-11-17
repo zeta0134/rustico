@@ -10,4 +10,4 @@ image = "0.19"
 sdl2 = "0.34.5"
 nfd2 = "0.2.3"
 rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "e1cf6698596165f1ff0a90b249b6d8a90efa5821" }
-rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev = "bc1f163b9b4e7c7818f6309d3e4c9479e743e5d8" }
+rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev = "eecfd7c3793c244e7a3f394f9efa7f263dd74508" }
