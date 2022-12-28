@@ -101,7 +101,7 @@ echo "=== Combining intermediate video and captured audio $raw_audio_file ... ==
 ffmpeg -y \
   -i "$intermediate_video_file" \
   -f s16be -i "$raw_audio_file" \
-  -af "loudnorm, afade=t=out:st=$fade_start:d=$fade_duration" \
+  -af "afade=t=out:st=$fade_start:d=$fade_duration" \
   -c:a aac -b:a "$audio_bitrate" \
   "$final_output"
 
