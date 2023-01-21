@@ -873,13 +873,8 @@ impl PianoRollWindow {
 
         let left_edge = effective_x - (slice.thickness * (key_width as f32) / 4.0) - (thickness as f32);
         let right_edge = effective_x + (slice.thickness * (key_width as f32) / 4.0) + (thickness as f32);
-        let left_floor = left_edge.floor();
-        let right_floor = right_edge.floor();
-
-        // sanity range check:
-        if left_edge < 0.0 || right_edge > canvas.width as f32 {
-            return;
-        }
+        let left_floor = left_edge.max(0.0).floor();
+        let right_floor = right_edge.min((canvas.width - 1) as f32).floor();
 
         let outline_thickness = thickness as i32; // TODO: make this a setting!
         for offset in -outline_thickness ..= outline_thickness {
