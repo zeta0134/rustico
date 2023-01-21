@@ -29,6 +29,8 @@ speed_multiplier = 4
 starting_octave = 0
 waveform_height = 64
 
+background_color = "rgba(0, 0, 0, 255)"
+
 [piano_roll.colors.2A03.DMC]
 static = "rgb(96, 32, 192)"
 

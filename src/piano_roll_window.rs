@@ -348,6 +348,7 @@ pub struct PianoRollWindow {
     pub surfboard_line_thickness: f32,
     pub surfboard_glow_thickness: f32,
     pub draw_piano_strings: bool,
+    pub background_color: Color,
 
     // Keyed on: chip name, then channel name within that chip
     pub channel_colors: HashMap<String, HashMap<String, Vec<Color>>>,
@@ -383,6 +384,7 @@ impl PianoRollWindow {
             surfboard_line_thickness: 0.5,
             surfboard_glow_thickness: 2.5,
             draw_piano_strings: true,
+            background_color: Color::rgba(0, 0, 0, 255),
         };
     }
 
@@ -1172,7 +1174,7 @@ impl PianoRollWindow {
     fn draw(&mut self, runtime: &RuntimeState) {
         let width = self.canvas.width;
         let height = self.canvas.height;
-        drawing::rect(&mut self.canvas, 0, 0, width, height, Color::rgb(0,0,0));
+        drawing::rect(&mut self.canvas, 0, 0, width, height, self.background_color);
         match self.scroll_direction {
             ScrollDirection::RightToLeft => {self.draw_right_to_left()},
             ScrollDirection::LeftToRight => {self.draw_left_to_right()},
@@ -1355,6 +1357,18 @@ impl Panel for PianoRollWindow {
                 let components = path.split(".").collect::<Vec<&str>>();
                 if components.len() == 5 && components[0] == "piano_roll" && components[1] == "colors" {
                     self.apply_color_string(components[2], components[3], components[4], value);
+                } else {
+                    match path.as_str() {
+                        "piano_roll.background_color" => {
+                            match Color::from_string(&value) {
+                                Ok(color) => {self.background_color = color},
+                                Err(_) => {
+                                    println!("Warning: Invalid color string {}, ignoring.", value);
+                                }
+                            }
+                        },
+                        _ => {}
+                    }    
                 }
             }
             _ => {}
