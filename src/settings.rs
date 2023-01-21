@@ -20,6 +20,7 @@ scale_factor = 2
 [piano_roll]
 canvas_width = 1280
 canvas_height = 720
+draw_piano_strings = true
 key_length = 32
 key_thickness = 11
 octave_count = 9

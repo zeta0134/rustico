@@ -347,6 +347,7 @@ pub struct PianoRollWindow {
     pub speed_multiplier: u32,
     pub surfboard_line_thickness: f32,
     pub surfboard_glow_thickness: f32,
+    pub draw_piano_strings: bool,
 
     // Keyed on: chip name, then channel name within that chip
     pub channel_colors: HashMap<String, HashMap<String, Vec<Color>>>,
@@ -381,6 +382,7 @@ impl PianoRollWindow {
             channel_colors: default_channel_colors(),
             surfboard_line_thickness: 0.5,
             surfboard_glow_thickness: 2.5,
+            draw_piano_strings: true,
         };
     }
 
@@ -1081,8 +1083,10 @@ impl PianoRollWindow {
         let bottom_key = self.canvas.height - waveform_area_height;
         let string_width = self.canvas.width - key_width;
 
-        self.draw_piano_strings_horiz(0, bottom_key, string_width);
-        self.draw_waveform_string_horiz(0, waveform_string_pos, string_width);
+        if self.draw_piano_strings {
+            self.draw_piano_strings_horiz(0, bottom_key, string_width);
+            self.draw_waveform_string_horiz(0, waveform_string_pos, string_width);
+        }
         self.draw_piano_keys_horiz(string_width, bottom_key);
         //draw_speaker_key(&mut self.canvas, black_key);
         self.draw_slices_horiz(string_width, bottom_key, -1);
@@ -1096,8 +1100,10 @@ impl PianoRollWindow {
         let bottom_key = self.canvas.height - waveform_area_height;
         let string_width = self.canvas.width - key_width;
 
-        self.draw_piano_strings_horiz(key_width, bottom_key, string_width);
-        self.draw_waveform_string_horiz(key_width, waveform_string_pos, string_width);
+        if self.draw_piano_strings {
+            self.draw_piano_strings_horiz(key_width, bottom_key, string_width);
+            self.draw_waveform_string_horiz(key_width, waveform_string_pos, string_width);
+        }
         self.draw_piano_keys_horiz(0, bottom_key);
 
         //draw_speaker_key(&mut self.canvas, black_key);
@@ -1115,8 +1121,10 @@ impl PianoRollWindow {
         let surfboard_height = self.surfboard_height;
         let string_height = self.canvas.height - key_height - surfboard_height;
 
-        self.draw_piano_strings_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, string_height);
-        self.draw_waveform_string_vert(waveform_string_pos, surfboard_height + key_height, string_height);
+        if self.draw_piano_strings {
+            self.draw_piano_strings_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, string_height);
+            self.draw_waveform_string_vert(waveform_string_pos, surfboard_height + key_height, string_height);
+        }
         self.draw_piano_keys_vert(leftmost_key, surfboard_height);
 
         self.draw_slices_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, 1, waveform_string_pos);
@@ -1134,8 +1142,10 @@ impl PianoRollWindow {
         let surfboard_height = self.surfboard_height;
         let string_height = self.canvas.height - key_height - surfboard_height;
 
-        self.draw_piano_strings_vert(waveform_area_width + waveform_margin, 0, string_height);
-        self.draw_waveform_string_vert(waveform_string_pos, 0, string_height);
+        if self.draw_piano_strings {
+            self.draw_piano_strings_vert(waveform_area_width + waveform_margin, 0, string_height);
+            self.draw_waveform_string_vert(waveform_string_pos, 0, string_height);
+        }
         self.draw_piano_keys_vert(leftmost_key, self.canvas.height - key_height);
 
         self.draw_slices_vert(waveform_area_width + waveform_margin, self.canvas.height - key_height, -1, waveform_string_pos);
@@ -1308,6 +1318,13 @@ impl Panel for PianoRollWindow {
             Event::RequestFrame => {self.draw(runtime)},
             Event::ShowPianoRollWindow => {self.shown = true},
             Event::CloseWindow => {self.shown = false},
+
+            Event::ApplyBooleanSetting(path, value) => {
+                match path.as_str() {
+                    "piano_roll.draw_piano_strings" => {self.draw_piano_strings = value},
+                    _ => {}
+                }
+            },
 
             Event::ApplyIntegerSetting(path, value) => {
                 match path.as_str() {
