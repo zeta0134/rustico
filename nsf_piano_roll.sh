@@ -85,6 +85,7 @@ cargo run --release -- \
   track "$track_index" \
   config "$base_config" \
   config "configs/piano_roll_colors.toml" \
+  config "configs/piano_roll_zeta.toml" \
   video pianoroll __videopipe audio "$raw_audio_file" \
   frames $duration_frames &
 

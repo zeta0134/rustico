@@ -133,15 +133,16 @@ fn dump_panel(file_handle: &mut Option<File>, panel: & dyn Panel) {
     Some(file) => {
       let width = panel.active_canvas().width as usize;
       let height = panel.active_canvas().height as usize;
-      let buffer_size = width * height * 3;
+      let buffer_size = width * height * 4;
       let mut buffer = vec!(0u8; buffer_size);
       for x in 0 .. width {
         for y in 0 .. height {
-          let pixel_index = (width * y + x) * 3;
+          let pixel_index = (width * y + x) * 4;
           let color = panel.active_canvas().get_pixel(x as u32, y as u32);
           buffer[pixel_index + 0] = color.r();
           buffer[pixel_index + 1] = color.g();
           buffer[pixel_index + 2] = color.b();
+          buffer[pixel_index + 3] = color.alpha();
         }
       }
       let _ = file.write_all(&buffer);
