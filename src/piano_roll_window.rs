@@ -560,7 +560,7 @@ impl PianoRollWindow {
         ];
 
         let canvas_width = self.canvas.width;
-        drawing::rect(&mut self.canvas, 0, y, canvas_width, self.key_length, top_edge);
+        drawing::rect(&mut self.canvas, 0, y, canvas_width, self.key_length + 1, top_edge);
         drawing::rect(&mut self.canvas, base_x, y, self.keys * self.key_thickness, self.key_length, white_key_border);
         for key_index in 0 .. self.keys - 1 {
             let x = base_x + key_index * self.key_thickness;
