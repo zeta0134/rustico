@@ -154,14 +154,39 @@ impl SimpleBuffer {
         self.buffer[index .. (index + 4)].copy_from_slice(&color.data);
     }
 
-    pub fn blend_pixel(&mut self, x: u32, y: u32, color: Color) {
+    pub fn blend_pixel_old(&mut self, x: u32, y: u32, color: Color) {
         let index = ((y * self.width + x) * 4) as usize;
         let original = self.get_pixel(x, y);
         let r = blend_component(original.r(), color.r(), color.alpha());
         let g = blend_component(original.g(), color.g(), color.alpha());
         let b = blend_component(original.b(), color.b(), color.alpha());
         self.buffer[index .. (index + 4)].copy_from_slice(&[r, g, b, 255]);
-    }    
+    }
+
+    pub fn blend_pixel(&mut self, x: u32, y: u32, color: Color) {
+        let index = ((y * self.width + x) * 4) as usize;
+        let original = self.get_pixel(x, y);
+
+        // avoid division by zero
+        if color.alpha() == 0 {
+            return; // do nothing!
+        }
+
+        let alpha_new = (color.alpha() as f32) / 255.0;
+        let remaining_potential_weight = 1.0 - alpha_new;
+        let alpha_original = ((original.alpha() as f32) / 255.0) * remaining_potential_weight;
+        let total_alpha = alpha_new + alpha_original;
+
+        let new_color_weight = alpha_new / total_alpha;
+        let old_color_weight = alpha_original / total_alpha;
+
+        let r = ((original.r() as f32) * old_color_weight + (color.r() as f32) * new_color_weight).min(255.0) as u8;
+        let g = ((original.g() as f32) * old_color_weight + (color.g() as f32) * new_color_weight).min(255.0) as u8;
+        let b = ((original.b() as f32) * old_color_weight + (color.b() as f32) * new_color_weight).min(255.0) as u8;
+        let alpha = (total_alpha.min(1.0) * 255.0) as u8;
+
+        self.buffer[index .. (index + 4)].copy_from_slice(&[r, g, b, alpha]);
+    }
 
     pub fn get_pixel(&self, x: u32, y: u32) -> Color {
         let index = ((y * self.width + x) * 4) as usize;
