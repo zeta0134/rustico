@@ -349,6 +349,8 @@ pub struct PianoRollWindow {
     pub surfboard_glow_thickness: f32,
     pub draw_piano_strings: bool,
     pub background_color: Color,
+    pub outline_color: Color,
+    pub outline_thickness: u32,
 
     // Keyed on: chip name, then channel name within that chip
     pub channel_colors: HashMap<String, HashMap<String, Vec<Color>>>,
@@ -385,6 +387,8 @@ impl PianoRollWindow {
             surfboard_glow_thickness: 2.5,
             draw_piano_strings: true,
             background_color: Color::rgba(0, 0, 0, 255),
+            outline_color: Color::rgba(0, 0, 0, 255),
+            outline_thickness: 2,
         };
     }
 
@@ -863,6 +867,51 @@ impl PianoRollWindow {
         }
     }
 
+    fn draw_outline_vert(canvas: &mut SimpleBuffer, slice: &ChannelSlice, base_x: u32, y: u32, key_width: u32, color: Color, thickness: u32) {
+        if !slice.visible {return;}
+        let effective_x = (base_x as f32) + (slice.y * (key_width as f32)) + 0.5;
+
+        let left_edge = effective_x - (slice.thickness * (key_width as f32) / 4.0) - (thickness as f32);
+        let right_edge = effective_x + (slice.thickness * (key_width as f32) / 4.0) + (thickness as f32);
+        let left_floor = left_edge.floor();
+        let right_floor = right_edge.floor();
+
+        // sanity range check:
+        if left_edge < 0.0 || right_edge > canvas.width as f32 {
+            return;
+        }
+
+        let outline_thickness = thickness as i32; // TODO: make this a setting!
+        for offset in -outline_thickness ..= outline_thickness {
+            let effective_y = (y as i32) + offset;
+            if effective_y >= 0 && effective_y < (canvas.height as i32) {
+                let mut blended_color = color;
+                if left_floor == right_floor {
+                    // Special case: alpha here will be related to their distance. Draw one
+                    // blended point and exit
+                    let alpha = right_edge - left_edge;
+                    blended_color.set_alpha((alpha * 255.0) as u8);
+                    canvas.blend_pixel(left_floor as u32, effective_y as u32, blended_color);
+                } else {
+                    // Alpha blend the edges
+                    let left_alpha = 1.0 - (left_edge - left_floor);
+                    blended_color.set_alpha((left_alpha * 255.0) as u8);
+                    canvas.blend_pixel(left_floor as u32, effective_y as u32, blended_color);
+
+                    let right_alpha = right_edge - right_floor;
+                    blended_color.set_alpha((right_alpha * 255.0) as u8);
+                    canvas.blend_pixel(right_floor as u32, effective_y as u32, blended_color);
+
+                    // If there is any distance at all between the edges, draw a solid color
+                    // line between them
+                    for x in (left_floor as u32) + 1 .. right_floor as u32 {
+                        canvas.put_pixel(x, effective_y as u32, color);
+                    }    
+                }
+            }
+        }
+    }
+
     fn draw_slices_horiz(&mut self, starting_x: u32, base_y: u32, step_direction: i32) {
         let mut x = starting_x;
         for channel_slice in self.time_slices.iter() {
@@ -874,6 +923,24 @@ impl PianoRollWindow {
                 return; //bail! don't draw offscreen
             }
             x = (x as i32 + step_direction) as u32;
+        }
+    }
+
+    fn draw_outlines_vert(&mut self, base_x: u32, starting_y: u32, step_direction: i32, waveform_pos: u32) {
+        let mut y = starting_y;
+        for channel_slice in self.time_slices.iter() {
+            for note in channel_slice.iter() {
+                if note.note_type == NoteType::Waveform {
+                    PianoRollWindow::draw_outline_vert(&mut self.canvas, &note, waveform_pos, y, self.key_thickness, self.outline_color, self.outline_thickness);
+                } else {
+                    PianoRollWindow::draw_outline_vert(&mut self.canvas, &note, base_x, y, self.key_thickness, self.outline_color, self.outline_thickness);
+                }
+            }
+            // bail if we hit either screen edge:
+            if (y as i32 + step_direction) == 0 || y == (self.canvas.height - 1) {
+                return; //bail! don't draw offscreen
+            }
+            y = (y as i32 + step_direction) as u32;
         }
     }
 
@@ -1107,9 +1174,6 @@ impl PianoRollWindow {
             self.draw_waveform_string_horiz(key_width, waveform_string_pos, string_width);
         }
         self.draw_piano_keys_horiz(0, bottom_key);
-
-        //draw_speaker_key(&mut self.canvas, black_key);
-
         self.draw_slices_horiz(key_width, bottom_key, 1);
         self.draw_key_spots_horiz(0, bottom_key);
     }
@@ -1127,8 +1191,9 @@ impl PianoRollWindow {
             self.draw_piano_strings_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, string_height);
             self.draw_waveform_string_vert(waveform_string_pos, surfboard_height + key_height, string_height);
         }
-        self.draw_piano_keys_vert(leftmost_key, surfboard_height);
 
+        self.draw_outlines_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, 1, waveform_string_pos);
+        self.draw_piano_keys_vert(leftmost_key, surfboard_height);
         self.draw_slices_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, 1, waveform_string_pos);
         self.draw_key_spots_vert(leftmost_key, surfboard_height, waveform_string_pos);
         
@@ -1148,8 +1213,8 @@ impl PianoRollWindow {
             self.draw_piano_strings_vert(waveform_area_width + waveform_margin, 0, string_height);
             self.draw_waveform_string_vert(waveform_string_pos, 0, string_height);
         }
+        self.draw_outlines_vert(waveform_area_width + waveform_margin, surfboard_height + key_height, 1, waveform_string_pos);
         self.draw_piano_keys_vert(leftmost_key, self.canvas.height - key_height);
-
         self.draw_slices_vert(waveform_area_width + waveform_margin, self.canvas.height - key_height, -1, waveform_string_pos);
         self.draw_key_spots_vert(leftmost_key, self.canvas.height - key_height, waveform_string_pos);
 
@@ -1341,6 +1406,7 @@ impl Panel for PianoRollWindow {
                     "piano_roll.waveform_height" => {self.surfboard_height = value as u32},
                     "piano_roll.oscilloscope_glow_thickness" => {self.surfboard_glow_thickness = value as f32},
                     "piano_roll.oscilloscope_line_thickness" => {self.surfboard_line_thickness = value as f32},
+                    "piano_roll.outline_thickness" => {self.outline_thickness = value as u32},
                     _ => {}
                 }
             },
@@ -1362,6 +1428,14 @@ impl Panel for PianoRollWindow {
                         "piano_roll.background_color" => {
                             match Color::from_string(&value) {
                                 Ok(color) => {self.background_color = color},
+                                Err(_) => {
+                                    println!("Warning: Invalid color string {}, ignoring.", value);
+                                }
+                            }
+                        },
+                        "piano_roll.outline_color" => {
+                            match Color::from_string(&value) {
+                                Ok(color) => {self.outline_color = color},
                                 Err(_) => {
                                     println!("Warning: Invalid color string {}, ignoring.", value);
                                 }
