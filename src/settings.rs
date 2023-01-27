@@ -123,6 +123,9 @@ static = "rgb(24, 104, 228)"
 [piano_roll.settings.YM2149F.C]
 static = "rgb(16, 64, 248)"
 
+[piano_roll.settings.APU."Final Mix"]
+static = "rgb(224, 224, 224)"
+
 "###;
 
 pub struct SettingsState {

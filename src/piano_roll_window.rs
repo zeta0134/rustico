@@ -356,11 +356,18 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
     n163_settings.insert("NAMCO 7".to_string(), ChannelSettings{ hidden: false, colors: wavetable_gradient.clone()});
     n163_settings.insert("NAMCO 8".to_string(), ChannelSettings{ hidden: false, colors: wavetable_gradient.clone()});
 
+    let mut final_mix_settings: HashMap<String, ChannelSettings> = HashMap::new();
+    final_mix_settings.insert("Final Mix".to_string(), ChannelSettings{
+        hidden: false,
+        colors: vec!(Color::rgb(224,  224, 224))
+    });
+
     channel_settings.insert("2A03".to_string(), apu_settings);
     channel_settings.insert("VRC6".to_string(), vrc6_settings);
     channel_settings.insert("MMC5".to_string(), mmc5_settings);
     channel_settings.insert("YM2149F".to_string(), s5b_settings);
     channel_settings.insert("N163".to_string(), n163_settings);
+    channel_settings.insert("APU".to_string(), final_mix_settings);
 
     return channel_settings;
 }
