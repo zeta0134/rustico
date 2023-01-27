@@ -9,6 +9,8 @@ use rusticnes_core::nes::NesState;
 use rusticnes_core::mmc::none::NoneMapper;
 use rusticnes_core::cartridge::mapper_from_file;
 
+use rusticnes_core::apu::AudioChannelState;
+
 
 
 pub struct RuntimeState {
@@ -119,11 +121,27 @@ impl RuntimeState {
         let mut responses: Vec<Event> = Vec::new();
         responses.extend(self.settings.handle_event(event.clone()));
         match event {
-            Event::MuteChannel(channel_index) => {
-                self.nes.apu.mute_channel(&mut *self.nes.mapper, channel_index);
+            Event::MuteChannel(chip_name, channel_name) => {
+                let mut channels: Vec<&mut dyn AudioChannelState> = Vec::new();
+                channels.extend(self.nes.apu.channels_mut());
+                channels.extend(self.nes.mapper.channels_mut());
+                for channel in channels {
+                    if channel.chip() == chip_name && channel.name() == channel_name {
+                        channel.mute();
+                    }
+                }
+                //self.nes.apu.mute_channel(&mut *self.nes.mapper, channel_index);
             },
-            Event::UnmuteChannel(channel_index) => {
-                self.nes.apu.unmute_channel(&mut *self.nes.mapper, channel_index);  
+            Event::UnmuteChannel(chip_name, channel_name) => {
+                let mut channels: Vec<&mut dyn AudioChannelState> = Vec::new();
+                channels.extend(self.nes.apu.channels_mut());
+                channels.extend(self.nes.mapper.channels_mut());
+                for channel in channels {
+                    if channel.chip() == chip_name && channel.name() == channel_name {
+                        channel.unmute();
+                    }
+                }
+                //self.nes.apu.unmute_channel(&mut *self.nes.mapper, channel_index);  
             },
             
             Event::LoadCartridge(cart_id, file_data, sram_data) => {

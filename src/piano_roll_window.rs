@@ -1199,10 +1199,18 @@ impl PianoRollWindow {
     fn draw_audio_surfboard_horiz(&mut self, runtime: &RuntimeState, x: u32, y: u32, width: u32, height: u32) {
         let channels = self.collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
         let channel_width = width / (channels.len() as u32);
+        let mut leftover_pixels = width - (channel_width * (channels.len() as u32));
+        let mut cx = 0;
         for i in 0 .. channels.len() {
+            let mut effective_width = channel_width;
+            if leftover_pixels > 0 {
+                effective_width += 1;
+                leftover_pixels -= 1;
+            }
             let channel = channels[i];
-            let dx = x + (i as u32) * channel_width;
-            self.draw_channel_surfboard(channel, dx, y, channel_width, height);
+            let dx = x + cx;
+            self.draw_channel_surfboard(channel, dx, y, effective_width, height);
+            cx = cx + effective_width;
         }
     }
 
@@ -1220,9 +1228,9 @@ impl PianoRollWindow {
             let cx = sx + (i as u32) * channel_width;
             if mx >= cx && mx < cx + channel_width && my >= sy && my < sy + height {
                if channel.muted() {
-                    events.push(Event::UnmuteChannel(i))
+                    events.push(Event::UnmuteChannel(channel.chip(), channel.name()))
                 } else {
-                    events.push(Event::MuteChannel(i))
+                    events.push(Event::MuteChannel(channel.chip(), channel.name()))
                 } 
             }
         }

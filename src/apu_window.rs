@@ -216,9 +216,9 @@ impl ApuWindow {
         let channel_index = ((my as u32) / (self.channel_height() + self.spacing)) as usize;
         if channel_index < (channels.len() - 1) { // do not attempt to mute the final mix
             if channels[channel_index].muted() {
-                events.push(Event::UnmuteChannel(channel_index))
+                events.push(Event::UnmuteChannel(channels[channel_index].chip(), channels[channel_index].name()))
             } else {
-                events.push(Event::MuteChannel(channel_index))
+                events.push(Event::MuteChannel(channels[channel_index].chip(), channels[channel_index].name()))
             }
         }
         return events;
