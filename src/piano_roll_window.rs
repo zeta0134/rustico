@@ -202,14 +202,6 @@ fn draw_speaker_key_vert(canvas: &mut SimpleBuffer, color: Color, x: u32, y: u32
         color);
 }
 
-fn collect_channels<'a>(apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
-    let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
-    channels.extend(apu.channels());
-    channels.extend(mapper.channels());
-    channels.push(apu);
-    return channels;
-}
-
 fn midi_frequency(midi_index: u32) -> f32 {
     return 440.0 * (2.0_f32).powf(((midi_index as f32) - 69.0) / 12.0);
 }
@@ -437,6 +429,22 @@ impl PianoRollWindow {
             outline_color: Color::rgba(0, 0, 0, 255),
             outline_thickness: 2,
         };
+    }
+
+    fn collect_channels<'a>(&self, apu: &'a ApuState, mapper: &'a dyn Mapper) -> Vec<&'a dyn AudioChannelState> {
+        let mut channels: Vec<& dyn AudioChannelState> = Vec::new();
+        channels.extend(apu.channels());
+        channels.extend(mapper.channels());
+        channels.push(apu);
+
+        let mut displayed_channels: Vec<& dyn AudioChannelState> = Vec::new();
+        for channel in channels {
+            if !self.channel_is_hidden(channel) {
+                displayed_channels.push(channel);
+            }
+        }
+
+        return displayed_channels;
     }
 
     fn roll_width(&self) -> u32 {
@@ -730,6 +738,28 @@ impl PianoRollWindow {
         let piano_roll_height = (self.keys) as f32;
         let coordinate = (note_log - lowest_log) * piano_roll_height / range;
         return coordinate;
+    }
+
+    pub fn channel_is_hidden(&self, channel: &dyn AudioChannelState) -> bool {
+        match self.channel_settings.get(&channel.chip()) {
+            Some(chip_settings) => {
+                match chip_settings.get(&channel.name()) {
+                    Some(channel_settings) => {
+                        return channel_settings.hidden;
+                    },
+                    None => {
+                        // Known chip, but unknown channel within this chip. Weird!
+                        // Default to displayed
+                        return false;
+                    }
+                }
+            },
+            None => {
+                // No settings are defined for this whole chip. Is it new? 
+                // Default to displayed
+                return false;
+            }
+        }
     }
 
     pub fn channel_colors(&self, channel: &dyn AudioChannelState) -> Vec<Color> {
@@ -1048,7 +1078,7 @@ impl PianoRollWindow {
     }
 
     fn update(&mut self, apu: &ApuState, mapper: &dyn Mapper) {
-        let channels = collect_channels(&apu, &*mapper);
+        let channels = self.collect_channels(&apu, &*mapper);
 
         for _i in 0 .. self.speed_multiplier {
             let mut frame_notes: Vec<ChannelSlice> = Vec::new();
@@ -1160,7 +1190,7 @@ impl PianoRollWindow {
     }
 
     fn draw_audio_surfboard_horiz(&mut self, runtime: &RuntimeState, x: u32, y: u32, width: u32, height: u32) {
-        let channels = collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
+        let channels = self.collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
         let channel_width = width / (channels.len() as u32);
         for i in 0 .. channels.len() {
             let channel = channels[i];
@@ -1176,7 +1206,7 @@ impl PianoRollWindow {
         }
         let mx = mouse_x as u32;
         let my = mouse_y as u32;
-        let channels = collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
+        let channels = self.collect_channels(&runtime.nes.apu, &*runtime.nes.mapper);
         let channel_width = width / (channels.len() as u32);
         for i in 0 .. channels.len() {
             let channel = channels[i];
@@ -1341,6 +1371,32 @@ impl PianoRollWindow {
         self.highest_frequency = highest_freq;
     }
 
+    fn apply_channel_boolean_setting(&mut self, chip_name: &str, channel_name: &str, setting_name: &str, new_value: bool) {
+        match self.channel_settings.get_mut(chip_name) {
+            Some(chip_settings) => {
+                match chip_settings.get_mut(channel_name) {
+                    Some(channel_settings) => {
+                        match setting_name {
+                            "hidden" => {
+                                channel_settings.hidden = new_value;
+                                println!("DEBUG: successfully set channel {} setting {} to {}", channel_name, setting_name, new_value);
+                            },
+                            _ => {
+                                println!("Warning: Failed to apply unrecognized setting {} to channel {}", setting_name, channel_name);
+                            }
+                        }
+                    },
+                    None => {
+                        println!("Warning: Failed to apply setting {} to unknown channel {}", setting_name, channel_name);
+                    }
+                }
+            },
+            None => {
+                println!("Warning: Failed to apply setting {} to unknown audio chip {}", setting_name, chip_name);
+            }
+        }
+    }
+
     fn apply_color_string(&mut self, chip_name: &str, channel_name: &str, setting_name: &str, color_string: String) {
         let setting_to_index_mapping = HashMap::from([
             // Triangle, DMC, a few other simple chips
@@ -1436,9 +1492,14 @@ impl Panel for PianoRollWindow {
             Event::CloseWindow => {self.shown = false},
 
             Event::ApplyBooleanSetting(path, value) => {
-                match path.as_str() {
-                    "piano_roll.draw_piano_strings" => {self.draw_piano_strings = value},
-                    _ => {}
+                let components = path.split(".").collect::<Vec<&str>>();
+                if components.len() == 5 && components[0] == "piano_roll" && components[1] == "settings" {
+                    self.apply_channel_boolean_setting(components[2], components[3], components[4], value);
+                } else {
+                    match path.as_str() {
+                        "piano_roll.draw_piano_strings" => {self.draw_piano_strings = value},
+                        _ => {}
+                    }
                 }
             },
 
@@ -1470,7 +1531,7 @@ impl Panel for PianoRollWindow {
 
             Event::ApplyStringSetting(path, value) => {
                 let components = path.split(".").collect::<Vec<&str>>();
-                if components.len() == 5 && components[0] == "piano_roll" && components[1] == "colors" {
+                if components.len() == 5 && components[0] == "piano_roll" && components[1] == "settings" {
                     self.apply_color_string(components[2], components[3], components[4], value);
                 } else {
                     match path.as_str() {

@@ -31,67 +31,67 @@ waveform_height = 64
 
 background_color = "rgba(0, 0, 0, 255)"
 
-[piano_roll.colors.2A03.DMC]
+[piano_roll.settings.2A03.DMC]
 static = "rgb(96, 32, 192)"
 
-[piano_roll.colors.2A03.Noise]
+[piano_roll.settings.2A03.Noise]
 mode0 = "rgb(192, 192, 192)"
 mode1 = "rgb(128, 240, 255)"
 
-[piano_roll.colors.2A03."Pulse 1"]
+[piano_roll.settings.2A03."Pulse 1"]
 duty0 = "hsv(340, 25%, 100%)"
 duty1 = "hsv(350, 55%, 100%)"
 duty2 = "hsv(360, 75%, 100%)"
 duty3 = "hsv(350, 55%, 100%)"
 
-[piano_roll.colors.2A03."Pulse 2"]
+[piano_roll.settings.2A03."Pulse 2"]
 duty0 = "hsv(40, 25%, 100%)"
 duty1 = "hsv(50, 55%, 100%)"
 duty2 = "hsv(60, 75%, 100%)"
 duty3 = "hsv(50, 55%, 100%)"
 
-[piano_roll.colors.2A03.Triangle]
+[piano_roll.settings.2A03.Triangle]
 static = "#40FF40"
-[piano_roll.colors.MMC5.PCM]
+[piano_roll.settings.MMC5.PCM]
 static = "rgb(224, 24, 64)"
 
-[piano_roll.colors.MMC5."Pulse 1"]
+[piano_roll.settings.MMC5."Pulse 1"]
 static = "rgb(224, 24, 64)"
 
-[piano_roll.colors.MMC5."Pulse 2"]
+[piano_roll.settings.MMC5."Pulse 2"]
 static = "rgb(180, 12, 40)"
-[piano_roll.colors.N163."NAMCO 1"]
+[piano_roll.settings.N163."NAMCO 1"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 2"]
+[piano_roll.settings.N163."NAMCO 2"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 3"]
+[piano_roll.settings.N163."NAMCO 3"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 4"]
+[piano_roll.settings.N163."NAMCO 4"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 5"]
+[piano_roll.settings.N163."NAMCO 5"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 6"]
+[piano_roll.settings.N163."NAMCO 6"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 7"]
+[piano_roll.settings.N163."NAMCO 7"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
 
-[piano_roll.colors.N163."NAMCO 8"]
+[piano_roll.settings.N163."NAMCO 8"]
 gradient_high = "hsv(35, 22%, 80%)"
 gradient_low = "hsv(5, 80%, 60%)"
-[piano_roll.colors.VRC6."Pulse 1"]
+[piano_roll.settings.VRC6."Pulse 1"]
 duty0 = "hsv(330, 22%, 94%)"
 duty1 = "hsv(330, 32%, 86%)"
 duty2 = "hsv(330, 42%, 78%)"
@@ -101,7 +101,7 @@ duty5 = "hsv(330, 73%, 54%)"
 duty6 = "hsv(330, 83%, 46%)"
 duty7 = "hsv(330, 93%, 48%)"
 
-[piano_roll.colors.VRC6."Pulse 2"]
+[piano_roll.settings.VRC6."Pulse 2"]
 duty0 = "hsv(300, 22%, 94%)"
 duty1 = "hsv(300, 32%, 86%)"
 duty2 = "hsv(300, 42%, 78%)"
@@ -111,16 +111,16 @@ duty5 = "hsv(300, 73%, 54%)"
 duty6 = "hsv(300, 83%, 46%)"
 duty7 = "hsv(300, 93%, 48%)"
 
-[piano_roll.colors.VRC6.Sawtooth]
+[piano_roll.settings.VRC6.Sawtooth]
 mode0 = "#077d5a"
 mode1 = "#9fb8ed"
-[piano_roll.colors.YM2149F.A]
+[piano_roll.settings.YM2149F.A]
 static = "rgb(32, 144, 204)"
 
-[piano_roll.colors.YM2149F.B]
+[piano_roll.settings.YM2149F.B]
 static = "rgb(24, 104, 228)"
 
-[piano_roll.colors.YM2149F.C]
+[piano_roll.settings.YM2149F.C]
 static = "rgb(16, 64, 248)"
 
 "###;
