@@ -1175,6 +1175,19 @@ impl PianoRollWindow {
         }
     }
 
+    fn draw_channel_dividers(&mut self, x: u32, y: u32, width: u32, height: u32) {
+        // TODO: make both of these tweakable settings
+        let mut base_color = Color::rgba(0, 0, 0, 255);
+        let divider_width = 5;
+
+        for dx in 0 .. divider_width {
+            let color_weight: u32 = (255 * (divider_width - dx)) / divider_width;
+            base_color.set_alpha(color_weight as u8);
+            drawing::blend_rect(&mut self.canvas, x + dx, y, 1, height, base_color);
+            drawing::blend_rect(&mut self.canvas, x + width - dx - 1, y, 1, height, base_color);
+        }
+    }
+
     fn draw_channel_surfboard(&mut self, channel: &dyn AudioChannelState, x: u32, y: u32, width: u32, height: u32) {
         let color = self.channel_color(channel);
         self.draw_surfboard_background(x, y, width, height, color);
@@ -1212,7 +1225,7 @@ impl PianoRollWindow {
 
         let chip_label = format!("{}", channel.chip());
         let chip_color = Color::rgba(channel_color.r(), channel_color.g(), channel_color.b(), 0x30);
-        let chip_x = x + 4;
+        let chip_x = x + 8;
         let chip_y = y + 4;
         drawing::text(&mut self.canvas, &self.font, chip_x - 1, chip_y, &chip_label, transparent_color);
         drawing::text(&mut self.canvas, &self.font, chip_x + 0, chip_y, &chip_label, transparent_color);
@@ -1222,7 +1235,7 @@ impl PianoRollWindow {
         let channel_label = format!("{}", channel.name());
         let channel_color = Color::rgba(channel_color.r(), channel_color.g(), channel_color.b(), 0x30);
         let label_width_px = (channel_label.len() * 8) as u32;
-        let channel_x = x + width - 4 - label_width_px;
+        let channel_x = x + width - 8 - label_width_px;
         let channel_y = y + height - 4 - 8;
         drawing::text(&mut self.canvas, &self.font, channel_x - 1, channel_y, &channel_label, transparent_color);
         drawing::text(&mut self.canvas, &self.font, channel_x + 0, channel_y, &channel_label, transparent_color);
@@ -1244,6 +1257,7 @@ impl PianoRollWindow {
             let channel = channels[i];
             let dx = x + cx;
             self.draw_channel_surfboard(channel, dx, y, effective_width, height);
+            self.draw_channel_dividers(dx, y, effective_width, height);
             cx = cx + effective_width;
         }
     }
