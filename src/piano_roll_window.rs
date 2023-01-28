@@ -316,11 +316,19 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
     let mut mmc5_settings: HashMap<String, ChannelSettings> = HashMap::new();
     mmc5_settings.insert("Pulse 1".to_string(), ChannelSettings{
         hidden: false,
-        colors: vec!(Color::rgb(224, 24, 64))
+        colors: vec!(
+            Color::rgb(0xCC, 0x00, 0x29),
+            Color::rgb(0xDF, 0x48, 0x67),
+            Color::rgb(0xF2, 0x91, 0xA5),
+            Color::rgb(0xDF, 0x48, 0x67))
     });
     mmc5_settings.insert("Pulse 2".to_string(), ChannelSettings{
         hidden: false,
-        colors: vec!(Color::rgb(180, 12, 40))
+        colors: vec!(
+            Color::rgb(0xCC, 0x00, 0x29),
+            Color::rgb(0xDF, 0x48, 0x67),
+            Color::rgb(0xF2, 0x91, 0xA5),
+            Color::rgb(0xDF, 0x48, 0x67))
     });
     mmc5_settings.insert("PCM".to_string(), ChannelSettings{
         hidden: false,
