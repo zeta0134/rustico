@@ -1181,7 +1181,8 @@ impl PianoRollWindow {
         let divider_width = 5;
 
         for dx in 0 .. divider_width {
-            let color_weight: u32 = (255 * (divider_width - dx)) / divider_width;
+            let gradient_index: u32 = (255 * (divider_width - dx)) / divider_width;
+            let color_weight: u32 = (gradient_index * gradient_index) / 255;
             base_color.set_alpha(color_weight as u8);
             drawing::blend_rect(&mut self.canvas, x + dx, y, 1, height, base_color);
             drawing::blend_rect(&mut self.canvas, x + width - dx - 1, y, 1, height, base_color);
