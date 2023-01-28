@@ -121,6 +121,12 @@ impl RuntimeState {
         let mut responses: Vec<Event> = Vec::new();
         responses.extend(self.settings.handle_event(event.clone()));
         match event {
+            Event::ApplyBooleanSetting(path, value) => {
+                match path.as_str() {
+                    "audio.multiplexing" => {self.nes.mapper.audio_multiplexing(value)},
+                    _ => {}
+                }
+            },
             Event::MuteChannel(chip_name, channel_name) => {
                 let mut channels: Vec<&mut dyn AudioChannelState> = Vec::new();
                 channels.extend(self.nes.apu.channels_mut());
