@@ -594,10 +594,10 @@ impl PianoRollWindow {
     // TOTO: this is hard-coded and isn't especially flexible. Shouldn't we use the key spot routines
     // instead of this?
     fn draw_piano_keys_vert(&mut self, base_x: u32, y: u32) {
-        let white_key_border = Color::rgb(0x1C, 0x1C, 0x1C);
+        let white_key_border = Color::rgb(0x18, 0x18, 0x18);
         let white_key = Color::rgb(0x20, 0x20, 0x20);
         let black_key = Color::rgb(0x00, 0x00, 0x00);
-        let top_edge = Color::rgb(0x0A, 0x0A, 0x0A);
+        let top_edge = Color::rgb(0x04, 0x04, 0x04);
 
         let key_colors = [
           white_key, // C
