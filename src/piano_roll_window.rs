@@ -1,6 +1,7 @@
 use application::RuntimeState;
 use drawing;
 use drawing::Color;
+use drawing::Font;
 use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
@@ -382,6 +383,7 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
 
 pub struct PianoRollWindow {
     pub canvas: SimpleBuffer,
+    pub font: Font,
     pub shown: bool,
     pub scale: u32,
     pub keys: u32,
@@ -412,15 +414,13 @@ pub struct PianoRollWindow {
 
 impl PianoRollWindow {
     pub fn new() -> PianoRollWindow {
-        println!("TESTING");
-        println!("Midi name C0 produces: index {}, freq {}", midi_index("C0").unwrap(), midi_frequency(midi_index("C0").unwrap()));
-        println!("Midi name Cs8 produces: index {}, freq {}", midi_index("Cs9").unwrap(), midi_frequency(midi_index("Cs9").unwrap()));
-
+        let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return PianoRollWindow {
             //canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
             //canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
             canvas: SimpleBuffer::new(1920, 1080), // actually 1080p
+            font: font,
             shown: false,
             scale: 1,
             keys: 109,
@@ -1178,6 +1178,7 @@ impl PianoRollWindow {
     fn draw_channel_surfboard(&mut self, channel: &dyn AudioChannelState, x: u32, y: u32, width: u32, height: u32) {
         let color = self.channel_color(channel);
         self.draw_surfboard_background(x, y, width, height, color);
+        self.draw_channel_labels(channel, x, y, width, height);
 
         let speed = 4;
         let first_sample_index = PianoRollWindow::find_edge(channel.edge_buffer(), (width * speed) as usize);
@@ -1202,6 +1203,31 @@ impl PianoRollWindow {
             self.draw_vertical_antialiased_line(dx, y as f32 + top_edge - self.surfboard_line_thickness, y as f32 + bottom_edge + self.surfboard_line_thickness, color);
             last_y = current_y;
         }
+    }
+
+    fn draw_channel_labels(&mut self, channel: &dyn AudioChannelState, x: u32, y: u32, width: u32, height: u32) {
+        let channel_color = self.channel_color(channel);
+
+        let transparent_color = Color::rgba(0, 0, 0, 0x80);
+
+        let chip_label = format!("{}", channel.chip());
+        let chip_color = Color::rgba(channel_color.r(), channel_color.g(), channel_color.b(), 0x30);
+        let chip_x = x + 4;
+        let chip_y = y + 4;
+        drawing::text(&mut self.canvas, &self.font, chip_x - 1, chip_y, &chip_label, transparent_color);
+        drawing::text(&mut self.canvas, &self.font, chip_x + 0, chip_y, &chip_label, transparent_color);
+        drawing::text(&mut self.canvas, &self.font, chip_x + 1, chip_y, &chip_label, transparent_color);
+        drawing::text(&mut self.canvas, &self.font, chip_x, chip_y, &chip_label, chip_color);
+
+        let channel_label = format!("{}", channel.name());
+        let channel_color = Color::rgba(channel_color.r(), channel_color.g(), channel_color.b(), 0x30);
+        let label_width_px = (channel_label.len() * 8) as u32;
+        let channel_x = x + width - 4 - label_width_px;
+        let channel_y = y + height - 4 - 8;
+        drawing::text(&mut self.canvas, &self.font, channel_x - 1, channel_y, &channel_label, transparent_color);
+        drawing::text(&mut self.canvas, &self.font, channel_x + 0, channel_y, &channel_label, transparent_color);
+        drawing::text(&mut self.canvas, &self.font, channel_x + 1, channel_y, &channel_label, transparent_color);
+        drawing::text(&mut self.canvas, &self.font, channel_x, channel_y, &channel_label, channel_color);
     }
 
     fn draw_audio_surfboard_horiz(&mut self, runtime: &RuntimeState, x: u32, y: u32, width: u32, height: u32) {
