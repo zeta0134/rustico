@@ -1319,8 +1319,10 @@ impl PianoRollWindow {
     }
 
     fn draw_top_to_bottom(&mut self, runtime: &RuntimeState) {
-        let waveform_area_width = self.key_thickness * 4;
-        let waveform_string_pos = self.key_thickness * 2;
+        let keyboard_width = self.keys * self.key_thickness;
+        let waveform_area_width = ((self.canvas.width - keyboard_width) / 2).max(20);
+
+        let waveform_string_pos = waveform_area_width / 2;
         let waveform_margin = self.key_thickness / 2;
         let key_height = self.key_length;
         let leftmost_key = waveform_area_width + waveform_margin;
