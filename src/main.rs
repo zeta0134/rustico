@@ -116,7 +116,7 @@ pub fn main() {
   let desired_spec = AudioSpecDesired {
     freq: Some(44100),
     channels: Some(1),
-    samples: Some(1024)
+    samples: Some(256)
   };
 
   // Grab the active audio device and begin playback immediately. Until we fill the buffer, this will "play" silence:
