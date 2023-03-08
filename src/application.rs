@@ -153,6 +153,9 @@ impl RuntimeState {
             Event::LoadCartridge(cart_id, file_data, sram_data) => {
                 responses.push(self.load_cartridge(cart_id, &file_data));
                 self.load_sram(&sram_data);
+                // Loading a new cartridge replaces the mapper and resets NesState, so we should
+                // reload all settings to make sure any emulation-specific things get re-appled.
+                responses.extend(self.settings.apply_settings());
             },
             Event::LoadSram(sram_data) => {
                 self.load_sram(&sram_data);
