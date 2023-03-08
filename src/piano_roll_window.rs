@@ -1416,8 +1416,6 @@ impl PianoRollWindow {
         let highest_index = key_index + self.keys;
         let highest_freq = midi_frequency(highest_index);
 
-        println!("New highest index: {}, new highest freq: {}", highest_index, highest_freq);
-
         self.lowest_index = key_index;
         self.lowest_frequency = key_freq;
         self.highest_index = highest_index;
@@ -1429,8 +1427,6 @@ impl PianoRollWindow {
 
         let highest_index = self.lowest_index + key_count;
         let highest_freq = midi_frequency(highest_index);
-
-        println!("New highest index: {}, new highest freq: {}", highest_index, highest_freq);
 
         self.keys = key_count;
         self.highest_index = highest_index;
@@ -1445,7 +1441,6 @@ impl PianoRollWindow {
                         match setting_name {
                             "hidden" => {
                                 channel_settings.hidden = new_value;
-                                println!("DEBUG: successfully set channel {} setting {} to {}", channel_name, setting_name, new_value);
                             },
                             _ => {
                                 println!("Warning: Failed to apply unrecognized setting {} to channel {}", setting_name, channel_name);
