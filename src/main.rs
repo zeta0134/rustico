@@ -308,7 +308,7 @@ pub fn main() {
           for i in 0 .. buffer_size {
             buffer[i] = runtime_state.nes.apu.output_buffer[i] as i16;
           }
-          device.queue(&buffer);
+          _ = device.queue_audio(&buffer);
           runtime_state.nes.apu.buffer_full = false;
           if dump_audio {
             runtime_state.nes.apu.dump_sample_buffer();
@@ -335,7 +335,7 @@ pub fn main() {
       } else {
         // we have to queue up *something*, so let's target around 60 Hz ish of silence
         let buffer = vec!(0i16; 44100 / 60);
-        device.queue(&buffer);
+        _ = device.queue_audio(&buffer);
       }
 
       // Run an update, and also flush out (unconditionally) any other queued events

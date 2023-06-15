@@ -7,7 +7,7 @@ build = "build.rs"
 [dependencies]
 dirs = "4.0"
 image = "0.19"
-sdl2 = "0.34.5"
+sdl2 = "0.35.2"
 nfd2 = "0.2.3"
 rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "b81ec27e481886278d29052203050304011f53cc" }
 rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev = "26dd47b1f634da9e36d926bcc69fe55a9d3b8cc3" }
