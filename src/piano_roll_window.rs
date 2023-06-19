@@ -365,6 +365,33 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
     n163_settings.insert("NAMCO 7".to_string(), ChannelSettings{ hidden: false, colors: wavetable_gradient.clone()});
     n163_settings.insert("NAMCO 8".to_string(), ChannelSettings{ hidden: false, colors: wavetable_gradient.clone()});
 
+    let mut vrc7_settings: HashMap<String, ChannelSettings> = HashMap::new();
+    let patch_colors = vec!(
+        Color::rgb(0xFF, 0xD0, 0xD0), // Custom
+        Color::rgb(0xFF, 0xD0, 0xD0), // Bell
+        Color::rgb(0xFF, 0xD0, 0xD0), // Guitar
+        Color::rgb(0xFF, 0xD0, 0xD0), // Piano
+        Color::rgb(0xFF, 0xD0, 0xD0), // Flute
+        Color::rgb(0xFF, 0xD0, 0xD0), // Clarinet
+        Color::rgb(0xFF, 0xD0, 0xD0), // Rattling Bell
+        Color::rgb(0xFF, 0xD0, 0xD0), // Trumpet
+        Color::rgb(0xFF, 0xD0, 0xD0), // Reed Organ
+        Color::rgb(0xFF, 0xD0, 0xD0), // Soft Bell
+        Color::rgb(0xFF, 0xD0, 0xD0), // Xylophone
+        Color::rgb(0xFF, 0xD0, 0xD0), // Vibraphone
+        Color::rgb(0xFF, 0xD0, 0xD0), // Brass
+        Color::rgb(0xFF, 0xD0, 0xD0), // Bass Guitar
+        Color::rgb(0xFF, 0xD0, 0xD0), // Synthesizer
+        Color::rgb(0xFF, 0xD0, 0xD0), // Chorus
+    );
+    vrc7_settings.insert("FM 1".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
+    vrc7_settings.insert("FM 2".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
+    vrc7_settings.insert("FM 3".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
+    vrc7_settings.insert("FM 4".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
+    vrc7_settings.insert("FM 5".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
+    vrc7_settings.insert("FM 6".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
+
+
     let mut final_mix_settings: HashMap<String, ChannelSettings> = HashMap::new();
     final_mix_settings.insert("Final Mix".to_string(), ChannelSettings{
         hidden: false,
@@ -376,6 +403,7 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
     channel_settings.insert("MMC5".to_string(), mmc5_settings);
     channel_settings.insert("YM2149F".to_string(), s5b_settings);
     channel_settings.insert("N163".to_string(), n163_settings);
+    channel_settings.insert("VRC7".to_string(), vrc7_settings);
     channel_settings.insert("APU".to_string(), final_mix_settings);
 
     return channel_settings;
@@ -417,11 +445,9 @@ impl PianoRollWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return PianoRollWindow {
-            //canvas: SimpleBuffer::new(480, 270), // conveniently 1/4 of 1080p, for easy nearest-neighbor upscaling of captures
-            //canvas: SimpleBuffer::new(960, 540), // conveniently 1/2 of 1080p, for easy nearest-neighbor upscaling of captures
             canvas: SimpleBuffer::new(1920, 1080), // actually 1080p
             font: font,
-            shown: false,
+            shown: true,
             scale: 1,
             keys: 109,
             key_thickness: 16,
@@ -1477,6 +1503,23 @@ impl PianoRollWindow {
             // Two-color gradients (N163)
             ("gradient_low", 0),
             ("gradient_high", 1),
+            // Patch Index (VRC7)
+            ("patch0", 0),
+            ("patch1", 1),
+            ("patch2", 2),
+            ("patch3", 3),
+            ("patch4", 4),
+            ("patch5", 5),
+            ("patch6", 6),
+            ("patch7", 7),
+            ("patch8", 8),
+            ("patch9", 9),
+            ("patchA", 10),
+            ("patchB", 11),
+            ("patchC", 12),
+            ("patchD", 13),
+            ("patchE", 14),
+            ("patchF", 15),
         ]);
 
         match self.channel_settings.get_mut(chip_name) {
