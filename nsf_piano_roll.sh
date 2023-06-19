@@ -85,14 +85,13 @@ cargo run --release -- \
   track "$track_index" \
   config "$base_config" \
   config "configs/piano_roll_colors.toml" \
-  config "configs/piano_roll_zeta.toml" \
   video pianoroll __videopipe audio "$raw_audio_file" \
   frames $duration_frames &
 
 echo "=== Converting captured video to $intermediate_video_file ... ==="
 # piano roll settings
 ffmpeg -y \
-  -f rawvideo -pix_fmt rgb24 -s "${render_width}x${render_height}" -r 60.0988 -i __videopipe \
+  -f rawvideo -pix_fmt rgba -s "${render_width}x${render_height}" -r 60.0988 -i __videopipe \
   -c:v libx264 -crf "$video_crf" -preset veryslow -pix_fmt yuv420p \
   -vf "scale=${output_width}:${output_height}:flags=neighbor, scale=out_color_matrix=bt709, fps=fps=60, fade=t=out:st=$fade_start:d=$fade_duration" \
   -color_range 1 -colorspace bt709 -color_trc bt709 -color_primaries bt709 -movflags faststart \
