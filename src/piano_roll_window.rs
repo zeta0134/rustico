@@ -447,7 +447,7 @@ impl PianoRollWindow {
         return PianoRollWindow {
             canvas: SimpleBuffer::new(1920, 1080), // actually 1080p
             font: font,
-            shown: true,
+            shown: false,
             scale: 1,
             keys: 109,
             key_thickness: 16,
