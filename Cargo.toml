@@ -5,5 +5,5 @@ authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
 
 [dependencies]
 image = "0.19"
-rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "c0b6ab9a8b074c280818b53e15450e02054b2a38" }
-rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev="5fa8b7d9fee92fec8403b42b92b0f7eabf0cc6ce" }
+rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "cbd7146ad66dd8e95a35d46828ad7878f75de638" }
+rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev="b0d0bf56c54a0c73baef7b05625b0dabea1a7153" }
