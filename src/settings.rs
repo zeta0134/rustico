@@ -30,6 +30,8 @@ starting_octave = 0
 waveform_height = 64
 draw_text_labels = true
 
+divider_width = 5
+divider_color = "rgb(0, 0, 0)"
 background_color = "rgba(0, 0, 0, 255)"
 
 [piano_roll.settings.2A03.DMC]

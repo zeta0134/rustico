@@ -436,6 +436,8 @@ pub struct PianoRollWindow {
     pub outline_color: Color,
     pub outline_thickness: u32,
     pub draw_text_labels: bool,
+    pub divider_color: Color,
+    pub divider_width: u32,
 
     // Keyed on: chip name, then channel name within that chip
     pub channel_settings: HashMap<String, HashMap<String, ChannelSettings>>,
@@ -471,6 +473,8 @@ impl PianoRollWindow {
             outline_color: Color::rgba(0, 0, 0, 255),
             outline_thickness: 2,
             draw_text_labels: true,
+            divider_color: Color::rgba(0, 0, 0, 255),
+            divider_width: 5,
         };
     }
 
@@ -1205,8 +1209,8 @@ impl PianoRollWindow {
 
     fn draw_channel_dividers(&mut self, x: u32, y: u32, width: u32, height: u32) {
         // TODO: make both of these tweakable settings
-        let mut base_color = Color::rgba(0, 0, 0, 255);
-        let divider_width = 5;
+        let mut base_color = self.divider_color;
+        let divider_width = self.divider_width;
 
         for dx in 0 .. divider_width {
             let gradient_index: u32 = (255 * (divider_width - dx)) / divider_width;
@@ -1627,6 +1631,7 @@ impl Panel for PianoRollWindow {
                     "piano_roll.oscilloscope_glow_thickness" => {self.surfboard_glow_thickness = value as f32},
                     "piano_roll.oscilloscope_line_thickness" => {self.surfboard_line_thickness = value as f32},
                     "piano_roll.outline_thickness" => {self.outline_thickness = value as u32},
+                    "piano_roll.divider_width" => {self.divider_width = value as u32},
                     _ => {}
                 }
             },
@@ -1648,6 +1653,14 @@ impl Panel for PianoRollWindow {
                         "piano_roll.background_color" => {
                             match Color::from_string(&value) {
                                 Ok(color) => {self.background_color = color},
+                                Err(_) => {
+                                    println!("Warning: Invalid color string {}, ignoring.", value);
+                                }
+                            }
+                        },
+                        "piano_roll.divider_color" => {
+                            match Color::from_string(&value) {
+                                Ok(color) => {self.divider_color = color},
                                 Err(_) => {
                                     println!("Warning: Invalid color string {}, ignoring.", value);
                                 }
