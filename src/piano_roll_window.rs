@@ -435,6 +435,7 @@ pub struct PianoRollWindow {
     pub background_color: Color,
     pub outline_color: Color,
     pub outline_thickness: u32,
+    pub draw_text_labels: bool,
 
     // Keyed on: chip name, then channel name within that chip
     pub channel_settings: HashMap<String, HashMap<String, ChannelSettings>>,
@@ -469,6 +470,7 @@ impl PianoRollWindow {
             background_color: Color::rgba(0, 0, 0, 255),
             outline_color: Color::rgba(0, 0, 0, 255),
             outline_thickness: 2,
+            draw_text_labels: true,
         };
     }
 
@@ -1246,6 +1248,9 @@ impl PianoRollWindow {
     }
 
     fn draw_channel_labels(&mut self, channel: &dyn AudioChannelState, x: u32, y: u32, width: u32, height: u32) {
+        if !self.draw_text_labels {
+            return;
+        }
         let channel_color = self.channel_color(channel);
 
         let transparent_color = Color::rgba(0, 0, 0, 0x80);
@@ -1602,6 +1607,7 @@ impl Panel for PianoRollWindow {
                 } else {
                     match path.as_str() {
                         "piano_roll.draw_piano_strings" => {self.draw_piano_strings = value},
+                        "piano_roll.draw_text_labels" => {self.draw_text_labels = value},
                         _ => {}
                     }
                 }

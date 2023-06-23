@@ -28,6 +28,7 @@ scale_factor = 1
 speed_multiplier = 4
 starting_octave = 0
 waveform_height = 64
+draw_text_labels = true
 
 background_color = "rgba(0, 0, 0, 255)"
 
