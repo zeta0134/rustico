@@ -233,6 +233,7 @@ patchF = "hsv(110, 50%, 94%)"
 
 [piano_roll.settings.APU."Final Mix"]
 static = "rgb(224, 224, 224)"
+hidden = true
 
 "###;
 
