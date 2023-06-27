@@ -38,18 +38,28 @@ impl RuntimeState {
         }
     }
 
-    pub fn load_cartridge(&mut self, cart_id: String, file_data: &[u8]) -> Event {
+    pub fn load_cartridge(&mut self, cart_id: String, file_data: &[u8]) -> Vec<Event> {
+        let mut responses: Vec<Event> = Vec::new();
         let maybe_mapper = mapper_from_file(file_data);
         match maybe_mapper {
             Ok(mapper) => {
+
                 self.nes = NesState::new(mapper);
-                self.nes.power_on();
-                self.running = true;
                 self.file_loaded = true;
-                return Event::CartridgeLoaded(cart_id);
+                responses.push(Event::CartridgeLoaded(cart_id));
+                if self.nes.mapper.needs_bios() {
+                    responses.push(Event::RequestBios);
+                    self.running = false;
+                    println!("FDS game needs bios, pausing emulation to request it from the shell...");
+                } else {
+                    self.nes.power_on();
+                    self.running = true;
+                }
+                return responses
             },
             Err(why) => {
-                return Event::CartridgeRejected(cart_id, why);
+                responses.push(Event::CartridgeRejected(cart_id, why));
+                return responses
             }
         }
     }
@@ -59,6 +69,15 @@ impl RuntimeState {
             if file_data.len() > 0 {
                 self.nes.set_sram(file_data.to_vec());
             }
+        }
+    }
+
+    pub fn load_bios(&mut self, file_data: &[u8]) {
+        self.nes.mapper.load_bios(file_data.to_vec());
+        // Set ourselves to running (but only if that succeeded)
+        if !self.nes.mapper.needs_bios() {
+            self.nes.power_on();
+            self.running = true;
         }
     }
 
@@ -151,11 +170,14 @@ impl RuntimeState {
             },
             
             Event::LoadCartridge(cart_id, file_data, sram_data) => {
-                responses.push(self.load_cartridge(cart_id, &file_data));
+                responses.extend(self.load_cartridge(cart_id, &file_data));
                 self.load_sram(&sram_data);
                 // Loading a new cartridge replaces the mapper and resets NesState, so we should
                 // reload all settings to make sure any emulation-specific things get re-appled.
                 responses.extend(self.settings.apply_settings());
+            },
+            Event::LoadBios(bios_data) => {
+                self.load_bios(&bios_data);
             },
             Event::LoadSram(sram_data) => {
                 self.load_sram(&sram_data);
