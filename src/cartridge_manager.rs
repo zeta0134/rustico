@@ -42,6 +42,22 @@ impl CartridgeManager {
     }
   }
 
+  pub fn open_bios(&mut self) -> rusticnes_ui_common::Event {
+    // Todo: check the config directory? try more potential filenames? When we find a bios, copy it to the
+    // config directory so we don't have to do this again?
+    let bios_filename = "disksys.rom";
+    let candidate_bios_path = PathBuf::from(&self.game_path).with_file_name(bios_filename);
+    match std::fs::read(&candidate_bios_path.to_str().unwrap()) {
+      Ok(bios_data) => {
+        return rusticnes_ui_common::Event::LoadBios(Rc::new(bios_data));
+      },
+      Err(reason) => {
+        println!("Failed to load FDS BIOS: {}", reason);
+        return rusticnes_ui_common::Event::LoadFailed(reason.to_string());
+      }
+    }
+  }
+
   pub fn save_sram(&self, filename: String, sram_data: &[u8]) {
     let file = File::create(filename);
     match file {
@@ -69,6 +85,9 @@ impl CartridgeManager {
             responses.push(rusticnes_ui_common::Event::LoadFailed(reason));
           }
         }
+      },
+      rusticnes_ui_common::Event::RequestBios => {
+        responses.push(self.open_bios());
       },
       rusticnes_ui_common::Event::CartridgeLoaded(cart_id) => {
         self.game_path = cart_id.to_string();
