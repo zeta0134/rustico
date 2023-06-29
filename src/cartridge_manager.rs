@@ -110,7 +110,7 @@ impl CartridgeManager {
 }
 
 pub fn open_file_dialog() -> Result<String, String> {
-  let result = nfd2::dialog().filter("nes,nsf").open().unwrap_or_else(|e| { panic!("{}", e); });
+  let result = nfd2::dialog().filter("nes,nsf,fds").open().unwrap_or_else(|e| { panic!("{}", e); });
 
   match result {
     nfd2::Response::Okay(file_path) => {

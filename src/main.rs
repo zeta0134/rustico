@@ -230,6 +230,15 @@ pub fn main() {
                           println!("Audio dump stopped.");
                         }
                       },
+                      
+                      Keycode::Kp1 => {application_events.push(events::Event::ChangeDisk(0, 0));},
+                      Keycode::Kp2 => {application_events.push(events::Event::ChangeDisk(0, 1));},
+                      Keycode::Kp3 => {application_events.push(events::Event::ChangeDisk(1, 0));},
+                      Keycode::Kp4 => {application_events.push(events::Event::ChangeDisk(1, 1));},
+                      Keycode::Kp5 => {application_events.push(events::Event::ChangeDisk(2, 0));},
+                      Keycode::Kp6 => {application_events.push(events::Event::ChangeDisk(2, 1));},
+                      Keycode::Kp7 => {application_events.push(events::Event::ChangeDisk(3, 0));},
+                      Keycode::Kp8 => {application_events.push(events::Event::ChangeDisk(3, 1));},
                       _ => ()
                     }
                   } else {
