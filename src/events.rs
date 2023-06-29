@@ -21,6 +21,7 @@ pub enum Event {
     CloseWindow,
     CartridgeLoaded(String),
     CartridgeRejected(String, String),
+    ChangeDisk(usize, usize),
     GameToggleOverscan,
     GameIncreaseScale,
     GameDecreaseScale,

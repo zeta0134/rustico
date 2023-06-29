@@ -155,7 +155,6 @@ impl RuntimeState {
                         channel.mute();
                     }
                 }
-                //self.nes.apu.mute_channel(&mut *self.nes.mapper, channel_index);
             },
             Event::UnmuteChannel(chip_name, channel_name) => {
                 let mut channels: Vec<&mut dyn AudioChannelState> = Vec::new();
@@ -166,9 +165,13 @@ impl RuntimeState {
                         channel.unmute();
                     }
                 }
-                //self.nes.apu.unmute_channel(&mut *self.nes.mapper, channel_index);  
             },
             
+            Event::ChangeDisk(disk_num, side_num) => {
+                let internal_side_num = disk_num * 2 + side_num;
+                self.nes.mapper.switch_disk(internal_side_num);
+            },
+
             Event::LoadCartridge(cart_id, file_data, sram_data) => {
                 responses.extend(self.load_cartridge(cart_id, &file_data));
                 self.load_sram(&sram_data);
