@@ -391,6 +391,13 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
     vrc7_settings.insert("FM 5".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
     vrc7_settings.insert("FM 6".to_string(), ChannelSettings{ hidden: false, colors: patch_colors.clone()});
 
+    let mut fds_settings: HashMap<String, ChannelSettings> = HashMap::new();
+    fds_settings.insert("Wavetable".to_string(), ChannelSettings{
+        hidden: false,
+        colors: vec!(
+            Color::rgb(0xb9, 0xdf, 0xfa),
+            Color::rgb(0x66, 0x47, 0xff))
+    }); 
 
     let mut final_mix_settings: HashMap<String, ChannelSettings> = HashMap::new();
     final_mix_settings.insert("Final Mix".to_string(), ChannelSettings{
@@ -404,6 +411,7 @@ pub fn default_channel_settings() -> HashMap<String, HashMap<String, ChannelSett
     channel_settings.insert("YM2149F".to_string(), s5b_settings);
     channel_settings.insert("N163".to_string(), n163_settings);
     channel_settings.insert("VRC7".to_string(), vrc7_settings);
+    channel_settings.insert("FDS".to_string(), fds_settings);
     channel_settings.insert("APU".to_string(), final_mix_settings);
 
     return channel_settings;
