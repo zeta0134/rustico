@@ -15,6 +15,7 @@ Cargo.lock
 # Various rom and binary formats commonly used for testing
 *.nes
 *.nsf
+*.nsfe
 *.sav
 *.raw
 *.ftm
