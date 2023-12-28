@@ -43,7 +43,7 @@ impl ApuWindow {
             canvas: SimpleBuffer::new(256, 1080),
             font: font,
             shown: false,
-            waveform_height: 64,
+            waveform_height: 32,
             text_height: 10,
             spacing: 2,
             old_channels: 5,
