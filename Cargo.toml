@@ -9,5 +9,5 @@ dirs = "5.0.1"
 image = "0.24.6"
 sdl2 = "0.35.2"
 nfd2 = "0.3.1"
-rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "86c532d1e053df979d1789696f68e92c0ae3dfaf" }
-rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev = "252dba7c81501822dc3f10a46dd1398be9b1eea7" }
+rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "be6ef2c7cd3d654846e67888aa3091aa8d310a0a" }
+rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev = "88f533743d55fabe860e6a91c9b18a309d5e3cac" }
