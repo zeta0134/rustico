@@ -1,0 +1,13 @@
+/target/
+/tests/
+**/*.rs.bk
+
+*.nes
+*.nsf
+*.png
+*.raw
+*.mp4
+*.mov
+Cargo.lock
+
+pipe_test.sh

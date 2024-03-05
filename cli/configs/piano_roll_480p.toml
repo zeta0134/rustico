@@ -1,0 +1,12 @@
+[piano_roll]
+canvas_width = 854
+canvas_height = 480
+key_length = 32
+key_thickness = 7
+octave_count = 9
+scale_factor = 1
+speed_multiplier = 3
+starting_octave = 0
+waveform_height = 32
+oscilloscope_glow_thickness = 3.0
+oscilloscope_line_thickness = 1.0

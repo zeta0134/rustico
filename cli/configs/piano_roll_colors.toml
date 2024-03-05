@@ -1,0 +1,199 @@
+[piano_roll.settings.2A03.DMC]
+static = "rgb(96, 32, 192)"
+
+[piano_roll.settings.2A03.Noise]
+mode0 = "rgb(192, 192, 192)"
+mode1 = "rgb(128, 240, 255)"
+
+[piano_roll.settings.2A03."Pulse 1"]
+duty0 = "hsv(340, 25%, 100%)"
+duty1 = "hsv(350, 55%, 100%)"
+duty2 = "hsv(360, 75%, 100%)"
+duty3 = "hsv(350, 55%, 100%)"
+
+[piano_roll.settings.2A03."Pulse 2"]
+duty0 = "hsv(40, 25%, 100%)"
+duty1 = "hsv(50, 55%, 100%)"
+duty2 = "hsv(60, 75%, 100%)"
+duty3 = "hsv(50, 55%, 100%)"
+
+[piano_roll.settings.2A03.Triangle]
+static = "#40FF40"
+[piano_roll.settings.MMC5.PCM]
+static = "rgb(224, 24, 64)"
+
+[piano_roll.settings.MMC5."Pulse 1"]
+static = "rgb(224, 24, 64)"
+
+[piano_roll.settings.MMC5."Pulse 2"]
+static = "rgb(180, 12, 40)"
+[piano_roll.settings.N163."NAMCO 1"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 2"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 3"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 4"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 5"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 6"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 7"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+
+[piano_roll.settings.N163."NAMCO 8"]
+gradient_high = "hsv(35, 22%, 80%)"
+gradient_low = "hsv(5, 80%, 60%)"
+[piano_roll.settings.VRC6."Pulse 1"]
+duty0 = "hsv(330, 22%, 94%)"
+duty1 = "hsv(330, 32%, 86%)"
+duty2 = "hsv(330, 42%, 78%)"
+duty3 = "hsv(330, 52%, 70%)"
+duty4 = "hsv(330, 63%, 62%)"
+duty5 = "hsv(330, 73%, 54%)"
+duty6 = "hsv(330, 83%, 46%)"
+duty7 = "hsv(330, 93%, 48%)"
+
+[piano_roll.settings.VRC6."Pulse 2"]
+duty0 = "hsv(300, 22%, 94%)"
+duty1 = "hsv(300, 32%, 86%)"
+duty2 = "hsv(300, 42%, 78%)"
+duty3 = "hsv(300, 52%, 70%)"
+duty4 = "hsv(300, 63%, 62%)"
+duty5 = "hsv(300, 73%, 54%)"
+duty6 = "hsv(300, 83%, 46%)"
+duty7 = "hsv(300, 93%, 48%)"
+
+[piano_roll.settings.VRC6.Sawtooth]
+mode0 = "#077d5a"
+mode1 = "#9fb8ed"
+[piano_roll.settings.YM2149F.A]
+static = "rgb(32, 144, 204)"
+
+[piano_roll.settings.YM2149F.B]
+static = "rgb(24, 104, 228)"
+
+[piano_roll.settings.YM2149F.C]
+static = "rgb(16, 64, 248)"
+
+[piano_roll.settings.VRC7."FM 1"]
+patch0 = "hsv(310, 40%, 100%)"
+patch1 = "hsv(131, 77%, 94%)"
+patch2 = "hsv(270, 63%, 100%)"
+patch3 = "hsv(211, 8%, 92%)"
+patch4 = "hsv(216, 21%, 72%)"
+patch5 = "hsv(224, 56%, 94%)"
+patch6 = "hsv(83, 65%, 92%)"
+patch7 = "hsv(31, 73%, 98%)"
+patch8 = "hsv(8, 87%, 96%)"
+patch9 = "hsv(156, 88%, 89%)"
+patchA = "hsv(180, 20%, 56%)"
+patchB = "hsv(27, 62%, 75%)"
+patchC = "hsv(23, 85%, 92%)"
+patchD = "hsv(258, 75%, 87%)"
+patchE = "hsv(192, 77%, 94%)"
+patchF = "hsv(110, 50%, 94%)"
+
+[piano_roll.settings.VRC7."FM 2"]
+patch0 = "hsv(310, 40%, 100%)"
+patch1 = "hsv(131, 77%, 94%)"
+patch2 = "hsv(270, 63%, 100%)"
+patch3 = "hsv(211, 8%, 92%)"
+patch4 = "hsv(216, 21%, 72%)"
+patch5 = "hsv(224, 56%, 94%)"
+patch6 = "hsv(83, 65%, 92%)"
+patch7 = "hsv(31, 73%, 98%)"
+patch8 = "hsv(8, 87%, 96%)"
+patch9 = "hsv(156, 88%, 89%)"
+patchA = "hsv(180, 20%, 56%)"
+patchB = "hsv(27, 62%, 75%)"
+patchC = "hsv(23, 85%, 92%)"
+patchD = "hsv(258, 75%, 87%)"
+patchE = "hsv(192, 77%, 94%)"
+patchF = "hsv(110, 50%, 94%)"
+
+[piano_roll.settings.VRC7."FM 3"]
+patch0 = "hsv(310, 40%, 100%)"
+patch1 = "hsv(131, 77%, 94%)"
+patch2 = "hsv(270, 63%, 100%)"
+patch3 = "hsv(211, 8%, 92%)"
+patch4 = "hsv(216, 21%, 72%)"
+patch5 = "hsv(224, 56%, 94%)"
+patch6 = "hsv(83, 65%, 92%)"
+patch7 = "hsv(31, 73%, 98%)"
+patch8 = "hsv(8, 87%, 96%)"
+patch9 = "hsv(156, 88%, 89%)"
+patchA = "hsv(180, 20%, 56%)"
+patchB = "hsv(27, 62%, 75%)"
+patchC = "hsv(23, 85%, 92%)"
+patchD = "hsv(258, 75%, 87%)"
+patchE = "hsv(192, 77%, 94%)"
+patchF = "hsv(110, 50%, 94%)"
+
+[piano_roll.settings.VRC7."FM 4"]
+patch0 = "hsv(310, 40%, 100%)"
+patch1 = "hsv(131, 77%, 94%)"
+patch2 = "hsv(270, 63%, 100%)"
+patch3 = "hsv(211, 8%, 92%)"
+patch4 = "hsv(216, 21%, 72%)"
+patch5 = "hsv(224, 56%, 94%)"
+patch6 = "hsv(83, 65%, 92%)"
+patch7 = "hsv(31, 73%, 98%)"
+patch8 = "hsv(8, 87%, 96%)"
+patch9 = "hsv(156, 88%, 89%)"
+patchA = "hsv(180, 20%, 56%)"
+patchB = "hsv(27, 62%, 75%)"
+patchC = "hsv(23, 85%, 92%)"
+patchD = "hsv(258, 75%, 87%)"
+patchE = "hsv(192, 77%, 94%)"
+patchF = "hsv(110, 50%, 94%)"
+
+[piano_roll.settings.VRC7."FM 5"]
+patch0 = "hsv(310, 40%, 100%)"
+patch1 = "hsv(131, 77%, 94%)"
+patch2 = "hsv(270, 63%, 100%)"
+patch3 = "hsv(211, 8%, 92%)"
+patch4 = "hsv(216, 21%, 72%)"
+patch5 = "hsv(224, 56%, 94%)"
+patch6 = "hsv(83, 65%, 92%)"
+patch7 = "hsv(31, 73%, 98%)"
+patch8 = "hsv(8, 87%, 96%)"
+patch9 = "hsv(156, 88%, 89%)"
+patchA = "hsv(180, 20%, 56%)"
+patchB = "hsv(27, 62%, 75%)"
+patchC = "hsv(23, 85%, 92%)"
+patchD = "hsv(258, 75%, 87%)"
+patchE = "hsv(192, 77%, 94%)"
+patchF = "hsv(110, 50%, 94%)"
+
+[piano_roll.settings.VRC7."FM 6"]
+patch0 = "hsv(310, 40%, 100%)"
+patch1 = "hsv(131, 77%, 94%)"
+patch2 = "hsv(270, 63%, 100%)"
+patch3 = "hsv(211, 8%, 92%)"
+patch4 = "hsv(216, 21%, 72%)"
+patch5 = "hsv(224, 56%, 94%)"
+patch6 = "hsv(83, 65%, 92%)"
+patch7 = "hsv(31, 73%, 98%)"
+patch8 = "hsv(8, 87%, 96%)"
+patch9 = "hsv(156, 88%, 89%)"
+patchA = "hsv(180, 20%, 56%)"
+patchB = "hsv(27, 62%, 75%)"
+patchC = "hsv(23, 85%, 92%)"
+patchD = "hsv(258, 75%, 87%)"
+patchE = "hsv(192, 77%, 94%)"
+patchF = "hsv(110, 50%, 94%)"
