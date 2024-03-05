@@ -1,0 +1,9 @@
+/target/
+**/*.rs.bk
+Cargo.lock
+*.wasm
+*.nes
+*.zip
+rusticnes_wasm.d.ts
+rusticnes_wasm_bg.wasm.d.ts
+rusticnes_wasm.js
