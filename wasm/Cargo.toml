@@ -14,6 +14,6 @@ crate-type = ["cdylib"]
 [dependencies]
 lazy_static = "1.0"
 wasm-bindgen = "0.2.92"
-rusticnes-core = { git = "https://github.com/zeta0134/rusticnes-core", rev = "be6ef2c7cd3d654846e67888aa3091aa8d310a0a"  }
-rusticnes-ui-common = { git = "https://github.com/zeta0134/rusticnes-ui-common", rev="88f533743d55fabe860e6a91c9b18a309d5e3cac" }
+rusticnes-core = { path = "../core" }
+rusticnes-ui-common = { path = "../ui-common" }
 
