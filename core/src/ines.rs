@@ -121,10 +121,13 @@ impl INesHeader {
             let multiplier = ((lsb & 0b0000_0011) * 2 + 1) as usize;
             let exponent = ((lsb & 0b1111_1100) >> 2) as u32;
             let base: usize = 2;
-            return base.pow(exponent) * multiplier;
+            let size = base.pow(exponent) * multiplier;
+            println!("base: {}, multiplier: {}, exponent: {}, size: {}", base, multiplier, exponent, size);
+            return size;
         } else {
             // simple mode
-            return ((msb as usize) << 8) + (lsb as usize) * 16 * 1024;
+            println!("used simple mode!");
+            return (((msb as usize) << 8) + (lsb as usize)) * 16 * 1024;
         }
     }
 
@@ -350,11 +353,13 @@ impl INesCartridge {
         if !header.magic_header_valid() {
             return Err(INesError::InvalidHeader);
         }
+        println!("iNes version: {}", header.version());
 
         let trainer_size = if header.has_trainer() {512} else {0};
         let mut trainer: Vec<u8> = Vec::new();
         trainer.resize(trainer_size, 0);
         file_reader.read_exact(&mut trainer)?;
+        println!("trainer size: {}", trainer.len());
 
         let mut prg: Vec<u8> = Vec::new();
         prg.resize(header.prg_size(), 0);
@@ -362,6 +367,7 @@ impl INesCartridge {
         if prg.len() == 0 {
             return Err(INesError::ReadError{reason: format!("PRG ROM size is {}. This file is invalid, or at the very least quite unusual. Aborting.", prg.len())});
         }
+        println!("prg rom size: {}", prg.len());
 
         let mut chr: Vec<u8> = Vec::new();
         chr.resize(header.chr_rom_size(), 0);
