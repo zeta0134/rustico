@@ -1,0 +1,14 @@
+[package]
+name = "rusticnes-egui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = { version = "0.26.2", features = [
+    "default"    
+] }
+env_logger = { version = "0.10", default-features = false, features = [
+    "auto-color",
+    "humantime",
+] }
+
