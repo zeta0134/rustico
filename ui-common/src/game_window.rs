@@ -31,7 +31,7 @@ impl GameWindow {
         let font = Font::from_raw(include_bytes!("assets/8x8_font.png"), 8);
 
         return GameWindow {
-            canvas: SimpleBuffer::new(240, 224),
+            canvas: SimpleBuffer::new(256, 240),
             font: font,
             shown: true,
             scale: 2,
