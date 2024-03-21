@@ -25,6 +25,7 @@ struct RusticNesGameWindow {
     pub texture_handle: egui::TextureHandle,
     pub runtime_state: RusticNesRuntimeState,
     pub game_window: GameWindow,
+    pub old_p1_buttons_held: u8,
 }
 
 impl RusticNesGameWindow {
@@ -45,13 +46,91 @@ impl RusticNesGameWindow {
             game_window: game_window,
             texture_handle: texture_handle,
             runtime_state: runtime_state,
+            old_p1_buttons_held: 0,
         }
+    }
+
+    fn apply_player_input(&mut self, ctx: &egui::Context) {
+        // For now, use the same hard-coded input setup from the SDL build.
+        // We will eventually completely throw this out and replace it with the input mapping system
+        // TODO: how does this handle the application being unfocused on various platforms?
+
+        ctx.input(|i| {
+            let mut p1_buttons_held = 0;
+
+            if i.keys_down.contains(&egui::Key::X)          {p1_buttons_held |= 1 << 0;}
+            if i.keys_down.contains(&egui::Key::Z)          {p1_buttons_held |= 1 << 1;}
+            if i.keys_down.contains(&egui::Key::Backspace)  {p1_buttons_held |= 1 << 2;}
+            if i.keys_down.contains(&egui::Key::Enter)      {p1_buttons_held |= 1 << 3;}
+            if i.keys_down.contains(&egui::Key::ArrowUp)    {p1_buttons_held |= 1 << 4;}
+            if i.keys_down.contains(&egui::Key::ArrowDown)  {p1_buttons_held |= 1 << 5;}
+            if i.keys_down.contains(&egui::Key::ArrowLeft)  {p1_buttons_held |= 1 << 6;}
+            if i.keys_down.contains(&egui::Key::ArrowRight) {p1_buttons_held |= 1 << 7;}
+
+            let p1_buttons_pressed = p1_buttons_held & !self.old_p1_buttons_held;
+            let p1_buttons_released = !p1_buttons_held & self.old_p1_buttons_held;
+
+            if (p1_buttons_pressed & (1 << 0)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::A));
+            }
+            if (p1_buttons_pressed & (1 << 1)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::B));
+            }
+            if (p1_buttons_pressed & (1 << 2)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::Select));
+            }
+            if (p1_buttons_pressed & (1 << 3)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::Start));
+            }
+            if (p1_buttons_pressed & (1 << 4)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadUp));
+            }
+            if (p1_buttons_pressed & (1 << 5)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadDown));
+            }
+            if (p1_buttons_pressed & (1 << 6)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadLeft));
+            }
+            if (p1_buttons_pressed & (1 << 7)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadRight));
+            }
+
+            if (p1_buttons_released & (1 << 0)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::A));
+            }
+            if (p1_buttons_released & (1 << 1)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::B));
+            }
+            if (p1_buttons_released & (1 << 2)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::Select));
+            }
+            if (p1_buttons_released & (1 << 3)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::Start));
+            }
+            if (p1_buttons_released & (1 << 4)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadUp));
+            }
+            if (p1_buttons_released & (1 << 5)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadDown));
+            }
+            if (p1_buttons_released & (1 << 6)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadLeft));
+            }
+            if (p1_buttons_released & (1 << 7)) != 0 {
+                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadRight));
+            }
+
+
+            self.old_p1_buttons_held = p1_buttons_held;
+        });
     }
 }
 
 impl eframe::App for RusticNesGameWindow {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Presumably this is called at some FPS? I guess we can find out!
+
+        self.apply_player_input(ctx);
 
         // Quickly poll the length of the audio buffer
         let audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
@@ -115,10 +194,13 @@ fn main() -> Result<(), eframe::Error> {
         .expect("no supported config?!")
         //.with_max_sample_rate();
         .with_sample_rate(cpal::SampleRate(44100));
-    println!("selected output sample rate: {:?}", supported_config.sample_rate());
+    println!("selected output sample rate: {:?}", supported_config);
+
+    let mut stream_config: cpal::StreamConfig = supported_config.into();
+    stream_config.buffer_size = cpal::BufferSize::Fixed(256);
 
     let stream = device.build_output_stream(
-        &supported_config.into(),
+        &stream_config,
         move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
             let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
             if audio_output_buffer.len() > data.len() {
