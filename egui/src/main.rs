@@ -53,21 +53,28 @@ impl eframe::App for RusticNesGameWindow {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Presumably this is called at some FPS? I guess we can find out!
 
-        // For now, just run a frame and then draw it.
-        // TODO: once we have working audio, sync to that properly. This
-        // will run at completely the wrong speed if the host FPS isn't 60 Hz,
-        // or we lag, or don't vsync, etc etc
-        self.runtime_state.handle_event(events::Event::NesRunFrame);
-        self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
-        let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &self.game_window.canvas.buffer);
-        self.texture_handle.set(image, egui::TextureOptions::default());
-
-        let samples_i16 = self.runtime_state.nes.apu.consume_samples();
-        let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
+        // Quickly poll the length of the audio buffer
+        let audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
+        let output_buffer_len = audio_output_buffer.len();
+        drop(audio_output_buffer); // immediately free the mutex, so running the emulator doesn't starve the audio thread
 
 
-        let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
-        audio_output_buffer.extend(samples_float);
+        let mut samples_i16: Vec<i16> = Vec::new();
+        // 2048 is arbitrary, make this configurable!
+        while output_buffer_len + samples_i16.len() < 2048 {
+            self.runtime_state.handle_event(events::Event::NesRunFrame);
+            self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
+            samples_i16.extend(self.runtime_state.nes.apu.consume_samples());
+        }
+        if samples_i16.len() > 0 {
+            let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &self.game_window.canvas.buffer);
+            self.texture_handle.set(image, egui::TextureOptions::default());
+
+            let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
+            let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
+            audio_output_buffer.extend(samples_float);
+            drop(audio_output_buffer);
+        }
 
         egui::TopBottomPanel::top("game_window_top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
