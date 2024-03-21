@@ -1,7 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+
 use eframe::egui;
 
+#[macro_use]
+extern crate lazy_static;
 extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
@@ -10,10 +14,17 @@ use rusticnes_ui_common::events;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::panel::Panel;
 
+use std::collections::VecDeque;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref AUDIO_OUTPUT_BUFFER: Mutex<VecDeque<f32>> = Mutex::new(VecDeque::new());
+}
+
 struct RusticNesGameWindow {
-    pub texture_handle: egui::TextureHandle,    
+    pub texture_handle: egui::TextureHandle,
     pub runtime_state: RusticNesRuntimeState,
-    pub game_window: GameWindow
+    pub game_window: GameWindow,
 }
 
 impl RusticNesGameWindow {
@@ -34,7 +45,7 @@ impl RusticNesGameWindow {
             game_window: game_window,
             texture_handle: texture_handle,
             runtime_state: runtime_state,
-        }   
+        }
     }
 }
 
@@ -50,6 +61,13 @@ impl eframe::App for RusticNesGameWindow {
         self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
         let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &self.game_window.canvas.buffer);
         self.texture_handle.set(image, egui::TextureOptions::default());
+
+        let samples_i16 = self.runtime_state.nes.apu.consume_samples();
+        let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
+
+
+        let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
+        audio_output_buffer.extend(samples_float);
 
         egui::TopBottomPanel::top("game_window_top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -78,12 +96,48 @@ impl eframe::App for RusticNesGameWindow {
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
 
+    // Setup the audio callback, which will ultimately be in charge of trying to step emulation
+    let host = cpal::default_host();
+    let device = host.default_output_device().expect("no output device available");
+
+    // TODO: eventually we want to present the supported configs to the end user, and let
+    // them pick
+    let mut supported_configs_range = device.supported_output_configs()
+        .expect("error while querying configs");
+    let supported_config = supported_configs_range.next()
+        .expect("no supported config?!")
+        //.with_max_sample_rate();
+        .with_sample_rate(cpal::SampleRate(44100));
+    println!("selected output sample rate: {:?}", supported_config.sample_rate());
+
+    let stream = device.build_output_stream(
+        &supported_config.into(),
+        move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+            let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
+            if audio_output_buffer.len() > data.len() {
+                let output_samples = audio_output_buffer.drain(0..data.len()).collect::<VecDeque<f32>>();
+                for i in 0 .. data.len() {
+                    data[i] = output_samples[i];
+                }
+            } else {
+                for sample in data.iter_mut() {
+                    *sample = cpal::Sample::EQUILIBRIUM;
+                }
+            }
+        },
+        move |err| {
+            println!("Audio error occurred: {}", err)
+        },
+        None // None=blocking, Some(Duration)=timeout
+    ).unwrap();
+
+    stream.play().unwrap();
+    
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([512.0, 480.0]),
         ..Default::default()
     };
-
-    
 
     eframe::run_native(
         "RusticNES egui - Single Window", 
