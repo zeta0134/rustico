@@ -1,19 +1,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-
-use eframe::egui;
-
 #[macro_use]
 extern crate lazy_static;
 extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use eframe::egui;
+use rfd::FileDialog;
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::panel::Panel;
-
 use std::collections::VecDeque;
 use std::sync::Mutex;
 
@@ -34,13 +32,7 @@ impl RusticNesGameWindow {
         let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &game_window.canvas.buffer);
         let texture_handle = cc.egui_ctx.load_texture("game_window_canvas", image, egui::TextureOptions::default());
 
-        let mut runtime_state = RusticNesRuntimeState::new();
-
-        let cartridge_data = std::fs::read("cartridge.nes").unwrap();
-        let bucket_of_nothing: Vec<u8> = Vec::new();
-        let cartridge_load_event = rusticnes_ui_common::Event::LoadCartridge(
-            "cartridge.nes".to_string(), std::rc::Rc::new(cartridge_data), std::rc::Rc::new(bucket_of_nothing));
-        runtime_state.handle_event(cartridge_load_event);
+        let runtime_state = RusticNesRuntimeState::new();
 
         Self {
             game_window: game_window,
@@ -124,6 +116,25 @@ impl RusticNesGameWindow {
             self.old_p1_buttons_held = p1_buttons_held;
         });
     }
+
+    fn open_file_cartridge(&mut self) {
+        let files = FileDialog::new()
+            .add_filter("nes", &["nes"])
+            .add_filter("nsf", &["nsf"])
+            .pick_file();
+        match files {
+            Some(file_path) => {
+                let cartridge_data = std::fs::read(file_path).unwrap();
+                let bucket_of_nothing: Vec<u8> = Vec::new();
+                let cartridge_load_event = rusticnes_ui_common::Event::LoadCartridge(
+                    "cartridge_name.nes".to_string(), std::rc::Rc::new(cartridge_data), std::rc::Rc::new(bucket_of_nothing));
+                self.runtime_state.handle_event(cartridge_load_event);
+            },
+            None => {
+                println!("User canceled the dialog.");
+            }
+        }
+    }
 }
 
 impl eframe::App for RusticNesGameWindow {
@@ -147,7 +158,12 @@ impl eframe::App for RusticNesGameWindow {
         }
         if samples_i16.len() > 0 {
             let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &self.game_window.canvas.buffer);
-            self.texture_handle.set(image, egui::TextureOptions::default());
+            let texture_options = egui::TextureOptions{
+                magnification: egui::TextureFilter::Nearest,
+                minification: egui::TextureFilter::Nearest,
+                ..egui::TextureOptions::default()
+            };
+            self.texture_handle.set(image, texture_options);
 
             let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
             let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
@@ -159,11 +175,13 @@ impl eframe::App for RusticNesGameWindow {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
-                        // would open file
+                        self.open_file_cartridge();
+                        ui.close_menu();
                     }
                     ui.separator();
                     if ui.button("Exit").clicked() {
                         // would exit application
+                        ui.close_menu();
                     }
                 })
             });
@@ -171,7 +189,11 @@ impl eframe::App for RusticNesGameWindow {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Simple Canvas Painting");
-            ui.image(egui::load::SizedTexture::from_handle(&self.texture_handle));
+            //ui.image(egui::load::SizedTexture::from_handle(&self.texture_handle));
+            ui.add(
+                egui::Image::new(egui::load::SizedTexture::from_handle(&self.texture_handle))
+                    .fit_to_exact_size([512.0, 480.0].into())
+            );
         });
 
         ctx.request_repaint();
@@ -198,6 +220,7 @@ fn main() -> Result<(), eframe::Error> {
 
     let mut stream_config: cpal::StreamConfig = supported_config.into();
     stream_config.buffer_size = cpal::BufferSize::Fixed(256);
+    stream_config.channels = 1;
 
     let stream = device.build_output_stream(
         &stream_config,
