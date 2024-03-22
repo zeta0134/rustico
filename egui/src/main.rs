@@ -180,7 +180,7 @@ impl eframe::App for RusticNesGameWindow {
                     }
                     ui.separator();
                     if ui.button("Exit").clicked() {
-                        // would exit application
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         ui.close_menu();
                     }
                 })
