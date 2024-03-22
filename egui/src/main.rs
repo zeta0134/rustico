@@ -187,14 +187,15 @@ impl eframe::App for RusticNesGameWindow {
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Simple Canvas Painting");
-            //ui.image(egui::load::SizedTexture::from_handle(&self.texture_handle));
+        egui::CentralPanel::default().frame(egui::Frame::none()).show(ctx, |ui| {
             ui.add(
                 egui::Image::new(egui::load::SizedTexture::from_handle(&self.texture_handle))
                     .fit_to_exact_size([512.0, 480.0].into())
             );
         });
+
+        let menubar_height = ctx.style().spacing.interact_size[1];
+        ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([512.0, 480.0 + menubar_height].into()));
 
         ctx.request_repaint();
     }
@@ -247,7 +248,10 @@ fn main() -> Result<(), eframe::Error> {
     
 
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([512.0, 480.0]),
+        viewport: egui::ViewportBuilder::default()
+            //.with_inner_size([512.0, 480.0]),
+            .with_resizable(false)
+            .with_inner_size([512.0, 480.0]),
         ..Default::default()
     };
 
