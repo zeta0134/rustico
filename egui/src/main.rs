@@ -13,6 +13,8 @@ use rusticnes_ui_common::events;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::panel::Panel;
 use std::collections::VecDeque;
+use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::Mutex;
 
 lazy_static! {
@@ -117,23 +119,44 @@ impl RusticNesGameWindow {
         });
     }
 
-    fn open_file_cartridge(&mut self) {
+    fn open_cartridge_dialog(&mut self) {
         let files = FileDialog::new()
             .add_filter("nes", &["nes"])
             .add_filter("nsf", &["nsf"])
             .pick_file();
         match files {
             Some(file_path) => {
-                let cartridge_data = std::fs::read(file_path).unwrap();
-                let bucket_of_nothing: Vec<u8> = Vec::new();
-                let cartridge_load_event = rusticnes_ui_common::Event::LoadCartridge(
-                    "cartridge_name.nes".to_string(), std::rc::Rc::new(cartridge_data), std::rc::Rc::new(bucket_of_nothing));
-                self.runtime_state.handle_event(cartridge_load_event);
+                self.open_cartridge(file_path);
             },
             None => {
                 println!("User canceled the dialog.");
             }
         }
+    }
+
+    fn open_cartridge(&mut self, cartridge_path: PathBuf) {
+        let sram_path = cartridge_path.with_extension("sav");
+        let cartridge_path_as_str = cartridge_path.clone().to_string_lossy().into_owned();
+        let cartridge_load_event = match std::fs::read(cartridge_path) {
+            Ok(cartridge_data) => {
+                match std::fs::read(&sram_path.to_str().unwrap()) {
+                    Ok(sram_data) => {
+                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Rc::new(cartridge_data), Rc::new(sram_data))
+                    },
+                    Err(reason) => {
+                        println!("Failed to load SRAM: {}", reason);
+                        println!("Continuing anyway.");
+                        let bucket_of_nothing: Vec<u8> = Vec::new();
+                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Rc::new(cartridge_data), Rc::new(bucket_of_nothing))
+                    }
+                }
+            },
+            Err(reason) => {
+                println!("{}", reason);
+                rusticnes_ui_common::Event::LoadFailed(reason.to_string())
+            }
+        };
+        self.runtime_state.handle_event(cartridge_load_event);
     }
 }
 
@@ -175,7 +198,7 @@ impl eframe::App for RusticNesGameWindow {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
-                        self.open_file_cartridge();
+                        self.open_cartridge_dialog();
                         ui.close_menu();
                     }
                     ui.separator();
