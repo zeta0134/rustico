@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum StandardControllerButton {
     A,
     B,
@@ -12,7 +12,7 @@ pub enum StandardControllerButton {
     DPadRight,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Event {
     ApplyBooleanSetting(String, bool),
     ApplyFloatSetting(String, f64),

@@ -9,22 +9,23 @@ mod worker;
 
 use eframe::egui;
 use rfd::FileDialog;
-use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
-use rusticnes_ui_common::game_window::GameWindow;
-use rusticnes_ui_common::panel::Panel;
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{channel, Sender, Receiver, TryRecvError};
 use std::thread;
 
+#[derive(Clone)]
+pub enum ShellEvent {
+    ImageRendered(String, Arc<worker::RenderedImage>)
+}
+
 struct RusticNesGameWindow {
-    pub texture_handle: egui::TextureHandle,
-    pub runtime_state: RusticNesRuntimeState,
-    pub game_window: GameWindow,
+    pub texture_handle: egui::TextureHandle,    
     pub old_p1_buttons_held: u8,
     pub sram_path: PathBuf,
 
@@ -34,20 +35,19 @@ struct RusticNesGameWindow {
     pub show_piano_roll: bool,
 
     pub runtime_tx: Sender<events::Event>,
+    pub shell_rx: Receiver<ShellEvent>,
+
+    pub last_rendered_frames: HashMap<String, Arc<worker::RenderedImage>>,
 }
 
 impl RusticNesGameWindow {
-    fn new(cc: &eframe::CreationContext, runtime_tx: Sender<events::Event>) -> Self {
-        let game_window = GameWindow::new();
-        let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &game_window.canvas.buffer);
+    fn new(cc: &eframe::CreationContext, runtime_tx: Sender<events::Event>, shell_rx: Receiver<ShellEvent>) -> Self {
+        let blank_canvas = vec![0u8; 256*240*4];
+        let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &blank_canvas);
         let texture_handle = cc.egui_ctx.load_texture("game_window_canvas", image, egui::TextureOptions::default());
 
-        let runtime_state = RusticNesRuntimeState::new();
-
         Self {
-            game_window: game_window,
             texture_handle: texture_handle,
-            runtime_state: runtime_state,
             old_p1_buttons_held: 0,
             sram_path: PathBuf::new(),
 
@@ -56,7 +56,57 @@ impl RusticNesGameWindow {
             show_ppu_viewer: false,
             show_piano_roll: false,
 
-            runtime_tx: runtime_tx
+            runtime_tx: runtime_tx,
+            shell_rx: shell_rx,
+
+            last_rendered_frames: HashMap::new(),
+        }
+    }
+
+    fn process_shell_events(&mut self) {
+        loop {
+            match self.shell_rx.try_recv() {
+                Ok(event) => {
+                    self.handle_event(event);
+                },
+                Err(error) => {
+                    match error {
+                        TryRecvError::Empty => {
+                            // all done!
+                            return
+                        },
+                        TryRecvError::Disconnected => {
+                            // ... wat? WHO WROTE THIS PROGRAM? HOW DID THIS HAPPEN!?
+                            panic!("shell_tx disconnected!!!1");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn handle_event(&mut self, event: ShellEvent) {
+        // For now, I'm not going to allow shell events to fire off more shell events.
+        // They'll mostly be coming from the worker thread as one-shot things
+        match event {
+            ShellEvent::ImageRendered(id, canvas) => {
+                self.last_rendered_frames.insert(id, canvas);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn process_rendered_frames(&mut self) {
+        if self.last_rendered_frames.contains_key("game_window") {
+            let canvas = &self.last_rendered_frames["game_window"];
+            let image = egui::ColorImage::from_rgba_unmultiplied([canvas.width, canvas.height], &canvas.rgba_buffer);
+            let texture_options = egui::TextureOptions{
+                magnification: egui::TextureFilter::Nearest,
+                minification: egui::TextureFilter::Nearest,
+                ..egui::TextureOptions::default()
+            };
+            self.texture_handle.set(image, texture_options);
+            self.last_rendered_frames.remove("game_window");
         }
     }
 
@@ -81,53 +131,53 @@ impl RusticNesGameWindow {
             let p1_buttons_released = !p1_buttons_held & self.old_p1_buttons_held;
 
             if (p1_buttons_pressed & (1 << 0)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::A));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::A));
             }
             if (p1_buttons_pressed & (1 << 1)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::B));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::B));
             }
             if (p1_buttons_pressed & (1 << 2)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::Select));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::Select));
             }
             if (p1_buttons_pressed & (1 << 3)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::Start));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::Start));
             }
             if (p1_buttons_pressed & (1 << 4)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadUp));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadUp));
             }
             if (p1_buttons_pressed & (1 << 5)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadDown));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadDown));
             }
             if (p1_buttons_pressed & (1 << 6)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadLeft));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadLeft));
             }
             if (p1_buttons_pressed & (1 << 7)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadRight));
+                self.runtime_tx.send(events::Event::StandardControllerPress(0, events::StandardControllerButton::DPadRight));
             }
 
             if (p1_buttons_released & (1 << 0)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::A));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::A));
             }
             if (p1_buttons_released & (1 << 1)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::B));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::B));
             }
             if (p1_buttons_released & (1 << 2)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::Select));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::Select));
             }
             if (p1_buttons_released & (1 << 3)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::Start));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::Start));
             }
             if (p1_buttons_released & (1 << 4)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadUp));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadUp));
             }
             if (p1_buttons_released & (1 << 5)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadDown));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadDown));
             }
             if (p1_buttons_released & (1 << 6)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadLeft));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadLeft));
             }
             if (p1_buttons_released & (1 << 7)) != 0 {
-                self.runtime_state.handle_event(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadRight));
+                self.runtime_tx.send(events::Event::StandardControllerRelease(0, events::StandardControllerButton::DPadRight));
             }
 
 
@@ -172,71 +222,37 @@ impl RusticNesGameWindow {
                 rusticnes_ui_common::Event::LoadFailed(reason.to_string())
             }
         };
-        self.runtime_state.handle_event(cartridge_load_event);
+        self.runtime_tx.send(cartridge_load_event);
     }
 
     fn save_sram(&mut self) {
-        let sram_path_as_str = self.sram_path.clone().to_string_lossy().into_owned();
-        if self.runtime_state.nes.mapper.has_sram() {
-            let sram_contents = self.runtime_state.nes.sram();
-            let file = File::create(self.sram_path.clone());
-                match file {
-                    Err(why) => {
-                        println!("Couldn't open {}: {}", sram_path_as_str, why.to_string());
-                    },
-                    Ok(mut file) => {
-                        let _ = file.write_all(&sram_contents);
-                        println!("Wrote sram data to: {}", sram_path_as_str);
-                    },
-                };
-        } else {
-            println!("Cartridge has no SRAM! Nothing to do.");
-        }
+        // TODO: figure out how we're actually going to do this part!
+
+        //let sram_path_as_str = self.sram_path.clone().to_string_lossy().into_owned();
+        //if self.runtime_state.nes.mapper.has_sram() {
+        //    let sram_contents = self.runtime_state.nes.sram();
+        //    let file = File::create(self.sram_path.clone());
+        //        match file {
+        //            Err(why) => {
+        //                println!("Couldn't open {}: {}", sram_path_as_str, why.to_string());
+        //            },
+        //            Ok(mut file) => {
+        //                let _ = file.write_all(&sram_contents);
+        //                println!("Wrote sram data to: {}", sram_path_as_str);
+        //            },
+        //        };
+        //} else {
+        //    println!("Cartridge has no SRAM! Nothing to do.");
+        //}
     }
 }
 
 impl eframe::App for RusticNesGameWindow {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Presumably this is called at some FPS? I guess we can find out!
-
         self.apply_player_input(ctx);
-
-        // Quickly poll the length of the audio buffer
-        let audio_output_buffer = worker::AUDIO_OUTPUT_BUFFER.lock().expect("wat");
-        let mut output_buffer_len = audio_output_buffer.len();
-        drop(audio_output_buffer); // immediately free the mutex, so running the emulator doesn't starve the audio thread
-
-        // Now we do fun stuff: as long as we are under the audio threshold, run one scanline. If we happen
-        // to complete a frame while doing this, update the game window texture (and later, call "draw" on all
-        // active subwindows so they know to repaint)
-        // (2048 is arbitrary, make this configurable later!)
-        let mut repaint_needed = false;
-        while output_buffer_len < 2048 {
-            self.runtime_state.handle_event(events::Event::NesRunScanline);
-            if self.runtime_state.nes.ppu.current_scanline == 242 {
-                // we just finished a game frame, so have the game window repaint itself
-                self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
-                repaint_needed = true;
-            }
-            let samples_i16 = self.runtime_state.nes.apu.consume_samples();
-            let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
-            // Apply those samples to the audio buffer AND recheck our count
-            // (keep going until we rise above the threshold)
-            let mut audio_output_buffer = worker::AUDIO_OUTPUT_BUFFER.lock().expect("wat");
-            audio_output_buffer.extend(samples_float);
-            output_buffer_len = audio_output_buffer.len();
-            drop(audio_output_buffer);
-        }
-
-        if repaint_needed {
-            let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &self.game_window.canvas.buffer);
-            let texture_options = egui::TextureOptions{
-                magnification: egui::TextureFilter::Nearest,
-                minification: egui::TextureFilter::Nearest,
-                ..egui::TextureOptions::default()
-            };
-            self.texture_handle.set(image, texture_options);
-        }
+        self.process_shell_events();
+        self.process_rendered_frames();
 
         egui::TopBottomPanel::top("game_window_top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -405,9 +421,10 @@ fn main() -> Result<(), eframe::Error> {
     env_logger::init();
 
     let (runtime_tx, runtime_rx) = channel::<events::Event>();
+    let (shell_tx, shell_rx) = channel::<ShellEvent>();
 
     let worker_handle = thread::spawn(|| {
-        worker::worker_main(runtime_rx);
+        worker::worker_main(runtime_rx, shell_tx);
     });
 
     let options = eframe::NativeOptions {
@@ -421,7 +438,7 @@ fn main() -> Result<(), eframe::Error> {
     let application_exit_state = eframe::run_native(
         "RusticNES egui - Single Window", 
         options, 
-        Box::new(|cc| Box::new(RusticNesGameWindow::new(cc, runtime_tx))),
+        Box::new(|cc| Box::new(RusticNesGameWindow::new(cc, runtime_tx, shell_rx))),
     );
 
     return application_exit_state;
