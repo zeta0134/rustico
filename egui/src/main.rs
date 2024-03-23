@@ -30,6 +30,11 @@ struct RusticNesGameWindow {
     pub game_window: GameWindow,
     pub old_p1_buttons_held: u8,
     pub sram_path: PathBuf,
+
+    pub show_memory_viewer: bool,
+    pub show_event_viewer: bool,
+    pub show_ppu_viewer: bool,
+    pub show_piano_roll: bool,
 }
 
 impl RusticNesGameWindow {
@@ -46,6 +51,11 @@ impl RusticNesGameWindow {
             runtime_state: runtime_state,
             old_p1_buttons_held: 0,
             sram_path: PathBuf::new(),
+
+            show_memory_viewer: false,
+            show_event_viewer: false,
+            show_ppu_viewer: false,
+            show_piano_roll: false,
         }
     }
 
@@ -234,7 +244,47 @@ impl eframe::App for RusticNesGameWindow {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         ui.close_menu();
                     }
-                })
+                });
+                ui.menu_button("Settings", |ui| {
+                    ui.menu_button("Video Size", |ui| {
+                        ui.add_enabled(false, egui::Button::new("1x"));
+                        if ui.button("2x").clicked() {
+                            ui.close_menu();
+                        }
+                        if ui.button("3x").clicked() {
+                            ui.close_menu();
+                        }
+                        if ui.button("4x").clicked() {
+                            ui.close_menu();
+                        }
+                        if ui.button("5x").clicked() {
+                            ui.close_menu();
+                        }
+                    });
+                    ui.separator();
+                    if ui.button("Preferences").clicked() {
+                        ui.close_menu();
+                    }
+                });
+                ui.menu_button("Tools", |ui| {
+                    if ui.button("Memory").clicked() {
+                        self.show_memory_viewer = !self.show_memory_viewer;
+                        ui.close_menu();
+                    }
+                    if ui.button("Events").clicked() {
+                        self.show_event_viewer = !self.show_event_viewer;
+                        ui.close_menu();
+                    }
+                    if ui.button("PPU").clicked() {
+                        self.show_ppu_viewer = !self.show_ppu_viewer;
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.button("Piano Roll").clicked() {
+                        self.show_piano_roll = !self.show_piano_roll;
+                        ui.close_menu();
+                    }
+                });
             });
         });
 
@@ -247,8 +297,92 @@ impl eframe::App for RusticNesGameWindow {
 
         let menubar_height = ctx.style().spacing.interact_size[1];
         ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([512.0, 480.0 + menubar_height].into()));
-
         ctx.request_repaint();
+
+        // TODO: break these out into separate files, the UI definitions are going to get very tall
+        if self.show_memory_viewer {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("memory_viewer_viewport"),
+                egui::ViewportBuilder::default()
+                    .with_title("Memory Viewer")
+                    .with_inner_size([300.0, 200.0]),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports!"
+                    );
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Hello Memory Viewer!");
+                    });
+                    if ctx.input(|i| i.viewport().close_requested()) {
+                        self.show_memory_viewer = false;
+                    }
+                }
+            );
+        }
+
+        if self.show_event_viewer {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("event_viewer_viewport"),
+                egui::ViewportBuilder::default()
+                    .with_title("Event Viewer")
+                    .with_inner_size([300.0, 200.0]),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports!"
+                    );
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Hello Event Viewer!");
+                    });
+                    if ctx.input(|i| i.viewport().close_requested()) {
+                        self.show_event_viewer = false;
+                    }
+                }
+            );
+        }
+
+        if self.show_ppu_viewer {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("ppu_viewer_viewport"),
+                egui::ViewportBuilder::default()
+                    .with_title("PPU Viewer")
+                    .with_inner_size([300.0, 200.0]),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports!"
+                    );
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Hello PPU Viewer!");
+                    });
+                    if ctx.input(|i| i.viewport().close_requested()) {
+                        self.show_ppu_viewer = false;
+                    }
+                }
+            );
+        }
+
+        if self.show_piano_roll {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("piano_roll_viewport"),
+                egui::ViewportBuilder::default()
+                    .with_title("Piano Roll")
+                    .with_inner_size([300.0, 200.0]),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports!"
+                    );
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Hello Piano Roll!");
+                    });
+                    if ctx.input(|i| i.viewport().close_requested()) {
+                        self.show_piano_roll = false;
+                    }
+                }
+            );
+        }
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
@@ -256,7 +390,6 @@ impl eframe::App for RusticNesGameWindow {
         self.save_sram();
     }
 }
-
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
