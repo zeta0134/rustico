@@ -58,8 +58,9 @@ impl Worker {
                             return
                         },
                         TryRecvError::Disconnected => {
-                            // ... wat? PANIC AT THE DISCO, ALL HOPE IS LOST
-                            panic!("runtime_tx disconnected!!!1");
+                            // PANIC AT THE DISCO, ALL HOPE IS LOST!
+                            // (We're just shutting down, it's fine)
+                            return
                         }
                     }
                 }

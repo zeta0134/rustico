@@ -456,7 +456,7 @@ fn main() -> Result<(), eframe::Error> {
     };
 
     let application_exit_state = eframe::run_native(
-        "RusticNES egui - Single Window", 
+        "Rustico", 
         options, 
         Box::new(|cc| Box::new(RusticNesGameWindow::new(cc, runtime_tx, shell_rx))),
     );
