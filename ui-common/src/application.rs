@@ -26,16 +26,19 @@ pub struct RuntimeState {
 
 impl RuntimeState {
     pub fn new() -> RuntimeState {
-        return RuntimeState {
-            nes: NesState::new(Box::new(NoneMapper::new())),
-            file_loaded: false,
-            running: false,
+        let initial_cartridge = mapper_from_file(include_bytes!("assets/rustico_no_cart.nes")).unwrap();
+        let mut state = RuntimeState {
+            nes: NesState::new(initial_cartridge),
+            file_loaded: true,
+            running: true,
             last_frame: 0,
             last_scanline: 0,
             last_apu_quarter_frame_count: 0,
             last_apu_half_frame_count: 0,
             settings: SettingsState::new(),
-        }
+        };
+        state.nes.power_on();
+        return state;
     }
 
     pub fn load_cartridge(&mut self, cart_id: String, file_data: &[u8]) -> Vec<Event> {
