@@ -12,7 +12,10 @@ use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
 use rusticnes_ui_common::events;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::panel::Panel;
+
 use std::collections::VecDeque;
+use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
@@ -26,6 +29,7 @@ struct RusticNesGameWindow {
     pub runtime_state: RusticNesRuntimeState,
     pub game_window: GameWindow,
     pub old_p1_buttons_held: u8,
+    pub sram_path: PathBuf,
 }
 
 impl RusticNesGameWindow {
@@ -41,6 +45,7 @@ impl RusticNesGameWindow {
             texture_handle: texture_handle,
             runtime_state: runtime_state,
             old_p1_buttons_held: 0,
+            sram_path: PathBuf::new(),
         }
     }
 
@@ -135,11 +140,11 @@ impl RusticNesGameWindow {
     }
 
     fn open_cartridge(&mut self, cartridge_path: PathBuf) {
-        let sram_path = cartridge_path.with_extension("sav");
+        self.sram_path = cartridge_path.with_extension("sav");
         let cartridge_path_as_str = cartridge_path.clone().to_string_lossy().into_owned();
         let cartridge_load_event = match std::fs::read(cartridge_path) {
             Ok(cartridge_data) => {
-                match std::fs::read(&sram_path.to_str().unwrap()) {
+                match std::fs::read(&self.sram_path.to_str().unwrap()) {
                     Ok(sram_data) => {
                         rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Rc::new(cartridge_data), Rc::new(sram_data))
                     },
@@ -157,6 +162,25 @@ impl RusticNesGameWindow {
             }
         };
         self.runtime_state.handle_event(cartridge_load_event);
+    }
+
+    fn save_sram(&mut self) {
+        let sram_path_as_str = self.sram_path.clone().to_string_lossy().into_owned();
+        if self.runtime_state.nes.mapper.has_sram() {
+            let sram_contents = self.runtime_state.nes.sram();
+            let file = File::create(self.sram_path.clone());
+                match file {
+                    Err(why) => {
+                        println!("Couldn't open {}: {}", sram_path_as_str, why.to_string());
+                    },
+                    Ok(mut file) => {
+                        let _ = file.write_all(&sram_contents);
+                        println!("Wrote sram data to: {}", sram_path_as_str);
+                    },
+                };
+        } else {
+            println!("Cartridge has no SRAM! Nothing to do.");
+        }
     }
 }
 
@@ -201,6 +225,10 @@ impl eframe::App for RusticNesGameWindow {
                         self.open_cartridge_dialog();
                         ui.close_menu();
                     }
+                    if ui.button("Save SRAM").clicked() {
+                        self.save_sram();
+                        ui.close_menu();
+                    }
                     ui.separator();
                     if ui.button("Exit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
@@ -221,6 +249,11 @@ impl eframe::App for RusticNesGameWindow {
         ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([512.0, 480.0 + menubar_height].into()));
 
         ctx.request_repaint();
+    }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        println!("Application closing, attempting to save SRAM one last time...");
+        self.save_sram();
     }
 }
 
@@ -278,9 +311,11 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
 
-    eframe::run_native(
+    let application_exit_state = eframe::run_native(
         "RusticNES egui - Single Window", 
         options, 
         Box::new(|cc| Box::new(RusticNesGameWindow::new(cc))),
-    )
+    );
+
+    return application_exit_state;
 }
