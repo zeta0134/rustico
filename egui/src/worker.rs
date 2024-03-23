@@ -80,7 +80,7 @@ impl Worker {
     pub fn handle_event(&mut self, event: events::Event) -> Vec<events::Event> {
         // For now, the WORKER doesn't need to do anything with runtime events. Later it might
         // and this is where those would get handled. Setting this up now for consistency.
-        let mut events: Vec<events::Event> = Vec::new();
+        let events: Vec<events::Event> = Vec::new();
         match event {
             _ => {}
         }
@@ -98,7 +98,7 @@ impl Worker {
         // active subwindows so they know to repaint)
         // (2048 is arbitrary, make this configurable later!)
         let mut repaint_needed = false;
-        while output_buffer_len < 2048 {
+        while output_buffer_len < 256 {
             self.runtime_state.handle_event(events::Event::NesRunScanline);
             if self.runtime_state.nes.ppu.current_scanline == 242 {
                 // we just finished a game frame, so have the game window repaint itself

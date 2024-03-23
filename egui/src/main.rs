@@ -12,8 +12,7 @@ use rfd::FileDialog;
 use rusticnes_ui_common::events;
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
+use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::mpsc::{channel, Sender, Receiver, TryRecvError};
@@ -37,7 +36,7 @@ struct RusticNesGameWindow {
     pub runtime_tx: Sender<events::Event>,
     pub shell_rx: Receiver<ShellEvent>,
 
-    pub last_rendered_frames: HashMap<String, Arc<worker::RenderedImage>>,
+    pub last_rendered_frames: HashMap<String, VecDeque<Arc<worker::RenderedImage>>>,
 }
 
 impl RusticNesGameWindow {
@@ -45,6 +44,9 @@ impl RusticNesGameWindow {
         let blank_canvas = vec![0u8; 256*240*4];
         let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &blank_canvas);
         let texture_handle = cc.egui_ctx.load_texture("game_window_canvas", image, egui::TextureOptions::default());
+
+        let mut last_rendered_frames = HashMap::new();
+        last_rendered_frames.insert("game_window".to_string(), VecDeque::new());
 
         Self {
             texture_handle: texture_handle,
@@ -59,7 +61,7 @@ impl RusticNesGameWindow {
             runtime_tx: runtime_tx,
             shell_rx: shell_rx,
 
-            last_rendered_frames: HashMap::new(),
+            last_rendered_frames: last_rendered_frames,
         }
     }
 
@@ -90,23 +92,41 @@ impl RusticNesGameWindow {
         // They'll mostly be coming from the worker thread as one-shot things
         match event {
             ShellEvent::ImageRendered(id, canvas) => {
-                self.last_rendered_frames.insert(id, canvas);
+                match self.last_rendered_frames.get_mut(id.as_str()) {
+                    Some(frame_buffer) => {
+                        frame_buffer.push_back(canvas);
+                        if frame_buffer.len() > 2 {
+                            _ = frame_buffer.pop_front();
+                        }
+                    },
+                    None => {
+                        println!("Received a rendered image named {} but I don't know how to draw that!", id);
+                    }
+                }
             }
-            _ => {}
+            //_ => {}
         }
     }
 
     pub fn process_rendered_frames(&mut self) {
-        if self.last_rendered_frames.contains_key("game_window") {
-            let canvas = &self.last_rendered_frames["game_window"];
-            let image = egui::ColorImage::from_rgba_unmultiplied([canvas.width, canvas.height], &canvas.rgba_buffer);
-            let texture_options = egui::TextureOptions{
-                magnification: egui::TextureFilter::Nearest,
-                minification: egui::TextureFilter::Nearest,
-                ..egui::TextureOptions::default()
-            };
-            self.texture_handle.set(image, texture_options);
-            self.last_rendered_frames.remove("game_window");
+        match self.last_rendered_frames.get_mut("game_window") {
+            Some(game_window_frame_buffer) => {
+                match game_window_frame_buffer.pop_front() {
+                    Some(canvas) => {
+                        let image = egui::ColorImage::from_rgba_unmultiplied([canvas.width, canvas.height], &canvas.rgba_buffer);
+                        let texture_options = egui::TextureOptions{
+                            magnification: egui::TextureFilter::Nearest,
+                            minification: egui::TextureFilter::Nearest,
+                            ..egui::TextureOptions::default()
+                        };
+                        self.texture_handle.set(image, texture_options);
+                    },
+                    None => {}
+                }
+            },
+            None => {
+                panic!("Where did our game window frame buffer go!?");
+            }
         }
     }
 
