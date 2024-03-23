@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub enum StandardControllerButton {
@@ -25,9 +25,9 @@ pub enum Event {
     GameToggleOverscan,
     GameIncreaseScale,
     GameDecreaseScale,
-    LoadCartridge(String, Rc<Vec<u8>>,Rc<Vec<u8>>),
-    LoadSram(Rc<Vec<u8>>),
-    LoadBios(Rc<Vec<u8>>),
+    LoadCartridge(String, Arc<Vec<u8>>,Arc<Vec<u8>>),
+    LoadSram(Arc<Vec<u8>>),
+    LoadBios(Arc<Vec<u8>>),
     LoadFailed(String),
     MouseMove(i32, i32),
     MouseClick(i32, i32),
@@ -55,7 +55,7 @@ pub enum Event {
     RequestCartridgeDialog,
     RequestSramSave(String),
     RequestBios,
-    SaveSram(String, Rc<Vec<u8>>),
+    SaveSram(String, Arc<Vec<u8>>),
     ShowApuWindow,
     ShowCpuWindow,
     ShowGameWindow,

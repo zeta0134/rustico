@@ -5,7 +5,8 @@ extern crate lazy_static;
 extern crate rusticnes_core;
 extern crate rusticnes_ui_common;
 
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+mod worker;
+
 use eframe::egui;
 use rfd::FileDialog;
 use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
@@ -13,16 +14,12 @@ use rusticnes_ui_common::events;
 use rusticnes_ui_common::game_window::GameWindow;
 use rusticnes_ui_common::panel::Panel;
 
-use std::collections::VecDeque;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::rc::Rc;
-use std::sync::Mutex;
-
-lazy_static! {
-    static ref AUDIO_OUTPUT_BUFFER: Mutex<VecDeque<f32>> = Mutex::new(VecDeque::new());
-}
+use std::sync::Arc;
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
 
 struct RusticNesGameWindow {
     pub texture_handle: egui::TextureHandle,
@@ -35,10 +32,12 @@ struct RusticNesGameWindow {
     pub show_event_viewer: bool,
     pub show_ppu_viewer: bool,
     pub show_piano_roll: bool,
+
+    pub runtime_tx: Sender<events::Event>,
 }
 
 impl RusticNesGameWindow {
-    fn new(cc: &eframe::CreationContext) -> Self {
+    fn new(cc: &eframe::CreationContext, runtime_tx: Sender<events::Event>) -> Self {
         let game_window = GameWindow::new();
         let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &game_window.canvas.buffer);
         let texture_handle = cc.egui_ctx.load_texture("game_window_canvas", image, egui::TextureOptions::default());
@@ -56,6 +55,8 @@ impl RusticNesGameWindow {
             show_event_viewer: false,
             show_ppu_viewer: false,
             show_piano_roll: false,
+
+            runtime_tx: runtime_tx
         }
     }
 
@@ -156,13 +157,13 @@ impl RusticNesGameWindow {
             Ok(cartridge_data) => {
                 match std::fs::read(&self.sram_path.to_str().unwrap()) {
                     Ok(sram_data) => {
-                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Rc::new(cartridge_data), Rc::new(sram_data))
+                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Arc::new(cartridge_data), Arc::new(sram_data))
                     },
                     Err(reason) => {
                         println!("Failed to load SRAM: {}", reason);
                         println!("Continuing anyway.");
                         let bucket_of_nothing: Vec<u8> = Vec::new();
-                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Rc::new(cartridge_data), Rc::new(bucket_of_nothing))
+                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Arc::new(cartridge_data), Arc::new(bucket_of_nothing))
                     }
                 }
             },
@@ -201,19 +202,33 @@ impl eframe::App for RusticNesGameWindow {
         self.apply_player_input(ctx);
 
         // Quickly poll the length of the audio buffer
-        let audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
-        let output_buffer_len = audio_output_buffer.len();
+        let audio_output_buffer = worker::AUDIO_OUTPUT_BUFFER.lock().expect("wat");
+        let mut output_buffer_len = audio_output_buffer.len();
         drop(audio_output_buffer); // immediately free the mutex, so running the emulator doesn't starve the audio thread
 
-
-        let mut samples_i16: Vec<i16> = Vec::new();
-        // 2048 is arbitrary, make this configurable!
-        while output_buffer_len + samples_i16.len() < 2048 {
-            self.runtime_state.handle_event(events::Event::NesRunFrame);
-            self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
-            samples_i16.extend(self.runtime_state.nes.apu.consume_samples());
+        // Now we do fun stuff: as long as we are under the audio threshold, run one scanline. If we happen
+        // to complete a frame while doing this, update the game window texture (and later, call "draw" on all
+        // active subwindows so they know to repaint)
+        // (2048 is arbitrary, make this configurable later!)
+        let mut repaint_needed = false;
+        while output_buffer_len < 2048 {
+            self.runtime_state.handle_event(events::Event::NesRunScanline);
+            if self.runtime_state.nes.ppu.current_scanline == 242 {
+                // we just finished a game frame, so have the game window repaint itself
+                self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
+                repaint_needed = true;
+            }
+            let samples_i16 = self.runtime_state.nes.apu.consume_samples();
+            let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
+            // Apply those samples to the audio buffer AND recheck our count
+            // (keep going until we rise above the threshold)
+            let mut audio_output_buffer = worker::AUDIO_OUTPUT_BUFFER.lock().expect("wat");
+            audio_output_buffer.extend(samples_float);
+            output_buffer_len = audio_output_buffer.len();
+            drop(audio_output_buffer);
         }
-        if samples_i16.len() > 0 {
+
+        if repaint_needed {
             let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &self.game_window.canvas.buffer);
             let texture_options = egui::TextureOptions{
                 magnification: egui::TextureFilter::Nearest,
@@ -221,11 +236,6 @@ impl eframe::App for RusticNesGameWindow {
                 ..egui::TextureOptions::default()
             };
             self.texture_handle.set(image, texture_options);
-
-            let samples_float: Vec<f32> = samples_i16.into_iter().map(|x| <i16 as Into<f32>>::into(x) / 32767.0).collect();
-            let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
-            audio_output_buffer.extend(samples_float);
-            drop(audio_output_buffer);
         }
 
         egui::TopBottomPanel::top("game_window_top_panel").show(ctx, |ui| {
@@ -394,47 +404,11 @@ impl eframe::App for RusticNesGameWindow {
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
 
-    // Setup the audio callback, which will ultimately be in charge of trying to step emulation
-    let host = cpal::default_host();
-    let device = host.default_output_device().expect("no output device available");
+    let (runtime_tx, runtime_rx) = channel::<events::Event>();
 
-    // TODO: eventually we want to present the supported configs to the end user, and let
-    // them pick
-    let mut supported_configs_range = device.supported_output_configs()
-        .expect("error while querying configs");
-    let supported_config = supported_configs_range.next()
-        .expect("no supported config?!")
-        //.with_max_sample_rate();
-        .with_sample_rate(cpal::SampleRate(44100));
-    println!("selected output sample rate: {:?}", supported_config);
-
-    let mut stream_config: cpal::StreamConfig = supported_config.into();
-    stream_config.buffer_size = cpal::BufferSize::Fixed(256);
-    stream_config.channels = 1;
-
-    let stream = device.build_output_stream(
-        &stream_config,
-        move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-            let mut audio_output_buffer = AUDIO_OUTPUT_BUFFER.lock().expect("wat");
-            if audio_output_buffer.len() > data.len() {
-                let output_samples = audio_output_buffer.drain(0..data.len()).collect::<VecDeque<f32>>();
-                for i in 0 .. data.len() {
-                    data[i] = output_samples[i];
-                }
-            } else {
-                for sample in data.iter_mut() {
-                    *sample = cpal::Sample::EQUILIBRIUM;
-                }
-            }
-        },
-        move |err| {
-            println!("Audio error occurred: {}", err)
-        },
-        None // None=blocking, Some(Duration)=timeout
-    ).unwrap();
-
-    stream.play().unwrap();
-    
+    let worker_handle = thread::spawn(|| {
+        worker::worker_main(runtime_rx);
+    });
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -447,7 +421,7 @@ fn main() -> Result<(), eframe::Error> {
     let application_exit_state = eframe::run_native(
         "RusticNES egui - Single Window", 
         options, 
-        Box::new(|cc| Box::new(RusticNesGameWindow::new(cc))),
+        Box::new(|cc| Box::new(RusticNesGameWindow::new(cc, runtime_tx))),
     );
 
     return application_exit_state;

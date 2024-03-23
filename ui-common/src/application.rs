@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use events::Event;
 use events::StandardControllerButton;
@@ -224,7 +224,7 @@ impl RuntimeState {
 
             Event::RequestSramSave(sram_id) => {
                 if self.nes.mapper.has_sram()  {
-                    responses.push(Event::SaveSram(sram_id, Rc::new(self.nes.sram())));
+                    responses.push(Event::SaveSram(sram_id, Arc::new(self.nes.sram())));
                 }
             },
 

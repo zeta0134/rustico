@@ -5,7 +5,7 @@ extern crate rusticnes_ui_common;
 extern crate wasm_bindgen;
 
 use std::sync::Mutex;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use rusticnes_core::palettes::NTSC_PAL;
 use rusticnes_core::apu::FilterType;
@@ -95,7 +95,7 @@ pub fn load_rom(cart_data: &[u8]) {
   let mut events: Vec<Event> = Vec::new();
   let bucket_of_nothing: Vec<u8> = Vec::new();
   let cartridge_data = cart_data.to_vec();
-  events.push(Event::LoadCartridge("cartridge".to_string(), Rc::new(cartridge_data), Rc::new(bucket_of_nothing)));
+  events.push(Event::LoadCartridge("cartridge".to_string(), Arc::new(cartridge_data), Arc::new(bucket_of_nothing)));
   resolve_events(events, &mut runtime);
 }
 

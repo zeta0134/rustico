@@ -1,8 +1,5 @@
-use image;
 use image::Pixel;
 use image::RgbaImage;
-
-use csscolorparser;
 
 fn blend_component(a: u8, b: u8, alpha: u8) -> u8 {
     return (

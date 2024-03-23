@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use rusticnes_ui_common;
 
@@ -25,13 +25,13 @@ impl CartridgeManager {
         let sram_path = cartridge_path.with_extension("sav");
         match std::fs::read(&sram_path.to_str().unwrap()) {
           Ok(sram_data) => {
-            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(sram_data));
+            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Arc::new(cartridge_data), Arc::new(sram_data));
           },
           Err(reason) => {
             println!("Failed to load SRAM: {}", reason);
             println!("Continuing anyway.");
             let bucket_of_nothing: Vec<u8> = Vec::new();
-            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Rc::new(cartridge_data), Rc::new(bucket_of_nothing));
+            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Arc::new(cartridge_data), Arc::new(bucket_of_nothing));
           }
         }
       },
@@ -49,7 +49,7 @@ impl CartridgeManager {
     let candidate_bios_path = PathBuf::from(&self.game_path).with_file_name(bios_filename);
     match std::fs::read(&candidate_bios_path.to_str().unwrap()) {
       Ok(bios_data) => {
-        return rusticnes_ui_common::Event::LoadBios(Rc::new(bios_data));
+        return rusticnes_ui_common::Event::LoadBios(Arc::new(bios_data));
       },
       Err(reason) => {
         println!("Failed to load FDS BIOS: {}", reason);
