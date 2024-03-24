@@ -2,14 +2,14 @@
 
 #[macro_use]
 extern crate lazy_static;
-extern crate rusticnes_core;
-extern crate rusticnes_ui_common;
+extern crate rustico_core;
+extern crate rustico_ui_common;
 
 mod worker;
 
 use eframe::egui;
 use rfd::FileDialog;
-use rusticnes_ui_common::events;
+use rustico_ui_common::events;
 
 use std::collections::HashMap;
 use std::collections::VecDeque;
@@ -23,7 +23,7 @@ pub enum ShellEvent {
     ImageRendered(String, Arc<worker::RenderedImage>)
 }
 
-struct RusticNesGameWindow {
+struct RusticoGameWindow {
     pub texture_handle: egui::TextureHandle,    
     pub old_p1_buttons_held: u8,
     pub sram_path: PathBuf,
@@ -39,7 +39,7 @@ struct RusticNesGameWindow {
     pub last_rendered_frames: HashMap<String, VecDeque<Arc<worker::RenderedImage>>>,
 }
 
-impl RusticNesGameWindow {
+impl RusticoGameWindow {
     fn new(cc: &eframe::CreationContext, runtime_tx: Sender<events::Event>, shell_rx: Receiver<ShellEvent>) -> Self {
         let blank_canvas = vec![0u8; 256*240*4];
         let image = egui::ColorImage::from_rgba_unmultiplied([256,240], &blank_canvas);
@@ -227,19 +227,19 @@ impl RusticNesGameWindow {
             Ok(cartridge_data) => {
                 match std::fs::read(&self.sram_path.to_str().unwrap()) {
                     Ok(sram_data) => {
-                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Arc::new(cartridge_data), Arc::new(sram_data))
+                        rustico_ui_common::Event::LoadCartridge(cartridge_path_as_str, Arc::new(cartridge_data), Arc::new(sram_data))
                     },
                     Err(reason) => {
                         println!("Failed to load SRAM: {}", reason);
                         println!("Continuing anyway.");
                         let bucket_of_nothing: Vec<u8> = Vec::new();
-                        rusticnes_ui_common::Event::LoadCartridge(cartridge_path_as_str, Arc::new(cartridge_data), Arc::new(bucket_of_nothing))
+                        rustico_ui_common::Event::LoadCartridge(cartridge_path_as_str, Arc::new(cartridge_data), Arc::new(bucket_of_nothing))
                     }
                 }
             },
             Err(reason) => {
                 println!("{}", reason);
-                rusticnes_ui_common::Event::LoadFailed(reason.to_string())
+                rustico_ui_common::Event::LoadFailed(reason.to_string())
             }
         };
         self.runtime_tx.send(cartridge_load_event);
@@ -267,7 +267,7 @@ impl RusticNesGameWindow {
     }
 }
 
-impl eframe::App for RusticNesGameWindow {
+impl eframe::App for RusticoGameWindow {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Presumably this is called at some FPS? I guess we can find out!
         self.apply_player_input(ctx);
@@ -458,7 +458,7 @@ fn main() -> Result<(), eframe::Error> {
     let application_exit_state = eframe::run_native(
         "Rustico", 
         options, 
-        Box::new(|cc| Box::new(RusticNesGameWindow::new(cc, runtime_tx, shell_rx))),
+        Box::new(|cc| Box::new(RusticoGameWindow::new(cc, runtime_tx, shell_rx))),
     );
 
     return application_exit_state;

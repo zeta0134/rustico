@@ -1,6 +1,4 @@
 // Most powerful Nintendo produced mapper, supporting many advanced features
-// As RusticNES doesn't support expansion audio, I'm not bothering to implement
-// it here quite yet.
 // Reference capabilities: https://wiki.nesdev.com/w/index.php/MMC5
 
 use ines::INesCartridge;

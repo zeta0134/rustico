@@ -1,4 +1,4 @@
-use rusticnes_ui_common::panel::Panel;
+use rustico_ui_common::panel::Panel;
 
 use sdl2::pixels::Color;
 use sdl2::VideoSubsystem;

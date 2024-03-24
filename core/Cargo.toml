@@ -1,4 +1,4 @@
 [package]
-name = "rusticnes-core"
+name = "rustico-core"
 version = "0.2.0"
 authors = ["Nicholas Flynt <zeta0134@reploid.cafe>"]

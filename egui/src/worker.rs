@@ -1,7 +1,7 @@
-use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
-use rusticnes_ui_common::events;
-use rusticnes_ui_common::game_window::GameWindow;
-use rusticnes_ui_common::panel::Panel;
+use rustico_ui_common::application::RuntimeState as RusticoRuntimeState;
+use rustico_ui_common::events;
+use rustico_ui_common::game_window::GameWindow;
+use rustico_ui_common::panel::Panel;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::collections::VecDeque;
@@ -26,14 +26,14 @@ struct Worker {
     shell_tx: Sender<crate::ShellEvent>,
 
     audio_stream: Box<dyn StreamTrait>,
-    runtime_state: RusticNesRuntimeState,
+    runtime_state: RusticoRuntimeState,
     game_window: GameWindow,
 }
 
 impl Worker {
     pub fn new(runtime_rx: Receiver<events::Event>, shell_tx: Sender<crate::ShellEvent>) -> Worker {
         let audio_stream = setup_audio_stream();
-        let runtime_state = RusticNesRuntimeState::new();
+        let runtime_state = RusticoRuntimeState::new();
         let game_window = GameWindow::new();
 
         return Worker{

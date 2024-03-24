@@ -6,10 +6,10 @@ use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
 
-use rusticnes_core::mmc::mapper::Mapper;
-use rusticnes_core::nes::NesState;
-use rusticnes_core::ppu;
-use rusticnes_core::palettes::NTSC_PAL;
+use rustico_core::mmc::mapper::Mapper;
+use rustico_core::nes::NesState;
+use rustico_core::ppu;
+use rustico_core::palettes::NTSC_PAL;
 
 fn draw_tile(mapper: &dyn Mapper, pattern_address: u16, tile_index: u16, buffer: &mut SimpleBuffer, dx: u32, dy: u32, palette: &[u8]) {
     for py in 0 .. 8 {

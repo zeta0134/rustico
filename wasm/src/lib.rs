@@ -1,24 +1,24 @@
 #[macro_use]
 extern crate lazy_static;
-extern crate rusticnes_core;
-extern crate rusticnes_ui_common;
+extern crate rustico_core;
+extern crate rustico_ui_common;
 extern crate wasm_bindgen;
 
 use std::sync::Mutex;
 use std::sync::Arc;
 
-use rusticnes_core::palettes::NTSC_PAL;
-use rusticnes_core::apu::FilterType;
+use rustico_core::palettes::NTSC_PAL;
+use rustico_core::apu::FilterType;
 use wasm_bindgen::prelude::*;
 
-use rusticnes_ui_common::application::RuntimeState;
-use rusticnes_ui_common::settings::SettingsState;
-use rusticnes_ui_common::events::Event;
-use rusticnes_ui_common::apu_window::ApuWindow;
-use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
+use rustico_ui_common::application::RuntimeState;
+use rustico_ui_common::settings::SettingsState;
+use rustico_ui_common::events::Event;
+use rustico_ui_common::apu_window::ApuWindow;
+use rustico_ui_common::piano_roll_window::PianoRollWindow;
 
-use rusticnes_ui_common::panel::Panel;
-use rusticnes_ui_common::drawing::SimpleBuffer;
+use rustico_ui_common::panel::Panel;
+use rustico_ui_common::drawing::SimpleBuffer;
 
 const WASM_CONFIG: &str = r###"
 [piano_roll]

@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use rusticnes_ui_common;
+use rustico_ui_common;
 
 pub struct CartridgeManager {
   pub game_path: String,
@@ -18,42 +18,42 @@ impl CartridgeManager {
     }
   }
 
-  pub fn open_cartridge_with_sram(&mut self, file_path: &str) -> rusticnes_ui_common::Event {
+  pub fn open_cartridge_with_sram(&mut self, file_path: &str) -> rustico_ui_common::Event {
     match std::fs::read(file_path) {
       Ok(cartridge_data) => {
         let cartridge_path = PathBuf::from(file_path);
         let sram_path = cartridge_path.with_extension("sav");
         match std::fs::read(&sram_path.to_str().unwrap()) {
           Ok(sram_data) => {
-            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Arc::new(cartridge_data), Arc::new(sram_data));
+            return rustico_ui_common::Event::LoadCartridge(file_path.to_string(), Arc::new(cartridge_data), Arc::new(sram_data));
           },
           Err(reason) => {
             println!("Failed to load SRAM: {}", reason);
             println!("Continuing anyway.");
             let bucket_of_nothing: Vec<u8> = Vec::new();
-            return rusticnes_ui_common::Event::LoadCartridge(file_path.to_string(), Arc::new(cartridge_data), Arc::new(bucket_of_nothing));
+            return rustico_ui_common::Event::LoadCartridge(file_path.to_string(), Arc::new(cartridge_data), Arc::new(bucket_of_nothing));
           }
         }
       },
       Err(reason) => {
         println!("{}", reason);
-        return rusticnes_ui_common::Event::LoadFailed(reason.to_string());
+        return rustico_ui_common::Event::LoadFailed(reason.to_string());
       }
     }
   }
 
-  pub fn open_bios(&mut self) -> rusticnes_ui_common::Event {
+  pub fn open_bios(&mut self) -> rustico_ui_common::Event {
     // Todo: check the config directory? try more potential filenames? When we find a bios, copy it to the
     // config directory so we don't have to do this again?
     let bios_filename = "disksys.rom";
     let candidate_bios_path = PathBuf::from(&self.game_path).with_file_name(bios_filename);
     match std::fs::read(&candidate_bios_path.to_str().unwrap()) {
       Ok(bios_data) => {
-        return rusticnes_ui_common::Event::LoadBios(Arc::new(bios_data));
+        return rustico_ui_common::Event::LoadBios(Arc::new(bios_data));
       },
       Err(reason) => {
         println!("Failed to load FDS BIOS: {}", reason);
-        return rusticnes_ui_common::Event::LoadFailed(reason.to_string());
+        return rustico_ui_common::Event::LoadFailed(reason.to_string());
       }
     }
   }
@@ -71,36 +71,36 @@ impl CartridgeManager {
     };
   }
 
-  pub fn handle_event(&mut self, event: rusticnes_ui_common::Event) -> Vec<rusticnes_ui_common::Event> {
-    let mut responses: Vec<rusticnes_ui_common::Event> = Vec::new();
+  pub fn handle_event(&mut self, event: rustico_ui_common::Event) -> Vec<rustico_ui_common::Event> {
+    let mut responses: Vec<rustico_ui_common::Event> = Vec::new();
     match event {
-      rusticnes_ui_common::Event::RequestCartridgeDialog => {
+      rustico_ui_common::Event::RequestCartridgeDialog => {
         match open_file_dialog() {
           Ok(file_path) => {
-            responses.push(rusticnes_ui_common::Event::RequestSramSave(self.sram_path.clone()));
+            responses.push(rustico_ui_common::Event::RequestSramSave(self.sram_path.clone()));
             responses.push(self.open_cartridge_with_sram(&file_path));
           },
           Err(reason) => {
             println!("{}", reason);
-            responses.push(rusticnes_ui_common::Event::LoadFailed(reason));
+            responses.push(rustico_ui_common::Event::LoadFailed(reason));
           }
         }
       },
-      rusticnes_ui_common::Event::RequestBios => {
+      rustico_ui_common::Event::RequestBios => {
         responses.push(self.open_bios());
       },
-      rusticnes_ui_common::Event::CartridgeLoaded(cart_id) => {
+      rustico_ui_common::Event::CartridgeLoaded(cart_id) => {
         self.game_path = cart_id.to_string();
         self.sram_path = PathBuf::from(cart_id).with_extension("sav").to_str().unwrap().to_string();
         println!("Cartridge loading success! Storing save path as: {}", self.sram_path);
       },
-      rusticnes_ui_common::Event::LoadFailed(reason) => {
+      rustico_ui_common::Event::LoadFailed(reason) => {
         println!("Loading failed: {}", reason);
       },
-      rusticnes_ui_common::Event::CartridgeRejected(cart_id, reason) => {
+      rustico_ui_common::Event::CartridgeRejected(cart_id, reason) => {
         println!("Cartridge {} could not be played: {}", cart_id, reason);
       },
-      rusticnes_ui_common::Event::SaveSram(sram_id, sram_data) => {
+      rustico_ui_common::Event::SaveSram(sram_id, sram_data) => {
         self.save_sram(sram_id, &sram_data);
       },
       _ => {}

@@ -6,8 +6,8 @@ use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
 
-use rusticnes_core::nes::NesState;
-use rusticnes_core::memory;
+use rustico_core::nes::NesState;
+use rustico_core::memory;
 
 pub struct MemoryWindow {
     pub canvas: SimpleBuffer,

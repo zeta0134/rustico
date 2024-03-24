@@ -1,7 +1,7 @@
 extern crate csscolorparser;
 extern crate image;
 extern crate regex;
-extern crate rusticnes_core;
+extern crate rustico_core;
 extern crate toml;
 
 pub mod application;

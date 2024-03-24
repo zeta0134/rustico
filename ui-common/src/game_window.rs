@@ -8,8 +8,8 @@ use panel::Panel;
 
 use std::time::Instant;
 
-use rusticnes_core::nes::NesState;
-use rusticnes_core::palettes::NTSC_PAL;
+use rustico_core::nes::NesState;
+use rustico_core::palettes::NTSC_PAL;
 
 pub struct GameWindow {
     pub canvas: SimpleBuffer,
@@ -119,7 +119,7 @@ impl GameWindow {
 
 impl Panel for GameWindow {
     fn title(&self) -> &str {
-        return "RusticNES";
+        return "Rustico";
     }
 
     fn shown(&self) -> bool {

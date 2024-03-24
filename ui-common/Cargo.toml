@@ -1,5 +1,5 @@
 [package]
-name = "rusticnes-ui-common"
+name = "rustico-ui-common"
 version = "0.0.1"
 authors = ["Nicholas Flynt <zeta0134@reploid.cafe>"]
 
@@ -8,4 +8,4 @@ csscolorparser = "0.6.1"
 image = "0.19"
 toml = "0.5"
 regex = "1.6"
-rusticnes-core = { path = "../core" }
+rustico-core = { path = "../core" }

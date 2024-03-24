@@ -6,8 +6,8 @@ extern crate image;
 extern crate nfd2;
 extern crate sdl2;
 
-extern crate rusticnes_core;
-extern crate rusticnes_ui_common;
+extern crate rustico_core;
+extern crate rustico_ui_common;
 
 mod cartridge_manager;
 mod platform_window;
@@ -32,21 +32,21 @@ use std::thread;
 use std::time;
 use std::ffi::OsString;
 
-use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
-use rusticnes_ui_common::events;
-use rusticnes_ui_common::events::StandardControllerButton;
-use rusticnes_ui_common::apu_window::ApuWindow;
-use rusticnes_ui_common::cpu_window::CpuWindow;
-use rusticnes_ui_common::game_window::GameWindow;
-use rusticnes_ui_common::event_window::EventWindow;
-use rusticnes_ui_common::memory_window::MemoryWindow;
-use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
-use rusticnes_ui_common::ppu_window::PpuWindow;
+use rustico_ui_common::application::RuntimeState as RusticoRuntimeState;
+use rustico_ui_common::events;
+use rustico_ui_common::events::StandardControllerButton;
+use rustico_ui_common::apu_window::ApuWindow;
+use rustico_ui_common::cpu_window::CpuWindow;
+use rustico_ui_common::game_window::GameWindow;
+use rustico_ui_common::event_window::EventWindow;
+use rustico_ui_common::memory_window::MemoryWindow;
+use rustico_ui_common::piano_roll_window::PianoRollWindow;
+use rustico_ui_common::ppu_window::PpuWindow;
 
 use cartridge_manager::CartridgeManager;
 use platform_window::PlatformWindow;
 
-pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut RusticNesRuntimeState, cartridge_state: &mut CartridgeManager, event: events::Event) -> Vec<events::Event> {
+pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut RusticoRuntimeState, cartridge_state: &mut CartridgeManager, event: events::Event) -> Vec<events::Event> {
   let mut responses: Vec<events::Event> = Vec::new();
   for i in 0 .. windows.len() {
     // Note: Windows get an immutable reference to everything other than themselves
@@ -61,11 +61,11 @@ pub fn dispatch_event(windows: &mut Vec<PlatformWindow>, runtime_state: &mut Rus
 
 pub fn main() {
   let version = env!("CARGO_PKG_VERSION");
-  println!("Welcome to RusticNES {}", version);
+  println!("Welcome to Rustico {}", version);
 
   let config_path: OsString = match dirs::config_dir() {
     Some(mut path) => {
-      path.push("rusticnes");
+      path.push("rustico");
       match fs::create_dir_all(&path) {
         Ok(_) => {},
         Err(e) => {println!("ERROR: {}\nFailed to create settings dir {}, settings will likely fail to save!", e, path.display())}
@@ -73,10 +73,10 @@ pub fn main() {
       path.push("settings.toml");
       path.into_os_string()
     },
-    None => {"rusticnes_settings.toml".into()}
+    None => {"rustico_settings.toml".into()}
   };
 
-  let mut runtime_state = RusticNesRuntimeState::new();
+  let mut runtime_state = RusticoRuntimeState::new();
   let mut cartridge_state = CartridgeManager::new();
   runtime_state.settings.load(&config_path);
 

@@ -1,5 +1,5 @@
 [package]
-name = "rusticnes-egui"
+name = "rustico-egui"
 version = "0.1.0"
 edition = "2021"
 
@@ -17,5 +17,5 @@ rfd = { version = "0.14.1", default-features = false, features = [
     "async-std",
     "xdg-portal"
 ] }
-rusticnes-core = { path = "../core" }
-rusticnes-ui-common = { path = "../ui-common" }
+rustico-core = { path = "../core" }
+rustico-ui-common = { path = "../ui-common" }

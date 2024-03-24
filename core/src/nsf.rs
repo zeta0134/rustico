@@ -4,10 +4,10 @@
 // chiptune artists and occasionally indie games.
 // https://wiki.nesdev.com/w/index.php/NSF
 
-// RusticNES is an NES emulator, so it will be attempting to mimick
+// Rustico is primarily an emulator, so it will be attempting to mimick
 // the limitations of a hardware player. Some advanced NSF files,
 // especially those with many expansion chips or a fast playback rate,
-// may not perform correctly in RusticNES, just as they would fail in most
+// may not perform correctly in Rustico, just as they would fail in most
 // hardware NSF player implementations. This is a feature, not a bug.
 
 use std::io::Read;

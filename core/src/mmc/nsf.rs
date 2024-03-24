@@ -545,7 +545,7 @@ impl NsfMapper {
     pub fn update_display(&mut self) {
         self.clear_display();
 
-        self.draw_string(21, 2, 9,  "RusticNES".as_bytes().to_vec());
+        self.draw_string(21, 2, 9,  "Rustico  ".as_bytes().to_vec());
         self.draw_string(20, 3, 10, "NSF Player".as_bytes().to_vec());
 
         self.draw_string(2, 5, 28, "Title".as_bytes().to_vec());

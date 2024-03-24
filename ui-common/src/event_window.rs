@@ -6,10 +6,10 @@ use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
 
-use rusticnes_core::nes::NesState;
-use rusticnes_core::palettes::NTSC_PAL;
-use rusticnes_core::tracked_events::TrackedEvent;
-use rusticnes_core::tracked_events::EventType;
+use rustico_core::nes::NesState;
+use rustico_core::palettes::NTSC_PAL;
+use rustico_core::tracked_events::TrackedEvent;
+use rustico_core::tracked_events::EventType;
 
 pub struct EventWindow {
     pub canvas: SimpleBuffer,

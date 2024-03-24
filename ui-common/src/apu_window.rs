@@ -6,10 +6,10 @@ use drawing::SimpleBuffer;
 use events::Event;
 use panel::Panel;
 
-use rusticnes_core::apu::ApuState;
-use rusticnes_core::apu::RingBuffer;
-use rusticnes_core::mmc::mapper::Mapper;
-use rusticnes_core::apu::AudioChannelState;
+use rustico_core::apu::ApuState;
+use rustico_core::apu::RingBuffer;
+use rustico_core::mmc::mapper::Mapper;
+use rustico_core::apu::AudioChannelState;
 
 pub struct ApuWindow {
     pub canvas: SimpleBuffer,

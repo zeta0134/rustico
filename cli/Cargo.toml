@@ -1,9 +1,9 @@
 [package]
-name = "rusticnes-cli"
+name = "rustico-cli"
 version = "0.1.0"
 authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
 
 [dependencies]
 image = "0.19"
-rusticnes-core = { path = "../core" }
-rusticnes-ui-common = { path = "../ui-common" }
+rustico-core = { path = "../core" }
+rustico-ui-common = { path = "../ui-common" }

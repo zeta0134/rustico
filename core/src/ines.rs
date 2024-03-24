@@ -201,7 +201,7 @@ impl INesHeader {
 
     pub fn chr_sram_size(&self) -> usize {
         // Note: iNes2.0 calls this NVRAM, we're going with SRAM to match
-        // RusticNES's conventions, and also user expectation
+        // Rustico's conventions, and also user expectation
         if self.version() != 2 {
             return 0;
         }

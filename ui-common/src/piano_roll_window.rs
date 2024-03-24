@@ -8,12 +8,12 @@ use panel::Panel;
 
 use regex::Regex;
 
-use rusticnes_core::apu::ApuState;
-use rusticnes_core::apu::AudioChannelState;
-use rusticnes_core::apu::PlaybackRate;
-use rusticnes_core::apu::RingBuffer;
-use rusticnes_core::apu::Timbre;
-use rusticnes_core::mmc::mapper::Mapper;
+use rustico_core::apu::ApuState;
+use rustico_core::apu::AudioChannelState;
+use rustico_core::apu::PlaybackRate;
+use rustico_core::apu::RingBuffer;
+use rustico_core::apu::Timbre;
+use rustico_core::mmc::mapper::Mapper;
 
 use std::collections::VecDeque;
 use std::collections::hash_map::HashMap;

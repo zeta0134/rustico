@@ -1,16 +1,16 @@
 extern crate image;
-extern crate rusticnes_core;
-extern crate rusticnes_ui_common;
+extern crate rustico_core;
+extern crate rustico_ui_common;
 
-use rusticnes_core::nes::NesState;
-use rusticnes_core::palettes::NTSC_PAL;
-use rusticnes_core::cartridge::mapper_from_file;
+use rustico_core::nes::NesState;
+use rustico_core::palettes::NTSC_PAL;
+use rustico_core::cartridge::mapper_from_file;
 
-use rusticnes_ui_common::application::RuntimeState as RusticNesRuntimeState;
-use rusticnes_ui_common::events;
-use rusticnes_ui_common::panel::Panel;
-use rusticnes_ui_common::piano_roll_window::PianoRollWindow;
-use rusticnes_ui_common::event_window::EventWindow;
+use rustico_ui_common::application::RuntimeState as RusticoRuntimeState;
+use rustico_ui_common::events;
+use rustico_ui_common::panel::Panel;
+use rustico_ui_common::piano_roll_window::PianoRollWindow;
+use rustico_ui_common::event_window::EventWindow;
 
 use std::env;
 use std::fs::File;
@@ -22,7 +22,7 @@ use std::io::BufReader;
 use std::io::BufRead;
 
 pub struct CliRuntimeState {
-  pub core: RusticNesRuntimeState,
+  pub core: RusticoRuntimeState,
   pub piano_roll_panel: PianoRollWindow,
   pub event_viewer_panel: EventWindow,
   pub game_file: Option<File>,
@@ -34,7 +34,7 @@ pub struct CliRuntimeState {
 impl CliRuntimeState {
   pub fn new() -> CliRuntimeState {
     return CliRuntimeState{
-      core: RusticNesRuntimeState::new(),
+      core: RusticoRuntimeState::new(),
       piano_roll_panel: PianoRollWindow::new(),
       event_viewer_panel: EventWindow::new(),
       game_file: None,
@@ -372,7 +372,7 @@ fn process_command_list(state: &mut CliRuntimeState, mut command_list: Vec<Strin
 fn main() {
 	let mut args: Vec<_> = env::args().collect();
   if args.len() < 2 {
-    panic!("Usage: rusticnes-cli <commands>");
+    panic!("Usage: rustico-cli <commands>");
   }
 
   let mut state = CliRuntimeState::new();

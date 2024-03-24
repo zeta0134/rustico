@@ -1,5 +1,5 @@
 [package]
-name = "rusticnes-sdl"
+name = "rustico-sdl"
 version = "0.1.1"
 authors = ["Nicholas Flynt <thegamefreak0134@gmail.com>"]
 build = "build.rs"
@@ -9,5 +9,5 @@ dirs = "5.0.1"
 image = "0.24.6"
 sdl2 = "0.36.0"
 nfd2 = "0.3.1"
-rusticnes-core = { path = "../core" }
-rusticnes-ui-common = { path = "../ui-common" }
+rustico-core = { path = "../core" }
+rustico-ui-common = { path = "../ui-common" }

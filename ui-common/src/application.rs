@@ -5,11 +5,10 @@ use events::StandardControllerButton;
 
 use settings::SettingsState;
 
-use rusticnes_core::nes::NesState;
-use rusticnes_core::mmc::none::NoneMapper;
-use rusticnes_core::cartridge::mapper_from_file;
+use rustico_core::nes::NesState;
+use rustico_core::cartridge::mapper_from_file;
 
-use rusticnes_core::apu::AudioChannelState;
+use rustico_core::apu::AudioChannelState;
 
 
 
