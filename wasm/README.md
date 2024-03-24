@@ -1,8 +1,8 @@
-# RusticNES-wasm
+# Rustico - WASM
 
-A web based interface for [RusticNES](https://github.com/zeta0134/rusticnes-core), running on Web Assembly for sweet retro action in the browser. Includes a basic web shell to operate the emulator, and relies on [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) to simplify the interface between the emulator core and the JavaScript UI. This is a reasonably early work in progress, expect bugs!
+A web based shell for Rustico, running on Web Assembly for sweet retro action in the browser. Includes a basic web shell to operate the emulator, and relies on [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) to simplify the interface between the emulator core and the JavaScript UI. This is a reasonably early work in progress, expect bugs!
 
-A live demo can be found [here](http://rusticnes.reploid.cafe/wasm/?cartridge=super-bat-puncher.nes), running the AWESOME homebrew [Super Bat Puncher](http://morphcat.de/superbatpuncher/), hosted with permission from [Morphcat Games](http://morphcat.de/) whom you should totally check out.
+A live demo can be found [here](http://rustico.reploid.cafe/wasm/?cartridge=super-bat-puncher.nes), running the AWESOME homebrew [Super Bat Puncher](http://morphcat.de/superbatpuncher/), hosted with permission from [Morphcat Games](http://morphcat.de/) whom you should totally check out.
 
 ## Building
 
@@ -24,9 +24,9 @@ Finally, run the `./build.sh` script in the main folder. Afterwards, for Firefox
 
 ## Usage
 
-Use the "Load" button to open up a `.nes` file from your computer. Alternately, you can pass in a query string: `?cartridge=game.nes`. This is read as a standard URL, so paths relative to the index page work, as do fully qualified URLs that point to a valid `.nes` file. Note that `.zip` and other archives are not supported. 
+Use the "Load" button to open up a `.nes` or `.nsf` file from your computer. (FDS is not currently supported, as there is no way to provide the BIOS.) Alternately, you can pass in a query string: `?cartridge=my_chiptune_album.nsf`. This is read as a standard URL, so paths relative to the index page work, as do fully qualified URLs that point to a valid cartridge file, subject to CORS limitations and usual web-based networking restrictions. Note that `.zip` and other archive formats are not supported. 
 
-The emulator will try to maintain 60 FPS, the success of which depends on how powerful your computer, tablet, or phone is. You may enter fullscreen mode by double-clicking on the game screen. If your game supports SRAM (not many NES games do), it will be persisted to local storage in your browser; note that the filename / URL is used to determine which save file is loaded. Gamepad controls default to the following, and may be remapped:
+The emulator will try to maintain 60.01 FPS, the success of which depends on how powerful your computer, tablet, or phone is. If your software supports SRAM, it will be persisted to local storage in your browser; note that the filename / URL is used to determine which SRAM file is loaded on the next run. Gamepad controls default to the following, and may be remapped:
 
 ```
 D-Pad: Arrow Keys
@@ -39,19 +39,21 @@ Select: Shift
 ## Planned Features
 
 - Speed Improvements
-- Better support for touchscreens
+- Much better support for touchscreens
+- Additional debugging features (mostly limited by canvas bandwidth)
+- SRAM Import / Export
 
-Needs rusticnes-core support:
+Needs core support:
 
-- NES Zapper
+- Zapper Light Gun
 - Save States
 
 ## General Notes
 
-All shells to RusticNES are limited by features present in the [core emulator](https://github.com/zeta0134/rusticnes-core), so some features need to be implemented upstream first. This applies to emulation bugs as well, especially with regards to missing mapper support. Bug reports are welcome! I don't have every cartridge out there to test with, so I may not be aware that your favorite game doesn't boot, but I love a good challenge.
+All shells to Rustico are limited by features present in the `/core` emulator. This applies to emulation bugs as well, especially with regards to missing mapper support. Bug reports are welcome!
 
-Several technologies involved in this project are moving targets, not the least of which being WebAssembly itself. Web Audio is particularly new, and might run into strange issues; I've heard reports of it deciding to mix audio at 192 KHz on some Windows systems, which should technically work but will definitely make the emulator work a lot harder. As of this writing, the emulator is known to work in both Firefox and Chrome, and has faster performance on Firefox. It should in theory be able to run on Microsoft Edge, but wasm-bindgen fails to load due to a missing (planned) feature. I'll try to correct for this later, but might need to wait on Microsoft for a proper fix. I'd like to make it as standards compliant as possible, so if it's not working in your favorite browser, (and you're reasonably confident that browser at least supports WASM), bug reports are welcome!
+Several technologies involved in this project are moving targets, not the least of which being WebAssembly itself. Web Audio is particularly new, and might run into strange issues; I've heard reports of it deciding to mix audio at 192 KHz on some Windows systems, which should technically run but will definitely make the emulator work a lot harder. As of this writing, the emulator is known to work in both Firefox and Chrome, and has faster performance on Firefox. It should in theory be able to run on Microsoft Edge, but wasm-bindgen fails to load due to a missing (planned) feature. Touchscreen support seems to work well on Mobile Safari, though fullscreen mode trips a strange "fullscreen keyboard" protection on some iOS versions. Performance on Android browsers is generally not great.
 
-If you'd like to test the emulator in more detail, right now the [RusticNES-SDL](https://github.com/zeta0134/rusticnes-sdl) frontend is much more mature, and supports many debug features. You should give it a try, as both shells use the same [rusticnes-core](https://github.com/zeta0134/rusticnes-core) backend. Emulation accuracy should be identical between the various frontends.
+If you'd like to test the emulator in more detail, right now the `/sdl` frontend is much more mature, and supports many debug features. All shells share the same core library, so emulation accuracy should be identical between them.
 
-Feel free to distribute this emulator! I mostly ask for common courtesy and respect. Fork, modify, extend, and have fun with it! However, please do be respectful of copyright laws. The emulator will play almost any game, even commercial games, but this does not give you the legal right to distribute those game files on your personal website. Please obey the local laws in your country / state, and if you can, be sure to give Nintendo and other publishers your support by buying their current titles and Virtual Console releases. Unless you are distributing a homebrew game that you wrote, I would not recommend hosting game files alongside the emulator if you choose make your build public.
+Feel free to distribute this emulator! However, please do be respectful of copyright laws. The emulator will play almost any game, even commercial games, but this does not give you the legal right to distribute those game files on your personal website. Unless you are distributing your own software, I would not recommend hosting game files alongside your build. Obey the local laws in your country / region, and if you can, be sure to support game publishers by buying their current titles and Virtual Console releases.
