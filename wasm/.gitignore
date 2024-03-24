@@ -4,6 +4,6 @@ Cargo.lock
 *.wasm
 *.nes
 *.zip
-rusticnes_wasm.d.ts
-rusticnes_wasm_bg.wasm.d.ts
-rusticnes_wasm.js
+rustico_wasm.d.ts
+rustico_wasm_bg.wasm.d.ts
+rustico_wasm.js

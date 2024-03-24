@@ -42,14 +42,14 @@ for i in "${screenshot_tests[@]}"
 do
 	echo ""
 	echo "##### $i with screenshot #####"
-	target/release/rusticnes-cli cart "../nes-test-roms/$i.nes" frames 1000 screenshot "../nes-test-roms/$i.png"
+	target/release/rustico-cli cart "../nes-test-roms/$i.nes" frames 1000 screenshot "../nes-test-roms/$i.png"
 done
 
 for i in "${blargg_tests[@]}"
 do
 	echo ""
 	echo "##### $i as blargg #####"
-	target/release/rusticnes-cli cart "../nes-test-roms/$i.nes" frames 1000 blargg "../nes-test-roms/$i.txt"
+	target/release/rustico-cli cart "../nes-test-roms/$i.nes" frames 1000 blargg "../nes-test-roms/$i.txt"
 done
 
 

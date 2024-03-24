@@ -1,4 +1,4 @@
-importScripts('./rusticnes_wasm.js');
+importScripts('./rustico_wasm.js');
 
 const { 
   wasm_init,
@@ -161,5 +161,5 @@ worker_init = function() {
   self.onmessage = handle_message;
 }
 
-wasm_bindgen('./rusticnes_wasm_bg.wasm').then(worker_init);
+wasm_bindgen('./rustico_wasm_bg.wasm').then(worker_init);
 

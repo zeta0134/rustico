@@ -23,7 +23,7 @@ And produce archives for Linux and Windows with:
 ./package.sh
 ```
 
-![Game Window](https://rusticnes.reploid.cafe/documentation/game_window.png) 
+![Game Window](https://rustico.reploid.cafe/documentation/game_window.png) 
 
 The emulator opens with no cartridge loaded, and only the Game Window visible. Use **Ctrl-O** to select either a `.nes`, `.nsf` or `.fds` file from your computer, which should automatically begin playing. From here, the following keyboard controls do interesting things, mostly useful for debugging.
 

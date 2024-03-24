@@ -23,11 +23,11 @@ jobs:
     - name: Upload Linux Package
       uses: actions/upload-artifact@v2.3.1
       with:
-        name: RusticNES-SDL.Linux.x86_64
-        path: packages/rusticnes-sdl-*.Linux.x86_64.tar.gz
+        name: Rustico-SDL.Linux.x86_64
+        path: packages/rustico-sdl-*.Linux.x86_64.tar.gz
     - name: Upload Windows Package
       uses: actions/upload-artifact@v2.3.1
       with:
-        name: RusticNES-SDL.Windows.x86_64
-        path: packages/rusticnes-sdl-*.Windows.x86_64.zip
+        name: Rustico-SDL.Windows.x86_64
+        path: packages/rustico-sdl-*.Windows.x86_64.zip
     
