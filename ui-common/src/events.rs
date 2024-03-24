@@ -18,6 +18,7 @@ pub enum Event {
     ApplyFloatSetting(String, f64),
     ApplyIntegerSetting(String, i64),
     ApplyStringSetting(String, String),
+    CloseApplication,
     CloseWindow,
     CartridgeLoaded(String),
     CartridgeRejected(String, String),

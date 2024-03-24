@@ -20,12 +20,14 @@ use std::thread;
 
 #[derive(Clone)]
 pub enum ShellEvent {
-    ImageRendered(String, Arc<worker::RenderedImage>)
+    ImageRendered(String, Arc<worker::RenderedImage>),
+    HasSram(bool),
 }
 
 struct RusticoGameWindow {
     pub texture_handle: egui::TextureHandle,    
     pub old_p1_buttons_held: u8,
+    pub has_sram: bool,
     pub sram_path: PathBuf,
 
     pub show_memory_viewer: bool,
@@ -52,6 +54,7 @@ impl RusticoGameWindow {
             texture_handle: texture_handle,
             old_p1_buttons_held: 0,
             sram_path: PathBuf::new(),
+            has_sram: false,
 
             show_memory_viewer: false,
             show_event_viewer: false,
@@ -103,8 +106,10 @@ impl RusticoGameWindow {
                         println!("Received a rendered image named {} but I don't know how to draw that!", id);
                     }
                 }
+            },
+            ShellEvent::HasSram(has_sram) => {
+                self.has_sram = has_sram;
             }
-            //_ => {}
         }
     }
 
@@ -221,6 +226,9 @@ impl RusticoGameWindow {
     }
 
     fn open_cartridge(&mut self, cartridge_path: PathBuf) {
+        // Before we open a new cartridge, save the SRAM for the old one
+        self.request_sram_save();
+
         self.sram_path = cartridge_path.with_extension("sav");
         let cartridge_path_as_str = cartridge_path.clone().to_string_lossy().into_owned();
         let cartridge_load_event = match std::fs::read(cartridge_path) {
@@ -245,25 +253,8 @@ impl RusticoGameWindow {
         self.runtime_tx.send(cartridge_load_event);
     }
 
-    fn save_sram(&mut self) {
-        // TODO: figure out how we're actually going to do this part!
-
-        //let sram_path_as_str = self.sram_path.clone().to_string_lossy().into_owned();
-        //if self.runtime_state.nes.mapper.has_sram() {
-        //    let sram_contents = self.runtime_state.nes.sram();
-        //    let file = File::create(self.sram_path.clone());
-        //        match file {
-        //            Err(why) => {
-        //                println!("Couldn't open {}: {}", sram_path_as_str, why.to_string());
-        //            },
-        //            Ok(mut file) => {
-        //                let _ = file.write_all(&sram_contents);
-        //                println!("Wrote sram data to: {}", sram_path_as_str);
-        //            },
-        //        };
-        //} else {
-        //    println!("Cartridge has no SRAM! Nothing to do.");
-        //}
+    fn request_sram_save(&mut self) {        
+        self.runtime_tx.send(events::Event::RequestSramSave(self.sram_path.clone().to_string_lossy().into_owned()));
     }
 }
 
@@ -281,8 +272,8 @@ impl eframe::App for RusticoGameWindow {
                         self.open_cartridge_dialog();
                         ui.close_menu();
                     }
-                    if ui.button("Save SRAM").clicked() {
-                        self.save_sram();
+                    if ui.add_enabled(self.has_sram, egui::Button::new("Save SRAM")).clicked() {
+                        self.request_sram_save();
                         ui.close_menu();
                     }
                     ui.separator();
@@ -432,8 +423,9 @@ impl eframe::App for RusticoGameWindow {
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
-        println!("Application closing, attempting to save SRAM one last time...");
-        self.save_sram();
+        println!("Application closing! Attempting to save SRAM one last time...");
+        self.request_sram_save();
+        self.runtime_tx.send(events::Event::CloseApplication);
     }
 }
 
@@ -460,6 +452,11 @@ fn main() -> Result<(), eframe::Error> {
         options, 
         Box::new(|cc| Box::new(RusticoGameWindow::new(cc, runtime_tx, shell_rx))),
     );
+
+    // Wait for the worker thread to exit here, so it has time to process any final
+    // file operations before it terminates. (By this stage, we have already gracefully
+    // requested that it shut down)
+    worker_handle.join().expect("Failed to gracefully shut down worker thread. Did it crash? Data may be lost!");
 
     return application_exit_state;
 }

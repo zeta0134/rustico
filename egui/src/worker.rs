@@ -5,6 +5,8 @@ use rustico_ui_common::panel::Panel;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::collections::VecDeque;
+use std::fs::File;
+use std::io::Write;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
@@ -28,6 +30,8 @@ struct Worker {
     audio_stream: Box<dyn StreamTrait>,
     runtime_state: RusticoRuntimeState,
     game_window: GameWindow,
+
+    exit_requested: bool,
 }
 
 impl Worker {
@@ -41,7 +45,8 @@ impl Worker {
             shell_tx: shell_tx,
             audio_stream: audio_stream,
             runtime_state: runtime_state,
-            game_window: game_window
+            game_window: game_window,
+            exit_requested: false
         };
     }
 
@@ -83,9 +88,33 @@ impl Worker {
         // and this is where those would get handled. Setting this up now for consistency.
         let events: Vec<events::Event> = Vec::new();
         match event {
+            rustico_ui_common::Event::CartridgeLoaded(_id) => {
+                let has_sram = self.runtime_state.nes.mapper.has_sram();
+                self.shell_tx.send(crate::ShellEvent::HasSram(has_sram));
+            }
+            rustico_ui_common::Event::SaveSram(sram_id, sram_data) => {
+                self.save_sram(sram_id, &sram_data);
+            },
+            rustico_ui_common::Event::CloseApplication => {
+                println!("WORKER: application close requested, will exit after processing remaining events...");
+                self.exit_requested = true;
+            }
             _ => {}
         }
         return events;
+    }
+
+    pub fn save_sram(&self, filename: String, sram_data: &[u8]) {
+        let file = File::create(filename.clone());
+        match file {
+            Err(why) => {
+                println!("Couldn't open {}: {}", filename, why.to_string());
+            },
+            Ok(mut file) => {
+                let _ = file.write_all(sram_data);
+                println!("Wrote sram data to: {}", filename);
+            },
+        };
     }
 
     pub fn step_emulator(&mut self) {
@@ -176,9 +205,14 @@ pub fn worker_main(runtime_rx: Receiver<events::Event>, shell_tx: Sender<crate::
     // or it will stop playing.
     let mut worker = Worker::new(runtime_rx, shell_tx);
 
-    loop {
+    while worker.exit_requested == false {
         worker.process_incoming_events();
         worker.step_emulator();
         thread::sleep(Duration::from_millis(1));
     }
+
+    // one more time, just in case things arrive out of order
+    thread::sleep(Duration::from_millis(1));
+    worker.process_incoming_events();
+    println!("WORKER: finished! proceeding to exit.")
 }
