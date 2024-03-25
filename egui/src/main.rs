@@ -22,6 +22,7 @@ use std::thread;
 pub enum ShellEvent {
     ImageRendered(String, Arc<worker::RenderedImage>),
     HasSram(bool),
+    SettingsUpdated(Arc<rustico_ui_common::settings::SettingsState>)
 }
 
 struct RusticoGameWindow {
@@ -39,6 +40,8 @@ struct RusticoGameWindow {
     pub shell_rx: Receiver<ShellEvent>,
 
     pub last_rendered_frames: HashMap<String, VecDeque<Arc<worker::RenderedImage>>>,
+    pub game_window_scale: usize,
+    pub settings_cache: rustico_ui_common::settings::SettingsState,
 }
 
 impl RusticoGameWindow {
@@ -65,6 +68,8 @@ impl RusticoGameWindow {
             shell_rx: shell_rx,
 
             last_rendered_frames: last_rendered_frames,
+            game_window_scale: 2,
+            settings_cache: rustico_ui_common::settings::SettingsState::new(),
         }
     }
 
@@ -109,6 +114,9 @@ impl RusticoGameWindow {
             },
             ShellEvent::HasSram(has_sram) => {
                 self.has_sram = has_sram;
+            },
+            ShellEvent::SettingsUpdated(settings_object) => {
+                self.settings_cache = Arc::unwrap_or_clone(settings_object);
             }
         }
     }
@@ -125,6 +133,7 @@ impl RusticoGameWindow {
                             ..egui::TextureOptions::default()
                         };
                         self.texture_handle.set(image, texture_options);
+                        self.game_window_scale = canvas.scale;
                     },
                     None => {}
                 }
@@ -283,18 +292,36 @@ impl eframe::App for RusticoGameWindow {
                     }
                 });
                 ui.menu_button("Settings", |ui| {
-                    ui.menu_button("Video Size", |ui| {
-                        ui.add_enabled(false, egui::Button::new("1x"));
-                        if ui.button("2x").clicked() {
+                    ui.menu_button("Video", |ui| {
+                        let mut overscan_checked = self.settings_cache.get_boolean("video.simulate_overscan".into()).unwrap_or(false);
+                        if ui.checkbox(&mut overscan_checked, "Hide Overscan").clicked() {
+                            self.runtime_tx.send(events::Event::ToggleBooleanSetting("video.simulate_overscan".into()));
                             ui.close_menu();
                         }
-                        if ui.button("3x").clicked() {
+                        let mut ntsc_checked = self.settings_cache.get_boolean("video.ntsc_filter".into()).unwrap_or(false);
+                        if ui.checkbox(&mut ntsc_checked, "NTSC Filter").clicked() {
+                            self.runtime_tx.send(events::Event::ToggleBooleanSetting("video.ntsc_filter".into()));
                             ui.close_menu();
                         }
-                        if ui.button("4x").clicked() {
+                        ui.separator();
+                        if ui.radio(self.settings_cache.get_integer("video.scale_factor".into()).unwrap_or(0) == 1, "1x scale").clicked() {
+                            self.runtime_tx.send(events::Event::StoreIntegerSetting("video.scale_factor".into(), 1));
                             ui.close_menu();
                         }
-                        if ui.button("5x").clicked() {
+                        if ui.radio(self.settings_cache.get_integer("video.scale_factor".into()).unwrap_or(0) == 2, "2x scale").clicked() {
+                            self.runtime_tx.send(events::Event::StoreIntegerSetting("video.scale_factor".into(), 2));
+                            ui.close_menu();
+                        }
+                        if ui.radio(self.settings_cache.get_integer("video.scale_factor".into()).unwrap_or(0) == 3, "3x scale").clicked() {
+                            self.runtime_tx.send(events::Event::StoreIntegerSetting("video.scale_factor".into(), 3));
+                            ui.close_menu();
+                        }
+                        if ui.radio(self.settings_cache.get_integer("video.scale_factor".into()).unwrap_or(0) == 4, "4x scale").clicked() {
+                            self.runtime_tx.send(events::Event::StoreIntegerSetting("video.scale_factor".into(), 4));
+                            ui.close_menu();
+                        }
+                        if ui.radio(self.settings_cache.get_integer("video.scale_factor".into()).unwrap_or(0) == 5, "5x scale").clicked() {
+                            self.runtime_tx.send(events::Event::StoreIntegerSetting("video.scale_factor".into(), 5));
                             ui.close_menu();
                         }
                     });
@@ -325,15 +352,22 @@ impl eframe::App for RusticoGameWindow {
             });
         });
 
+        let game_window_width = (self.texture_handle.size()[0] * self.game_window_scale) as f32;
+        let game_window_height = (self.texture_handle.size()[1] * self.game_window_scale) as f32;
         egui::CentralPanel::default().frame(egui::Frame::none()).show(ctx, |ui| {
             ui.add(
                 egui::Image::new(egui::load::SizedTexture::from_handle(&self.texture_handle))
-                    .fit_to_exact_size([512.0, 480.0].into())
+                    .fit_to_exact_size([
+                        game_window_width,
+                        game_window_height
+                    ].into())
             );
         });
 
         let menubar_height = ctx.style().spacing.interact_size[1];
-        ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([512.0, 480.0 + menubar_height].into()));
+        ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([
+            game_window_width, 
+            game_window_height + menubar_height].into()));
         ctx.request_repaint();
 
         // TODO: break these out into separate files, the UI definitions are going to get very tall

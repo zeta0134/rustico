@@ -240,6 +240,7 @@ hidden = true
 
 "###;
 
+#[derive(Clone)]
 pub struct SettingsState {
     pub root: Value
 }
@@ -347,6 +348,59 @@ impl SettingsState {
     pub fn get(&self, path: String) -> Option<&Value> {
         let root_table = self.root.as_table().unwrap();
         return SettingsState::_get(path, root_table);
+    }
+
+    // Convenience functions, mostly used by the settings UI
+    pub fn get_boolean(&self, path: String) -> Option<bool> {
+        let root_table = self.root.as_table().unwrap();
+        match SettingsState::_get(path, root_table) {
+            Some(value) => {
+                match value {
+                    Value::Boolean(boolean_value) => {return Some(*boolean_value)},
+                    _ => {return None}
+                }
+            },
+            _ => {return None}
+        }
+    }
+
+    pub fn get_integer(&self, path: String) -> Option<i64> {
+        let root_table = self.root.as_table().unwrap();
+        match SettingsState::_get(path, root_table) {
+            Some(value) => {
+                match value {
+                    Value::Integer(integer_value) => {return Some(*integer_value)},
+                    _ => {return None}
+                }
+            },
+            _ => {return None}
+        }
+    }
+
+    pub fn get_float(&self, path: String) -> Option<f64> {
+        let root_table = self.root.as_table().unwrap();
+        match SettingsState::_get(path, root_table) {
+            Some(value) => {
+                match value {
+                    Value::Float(float_value) => {return Some(*float_value)},
+                    _ => {return None}
+                }
+            },
+            _ => {return None}
+        }
+    }
+
+    pub fn get_string(&self, path: String) -> Option<String> {
+        let root_table = self.root.as_table().unwrap();
+        match SettingsState::_get(path, root_table) {
+            Some(value) => {
+                match value {
+                    Value::String(string_value) => {return Some(string_value.into())},
+                    _ => {return None}
+                }
+            },
+            _ => {return None}
+        }
     }
 
     pub fn _set(path: String, current_table: &mut Map<String, Value>, new_value: Value) {

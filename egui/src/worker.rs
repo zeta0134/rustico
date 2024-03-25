@@ -20,6 +20,7 @@ lazy_static! {
 pub struct RenderedImage {
     pub width: usize,
     pub height: usize,
+    pub scale: usize,
     pub rgba_buffer: Vec<u8>,
 }
 
@@ -98,7 +99,27 @@ impl Worker {
             rustico_ui_common::Event::CloseApplication => {
                 println!("WORKER: application close requested, will exit after processing remaining events...");
                 self.exit_requested = true;
-            }
+            },
+            rustico_ui_common::Event::ApplyBooleanSetting(_,_) => {
+                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                    Arc::new(self.runtime_state.settings.clone())
+                ));
+            },
+            rustico_ui_common::Event::ApplyIntegerSetting(_,_) => {
+                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                    Arc::new(self.runtime_state.settings.clone())
+                ));
+            },
+            rustico_ui_common::Event::ApplyFloatSetting(_,_) => {
+                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                    Arc::new(self.runtime_state.settings.clone())
+                ));
+            },
+            rustico_ui_common::Event::ApplyStringSetting(_,_) => {
+                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                    Arc::new(self.runtime_state.settings.clone())
+                ));
+            },
             _ => {}
         }
         return events;
@@ -128,11 +149,11 @@ impl Worker {
         // active subwindows so they know to repaint)
         // (2048 is arbitrary, make this configurable later!)
         let mut repaint_needed = false;
-        while output_buffer_len < 256 {
-            self.runtime_state.handle_event(events::Event::NesRunScanline);
+        while output_buffer_len < 512 {
+            self.dispatch_event(events::Event::NesRunScanline);
             if self.runtime_state.nes.ppu.current_scanline == 242 {
                 // we just finished a game frame, so have the game window repaint itself
-                self.game_window.handle_event(&self.runtime_state, events::Event::RequestFrame);
+                self.dispatch_event(events::Event::RequestFrame);
                 repaint_needed = true;
             }
             let samples_i16 = self.runtime_state.nes.apu.consume_samples();
@@ -151,6 +172,7 @@ impl Worker {
                 Arc::new(RenderedImage{
                     width: self.game_window.canvas.width as usize,
                     height: self.game_window.canvas.height as usize,
+                    scale: if self.game_window.ntsc_filter == true {1} else {self.game_window.scale as usize},
                     rgba_buffer: Vec::from(self.game_window.canvas.buffer.clone())
                 })
             );
