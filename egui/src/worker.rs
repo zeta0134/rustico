@@ -1,3 +1,5 @@
+use crate::app;
+
 use rustico_ui_common::application::RuntimeState as RusticoRuntimeState;
 use rustico_ui_common::events;
 use rustico_ui_common::game_window::GameWindow;
@@ -26,9 +28,11 @@ pub struct RenderedImage {
 
 struct Worker {
     runtime_rx: Receiver<events::Event>,
-    shell_tx: Sender<crate::ShellEvent>,
+    shell_tx: Sender<app::ShellEvent>,
 
-    audio_stream: Box<dyn StreamTrait>,
+    // We need to keep the audio stream around so that it continues to run, but
+    // we never need to read it directly. Rust complains about this. :)
+    _audio_stream: Box<dyn StreamTrait>,
     runtime_state: RusticoRuntimeState,
     game_window: GameWindow,
 
@@ -36,7 +40,7 @@ struct Worker {
 }
 
 impl Worker {
-    pub fn new(runtime_rx: Receiver<events::Event>, shell_tx: Sender<crate::ShellEvent>) -> Worker {
+    pub fn new(runtime_rx: Receiver<events::Event>, shell_tx: Sender<app::ShellEvent>) -> Worker {
         let audio_stream = setup_audio_stream();
         let runtime_state = RusticoRuntimeState::new();
         let game_window = GameWindow::new();
@@ -44,7 +48,7 @@ impl Worker {
         return Worker{
             runtime_rx: runtime_rx,
             shell_tx: shell_tx,
-            audio_stream: audio_stream,
+            _audio_stream: audio_stream,
             runtime_state: runtime_state,
             game_window: game_window,
             exit_requested: false
@@ -91,7 +95,7 @@ impl Worker {
         match event {
             rustico_ui_common::Event::CartridgeLoaded(_id) => {
                 let has_sram = self.runtime_state.nes.mapper.has_sram();
-                self.shell_tx.send(crate::ShellEvent::HasSram(has_sram));
+                let _ = self.shell_tx.send(app::ShellEvent::HasSram(has_sram));
             }
             rustico_ui_common::Event::SaveSram(sram_id, sram_data) => {
                 self.save_sram(sram_id, &sram_data);
@@ -101,22 +105,22 @@ impl Worker {
                 self.exit_requested = true;
             },
             rustico_ui_common::Event::ApplyBooleanSetting(_,_) => {
-                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                let _ = self.shell_tx.send(app::ShellEvent::SettingsUpdated(
                     Arc::new(self.runtime_state.settings.clone())
                 ));
             },
             rustico_ui_common::Event::ApplyIntegerSetting(_,_) => {
-                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                let _ = self.shell_tx.send(app::ShellEvent::SettingsUpdated(
                     Arc::new(self.runtime_state.settings.clone())
                 ));
             },
             rustico_ui_common::Event::ApplyFloatSetting(_,_) => {
-                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                let _ = self.shell_tx.send(app::ShellEvent::SettingsUpdated(
                     Arc::new(self.runtime_state.settings.clone())
                 ));
             },
             rustico_ui_common::Event::ApplyStringSetting(_,_) => {
-                self.shell_tx.send(crate::ShellEvent::SettingsUpdated(
+                let _ = self.shell_tx.send(app::ShellEvent::SettingsUpdated(
                     Arc::new(self.runtime_state.settings.clone())
                 ));
             },
@@ -167,7 +171,7 @@ impl Worker {
         }
 
         if repaint_needed {
-            let repaint_event = crate::ShellEvent::ImageRendered(
+            let repaint_event = app::ShellEvent::ImageRendered(
                 "game_window".to_string(),
                 Arc::new(RenderedImage{
                     width: self.game_window.canvas.width as usize,
@@ -176,7 +180,7 @@ impl Worker {
                     rgba_buffer: Vec::from(self.game_window.canvas.buffer.clone())
                 })
             );
-            self.shell_tx.send(repaint_event);
+            let _ = self.shell_tx.send(repaint_event);
         }
     }
 }
@@ -222,7 +226,7 @@ pub fn setup_audio_stream() -> Box<dyn StreamTrait> {
     return Box::new(stream);
 }
 
-pub fn worker_main(runtime_rx: Receiver<events::Event>, shell_tx: Sender<crate::ShellEvent>) {
+pub fn worker_main(runtime_rx: Receiver<events::Event>, shell_tx: Sender<app::ShellEvent>) {
     // We don't need to DO anything with the stream, but we do need to keep it around
     // or it will stop playing.
     let mut worker = Worker::new(runtime_rx, shell_tx);
