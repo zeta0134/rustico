@@ -172,11 +172,11 @@ impl GameWindow {
                         }
                     });
                     ui.separator();
-                    if ui.button("Input").clicked() {
+                    if ui.button("Configure Input...").clicked() {
                         shell_events.push(ShellEvent::ToggleInputWindowShown);
                         ui.close_menu();
                     }
-                    if ui.button("Preferences").clicked() {
+                    if ui.button("Preferences...").clicked() {
                         ui.close_menu();
                     }
                 });
