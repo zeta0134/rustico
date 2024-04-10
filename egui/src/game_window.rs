@@ -116,7 +116,8 @@ impl GameWindow {
         let _ = runtime_tx.send(cartridge_load_event);
     }
 
-    pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState, runtime_tx: &mut Sender<events::Event>) {
+    pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState, runtime_tx: &mut Sender<events::Event>) -> Vec<ShellEvent> {
+        let mut shell_events: Vec<ShellEvent> = Vec::new();
         self.process_rendered_frames();
 
         egui::TopBottomPanel::top("game_window_top_panel").show(ctx, |ui| {
@@ -171,6 +172,10 @@ impl GameWindow {
                         }
                     });
                     ui.separator();
+                    if ui.button("Input").clicked() {
+                        shell_events.push(ShellEvent::ToggleInputWindowShown);
+                        ui.close_menu();
+                    }
                     if ui.button("Preferences").clicked() {
                         ui.close_menu();
                     }
@@ -214,6 +219,8 @@ impl GameWindow {
             game_window_width, 
             game_window_height + menubar_height].into()));
         ctx.request_repaint();
+
+        return shell_events;
     }
 }
 

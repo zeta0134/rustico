@@ -7,6 +7,7 @@ extern crate rustico_ui_common;
 
 mod app;
 mod game_window;
+mod input_window;
 mod worker;
 
 use eframe::egui;
