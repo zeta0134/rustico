@@ -592,10 +592,12 @@ impl Mmc5 {
         }
         if self.cpu_cycles_since_last_ppu_read == 4 {
             self.in_frame = false;
+            self.consecutive_nametable_count = 0;
             self.ppu_read_mode = PpuMode::PpuData;
         }
         if address == 0xFFFA || address == 0xFFFB {
             self.in_frame = false;
+            self.consecutive_nametable_count = 0;
             self.irq_pending = false;
             self.current_scanline = 0;
             self.ppu_read_mode = PpuMode::PpuData;

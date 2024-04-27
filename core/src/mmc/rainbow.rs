@@ -788,6 +788,7 @@ impl Rainbow {
         // If we go 3 CPU reads without any PPU access, assume rendering has stopped
         if self.cpu_cycles_since_last_ppu_read == 4 {
             self.in_frame = false;
+            self.consecutive_nametable_count = 0;
             self.in_hblank = false;
             self.ppu_read_mode = PpuMode::PpuData;
         }
@@ -795,6 +796,7 @@ impl Rainbow {
         // the scanline IRQ, if it is still pending
         if address == 0xFFFA || address == 0xFFFB {
             self.in_frame = false;
+            self.consecutive_nametable_count = 0;
             self.in_hblank = false;
             self.scanline_irq_pending = false;
             self.current_scanline = 0;
