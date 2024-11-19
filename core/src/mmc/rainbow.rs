@@ -1311,6 +1311,18 @@ impl Mapper for Rainbow {
         self.vrc6_pulse2.record_current_output();
         self.vrc6_sawtooth.record_current_output();
     }
+
+    fn has_sram(&self) -> bool {
+        return true;
+    }
+
+    fn get_sram(&self) -> Vec<u8> {
+        return self.prg_ram.as_vec().clone();
+    }
+
+    fn load_sram(&mut self, sram_data: Vec<u8>) {
+        *self.prg_ram.as_mut_vec() = sram_data;
+    }
 }
 
 // Provided courtesy of Broke Studio. The raster font contained within is assumed
