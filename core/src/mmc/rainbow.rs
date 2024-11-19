@@ -1201,14 +1201,13 @@ impl Mapper for Rainbow {
             0x4153 => {
                 self.scanline_irq_offset = data;
             },
-            
             0x4158 => {
-                self.cpu_irq_latch &= 0b1111_1111_0000_0000;
-                self.cpu_irq_latch |= data as u16;
-            },
-            0x4159 => {
                 self.cpu_irq_latch &= 0b0000_0000_1111_1111;
                 self.cpu_irq_latch |= (data as u16) << 8;
+            },
+            0x4159 => {
+                self.cpu_irq_latch &= 0b1111_1111_0000_0000;
+                self.cpu_irq_latch |= data as u16;
             },
             0x415A => {
                 self.cpu_irq_auto_repeat = (data & 0b0000_0001) != 0;
