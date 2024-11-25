@@ -802,7 +802,6 @@ impl Rainbow {
             self.current_scanline = 0;
             self.ppu_read_mode = PpuMode::PpuData;
         }
-        self.scanline_jitter_counter = self.scanline_jitter_counter.wrapping_add(1);
     }
 }
 
@@ -823,6 +822,7 @@ impl Mapper for Rainbow {
         self.vrc6_pulse2.clock();
         self.vrc6_sawtooth.clock();
         self.clock_irq();
+        self.scanline_jitter_counter = self.scanline_jitter_counter.wrapping_add(1);
     }
 
     fn irq_flag(&self) -> bool {
