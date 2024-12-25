@@ -126,7 +126,6 @@ impl INesHeader {
             return size;
         } else {
             // simple mode
-            println!("used simple mode!");
             return (((msb as usize) << 8) + (lsb as usize)) * 16 * 1024;
         }
     }
@@ -164,7 +163,7 @@ impl INesHeader {
             return base.pow(exponent) * multiplier;
         } else {
             // simple mode
-            return ((msb as usize) << 8) + (lsb as usize) * 8 * 1024;
+            return (((msb as usize) << 8) + (lsb as usize)) * 8 * 1024;
         }
     }
 
