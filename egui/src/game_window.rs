@@ -117,6 +117,8 @@ impl GameWindow {
     }
 
     pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState, runtime_tx: &mut Sender<events::Event>) -> Vec<ShellEvent> {
+        let statusbar_thing = format!("Frames queued: {:?}", self.last_rendered_frames.len());
+
         let mut shell_events: Vec<ShellEvent> = Vec::new();
         self.process_rendered_frames();
 
@@ -202,6 +204,12 @@ impl GameWindow {
             });
         });
 
+        egui::TopBottomPanel::bottom("game_window_bottom_panel").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.label(statusbar_thing);
+            });
+        });
+
         let game_window_width = (self.texture_handle.size()[0] * self.game_window_scale) as f32;
         let game_window_height = (self.texture_handle.size()[1] * self.game_window_scale) as f32;
         egui::CentralPanel::default().frame(egui::Frame::none()).show(ctx, |ui| {
@@ -214,10 +222,10 @@ impl GameWindow {
             );
         });
 
-        let menubar_height = ctx.style().spacing.interact_size[1];
+        let menubar_height = ctx.style().spacing.interact_size[1] + 6.0;
         ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([
             game_window_width, 
-            game_window_height + menubar_height].into()));
+            game_window_height + menubar_height + menubar_height].into()));
         ctx.request_repaint();
 
         return shell_events;

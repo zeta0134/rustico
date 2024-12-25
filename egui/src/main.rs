@@ -11,6 +11,7 @@ mod input_window;
 mod worker;
 
 use eframe::egui;
+use eframe::egui_wgpu;
 use rustico_ui_common::events;
 
 use std::sync::mpsc::{channel};
@@ -31,6 +32,11 @@ fn main() -> Result<(), eframe::Error> {
             //.with_inner_size([512.0, 480.0]),
             .with_resizable(false)
             .with_inner_size([512.0, 480.0]),
+        vsync: true,
+        wgpu_options: egui_wgpu::WgpuConfiguration {
+            present_mode: eframe::wgpu::PresentMode::Mailbox,
+            ..Default::default()
+        },
         ..Default::default()
     };
 

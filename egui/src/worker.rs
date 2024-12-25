@@ -19,6 +19,7 @@ lazy_static! {
     pub static ref AUDIO_OUTPUT_BUFFER: Mutex<VecDeque<f32>> = Mutex::new(VecDeque::new());
 }
 
+#[derive(Clone, Debug)]
 pub struct RenderedImage {
     pub width: usize,
     pub height: usize,
@@ -151,7 +152,7 @@ impl Worker {
         // Now we do fun stuff: as long as we are under the audio threshold, run one scanline. If we happen
         // to complete a frame while doing this, update the game window texture (and later, call "draw" on all
         // active subwindows so they know to repaint)
-        // (2048 is arbitrary, make this configurable later!)
+        // (512 is arbitrary, make this configurable later!)
         let mut repaint_needed = false;
         while output_buffer_len < 512 {
             self.dispatch_event(events::Event::NesRunScanline);

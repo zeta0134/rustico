@@ -1,6 +1,7 @@
 use crate::app;
 
 use app::ShellEvent;
+use app::detect_key_events;
 use eframe::egui;
 use std::sync::mpsc::{Sender};
 use rustico_ui_common::events;
@@ -9,6 +10,7 @@ use rustico_ui_common::settings::SettingsState;
 pub struct InputWindow {
     pub shown: bool,
     pub mapping_in_progress: bool,
+    pub mapping_hotkey: bool,
     pub mapping_action: String,
 }
 
@@ -17,12 +19,20 @@ impl InputWindow {
         return Self {
             shown: false,
             mapping_in_progress: false,
+            mapping_hotkey: false,
             mapping_action: "".to_string(),
         };
     }
 
-    pub fn handle_event(&mut self, event: ShellEvent) {
+    pub fn handle_event(&mut self, event: ShellEvent, runtime_tx: &mut Sender<events::Event>) {
         match event {
+            ShellEvent::RawButtonPress(button_name) => {
+                //println!("got button press event: {:?}", button_name);
+                if self.mapping_hotkey == false {
+                    let _ = runtime_tx.send(events::Event::StoreStringSetting(self.mapping_action.clone(), button_name));
+                    self.mapping_in_progress = false;
+                }
+            }
             _ => {}
         }
     }
@@ -52,8 +62,8 @@ impl InputWindow {
         ui.end_row();
     }
 
-    pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState, _runtime_tx: &mut Sender<events::Event>) -> Vec<ShellEvent> {
-        let shell_events: Vec<ShellEvent> = Vec::new();
+    pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState) -> Vec<ShellEvent> {
+        let mut shell_events: Vec<ShellEvent> = Vec::new();
 
         if self.shown == false {
             return shell_events;
@@ -69,8 +79,12 @@ impl InputWindow {
                     class == egui::ViewportClass::Immediate,
                     "This egui backend doesn't support multiple viewports!"
                 );
+                ctx.input(|i| {
+                    shell_events.extend(detect_key_events(i));
+                });
                 if ctx.input(|i| i.viewport().close_requested()) {
                     self.shown = false;
+                    self.mapping_in_progress = false; // if we were mapping something, cancel that out
                 }
                 egui::CentralPanel::default().show(ctx, |ui| {
                     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {

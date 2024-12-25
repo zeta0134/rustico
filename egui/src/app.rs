@@ -8,12 +8,51 @@ use rustico_ui_common::events;
 use std::sync::Arc;
 use std::sync::mpsc::{Sender, Receiver, TryRecvError};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ShellEvent {
     ImageRendered(String, Arc<worker::RenderedImage>),
     HasSram(bool),
     SettingsUpdated(Arc<rustico_ui_common::settings::SettingsState>),
     ToggleInputWindowShown,
+    RawButtonPress(String),
+    RawButtonRelease(String),
+    RawHotkeyPress(String),
+}
+
+fn normalized_key_name(key: &egui::Key) -> String {
+    return key.name().to_string()
+}
+
+fn normalized_hotkey_name(key: &egui::Key, modifiers: &egui::Modifiers) -> String {
+    let mut key_components: Vec<String> = Vec::new();
+    if modifiers.mac_cmd == true {key_components.push("Cmd".to_string())}
+    if modifiers.ctrl == true {key_components.push("Ctrl".to_string())}
+    if modifiers.alt == true {key_components.push("Alt".to_string())}
+    if modifiers.shift == true {key_components.push("Shift".to_string())}
+    key_components.push(key.name().to_string());
+    let key_string = key_components.join("+");
+    return key_string
+}
+
+pub fn detect_key_events(input_state: &egui::InputState) -> Vec<ShellEvent> {
+    let mut shell_events: Vec<ShellEvent> = Vec::new();
+    for event in &input_state.events {
+        match event {
+            egui::Event::Key{key, physical_key: _, pressed, repeat: _, modifiers} => {
+                let key_name = normalized_key_name(key);
+                if *pressed == true {
+                    //println!("Firing press event");
+                    let hotkey_name = normalized_hotkey_name(key, modifiers);
+                    shell_events.push(ShellEvent::RawButtonPress(key_name));
+                    shell_events.push(ShellEvent::RawHotkeyPress(hotkey_name));
+                } else {
+                    shell_events.push(ShellEvent::RawButtonRelease(key_name));
+                }
+            },
+            _ => {/* don't care */}
+        }
+    }
+    return shell_events;
 }
 
 pub struct RusticoApp {
@@ -77,7 +116,7 @@ impl RusticoApp {
             _ => {}
         }
         self.game_window.handle_event(event.clone());
-        self.input_window.handle_event(event.clone());
+        self.input_window.handle_event(event.clone(), &mut self.runtime_tx);
     }
 
     fn apply_player_input(&mut self, ctx: &egui::Context) {
@@ -164,14 +203,16 @@ impl eframe::App for RusticoApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let mut shell_events: Vec<ShellEvent> = Vec::new();
 
-        // Presumably this is called at some FPS? I guess we can find out!
+        ctx.input(|i| {
+            shell_events.extend(detect_key_events(i));
+        });
         self.apply_player_input(ctx);
         self.receive_worker_shell_events();
 
         // Always run all viewport update routines
         // (the viewports contain logic to show/hide themselves as appropriate)
         shell_events.extend(self.game_window.update(ctx, &self.settings_cache, &mut self.runtime_tx));
-        shell_events.extend(self.input_window.update(ctx, &self.settings_cache, &mut self.runtime_tx));
+        shell_events.extend(self.input_window.update(ctx, &self.settings_cache));
 
         for event in shell_events {
             self.handle_event(event);

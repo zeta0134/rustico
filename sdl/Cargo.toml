@@ -7,7 +7,7 @@ build = "build.rs"
 [dependencies]
 dirs = "5.0.1"
 image = "0.24.6"
-sdl2 = "0.36.0"
+sdl2 = "0.35.2"
 nfd2 = "0.3.1"
 rustico-core = { path = "../core" }
 rustico-ui-common = { path = "../ui-common" }
