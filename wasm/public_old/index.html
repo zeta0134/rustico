@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rustico</title>
+  <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+  <meta charset="utf-8">
+  <link href="style.css" rel="stylesheet">
+  <script src="./input.js"></script>
+  <script src="./touch.js"></script>
+  <script src="./main.js"></script>
+</head>
+<body>
+  <div id="navbar">
+    <div id="header">
+      <h1>Rustico</h1>
+    </div>
+    <ul id="main_menu">
+      <li id="power_light"><div id="led" class=""></div></li>
+      <li><button name="playfield" class="active">Play</button></li>
+      <li><label for="file-loader">Load</label><input type="file" id="file-loader" name="file-loader" /></li>
+      <li><button name="configure_input">Input</button></li>
+      <li><button name="jam">Jam</button></li>
+      <li><button name="fullscreen">Fullscreen</button></li>
+    </ul>
+    <div id="credits">
+      <span id="fps-counter">FPS: -</span> 
+      - <a href="https://github.com/zeta0134" target="_blank">zeta0134</a>
+      <a href="https://github.com/zeta0134/rustico" target="_blank"><img alt="Source on Github" src="github-logo-48px-black.png" /></a>
+      <a href="https://www.patreon.com/user?u=2900989" target="_blank"><img alt="Support me on Patreon" src="patreon-logo-48px-black.png" /></a>
+    </div>
+  </div>
+  <div class="banner active error" id="audio-context-warning">
+    <b>Waiting for Audio Context...</b> (You may need to click the page.)
+  </div>
+  <div class="banner" name="super-bat-puncher.nes">
+    Now Playing: <a href="http://www.morphcat.de/superbatpuncher/">Super Bat Buncher</a> 
+    - <a href="http://www.morphcat.de/">Morphcat Games</a>
+  </div>
+  <div class="banner" name="2a03puritans.nes">
+    Now Playing: <a href="http://rainwarrior.ca/projects/nes/2a03puritans.html">2A03 Puritans</a>
+     - Programmed by <a href="http://rainwarrior.ca/">Rainwarrior</a>, Music by <a href="https://bitpuritans.bandcamp.com/">bitpuritans</a>
+     - Album on <a href="https://bitpuritans.bandcamp.com/album/2a03-puritans">Bandcamp</a>
+     - Physical Cartridge @ <a href="http://www.infiniteneslives.com/2A03puritans.php">INFINITELIVES</a>
+  </div>
+  <div class="banner" name="pico.nes">
+    Now Playing: <a href="http://rainwarrior.ca/projects/nes/pico.html">Famicompo Pico 1</a>
+    - Programmed by <a href="http://rainwarrior.ca/">Rainwarrior</a>
+    - Album on <a href="https://famicompo.bandcamp.com/album/famicompo-pico-2014">Bandcamp</a>
+    - Physical Cartridge @ <a href="http://www.infiniteneslives.com/famicompo.php">INFINITELIVES</a>
+  </div>
+  <div class="banner" name="pico2.nes">
+    Now Playing: <a href="http://rainwarrior.ca/projects/nes/pico.html">Famicompo Pico 2</a>
+    - Programmed by <a href="http://rainwarrior.ca/">Rainwarrior</a>
+  </div>
+  <div class="banner" name="Shovel_Knight_Music.nsf">
+    Now Playing: <a href="https://virt.bandcamp.com/album/shovel-knight-original-soundtrack">Shovel Knight OST</a>
+    - Composed by 
+      <a href="https://virt.bandcamp.com/">Jake Kaufman</a>, 
+      <a href="https://bravewave.net/manami-matsumae">Manami Matsumae (松前 真奈美)</a>
+    - <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">
+        <img alt="Creative Commons License" style="border-width:0; vertical-align: text-bottom" src="cc-by-nc-sa-logo.png" />
+      </a>
+  </div>
+  <div class="banner" name="action53v1.nes">
+    Now Playing: <a href="https://action53.itch.io/vol1">Action 53 Volume One Function 16</a>
+    - 20 Radical Games & Toys for Your NES!
+  </div>
+  <div class="banner" name="action53v2.nes">
+    Now Playing: <a href="https://action53.itch.io/vol2">Double Action 53: Volume 2</a>
+    - 19 More Games & Toys for Your NES!
+  </div>
+  <div class="banner" name="action53v3.nes">
+    Now Playing: <a href="https://action53.itch.io/vol3">Action 53 Vol. 3: Revenge of the Twins</a>
+    - 23 New Games & Toys for Your NES!
+  </div>
+  <div class="banner" name="action53v4.nes">
+    Now Playing: <a href="https://action53.itch.io/vol4">Action 53 Vol. 4: Actually 54</a>
+    - 54 Awesome Games and Toys for Your NES!
+  </div>
+    <div class="banner" name="nesdev-compo-19.nes">
+    Now Playing: <a href="https://action53.itch.io/compocart19">NESDev '19 Compo Cart</a>
+    - An anthology multicart for the NES.
+  </div>
+  <div class="debug-box" id="debug-box">
+    <b>=== Profiling Results ===</b><br />
+    <pre id="profiling-results">would go here</pre>
+  </div>
+  
+  <div id="content_area">
+    <div class="tab_content active" id="playfield">
+      <div class="canvas_container">
+        <canvas id="pixels" width="256" height="240"></canvas>
+      </div>
+      <div class="round-button-area">
+        <div id="button_b" class="circle" style="position: absolute; top: 50px; left: 0px;"></div>
+        <div id="button_a" class="circle" style="position: absolute; top: 0px; left: 130px;"></div>
+        <div id="button_ab" class="small circle" style="position: absolute; top: 50px; left: 90px;"></div>
+      </div>
+      <div class="pill-button-area">
+        <div id="button_select" class="rectangle" style="position: absolute; top: 0px; left: 0px;"></div>
+        <div id="button_start" class="rectangle" style="position: absolute; top: 0px; left: 120px;"></div>
+      </div>
+      <div id="d_pad" class="dpad-area">
+        <div id="d_pad_up"    class="d-pad-button" style="width: 60px; height: 60px; position: absolute; top:   0px; left:  60px;" ></div>
+        <div id="d_pad_down"  class="d-pad-button" style="width: 60px; height: 60px; position: absolute; top: 120px; left:  60px;" ></div>
+        <div id="d_pad_left"  class="d-pad-button" style="width: 60px; height: 60px; position: absolute; top:  60px; left:   0px;" ></div>
+        <div id="d_pad_right" class="d-pad-button" style="width: 60px; height: 60px; position: absolute; top:  60px; left: 120px;" ></div>
+      </div>
+    </div>
+    <div class="tab_content" id="configure_input">
+      <div class="flex_columns">
+        <div>
+          <h1>P1 - Standard</h1>
+          <table>
+            <tr><td>A     </td><td><button id="p1_a"      data-controller="standard" data-slot="1" data-key="0"></button></td></tr>
+            <tr><td>B     </td><td><button id="p1_b"      data-controller="standard" data-slot="1" data-key="1"></button></td></tr>
+            <tr><td>Select</td><td><button id="p1_select" data-controller="standard" data-slot="1" data-key="2"></button></td></tr>
+            <tr><td>Start </td><td><button id="p1_start"  data-controller="standard" data-slot="1" data-key="3"></button></td></tr>
+            <tr><td>Up    </td><td><button id="p1_up"     data-controller="standard" data-slot="1" data-key="4"></button></td></tr>
+            <tr><td>Down  </td><td><button id="p1_down"   data-controller="standard" data-slot="1" data-key="5"></button></td></tr>
+            <tr><td>Left  </td><td><button id="p1_left"   data-controller="standard" data-slot="1" data-key="6"></button></td></tr>
+            <tr><td>Right </td><td><button id="p1_right"  data-controller="standard" data-slot="1" data-key="7"></button></td></tr>
+          </table>
+        </div>
+        <div>
+          <h1>P2 - Standard</h1>
+          <table>
+            <tr><td>A     </td><td><button id="p2_a"      data-controller="standard" data-slot="2" data-key="0"></button></td></tr>
+            <tr><td>B     </td><td><button id="p2_b"      data-controller="standard" data-slot="2" data-key="1"></button></td></tr>
+            <tr><td>Select</td><td><button id="p2_select" data-controller="standard" data-slot="2" data-key="2"></button></td></tr>
+            <tr><td>Start </td><td><button id="p2_start"  data-controller="standard" data-slot="2" data-key="3"></button></td></tr>
+            <tr><td>Up    </td><td><button id="p2_up"     data-controller="standard" data-slot="2" data-key="4"></button></td></tr>
+            <tr><td>Down  </td><td><button id="p2_down"   data-controller="standard" data-slot="2" data-key="5"></button></td></tr>
+            <tr><td>Left  </td><td><button id="p2_left"   data-controller="standard" data-slot="2" data-key="6"></button></td></tr>
+            <tr><td>Right </td><td><button id="p2_right"  data-controller="standard" data-slot="2" data-key="7"></button></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="tab_content" id="jam">
+      <div class="apu_container">
+        <div class="flex_rows">
+          <div class="flex_columns">
+            <div class="jam_pixels_container">
+              <canvas id="jam_pixels" width="256" height="240"></canvas>
+            </div>
+          </div>
+          <div class="flex_columns">
+            <div class="piano_roll_container">
+              <canvas id="piano_roll_window" width="480" height="270"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
