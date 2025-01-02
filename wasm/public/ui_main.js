@@ -1,5 +1,6 @@
+import rustico from "./rustico.js";
+
 function load_cartridge_by_url(url) {
-  save_sram();
   var rawFile = new XMLHttpRequest();
   rawFile.overrideMimeType("application/octet-stream");
   rawFile.open("GET", url, true);
@@ -7,18 +8,18 @@ function load_cartridge_by_url(url) {
   rawFile.onreadystatechange = function() {
     if (rawFile.readyState === 4 && rawFile.status == "200") {
       console.log(rawFile.responseType);
-      cart_data = new Uint8Array(rawFile.response);
-      load_cartridge(cart_data);
+      let cart_data = new Uint8Array(rawFile.response);
+      rustico.load_cartridge(cart_data);
     }
   }
   rawFile.send(null);
 }
 
 async function onready() {
-  await emu_init();
-  set_active_panels("#testId", null);
+  await rustico.init();
+  rustico.set_active_panels("#testId", null);
 
-  document.querySelector("#activateAudio").addEventListener("click", try_to_start_audio);
+  document.querySelector("#activateAudio").addEventListener("click", rustico.try_to_start_audio);
 
   load_cartridge_by_url("tactus.nes");
 }

@@ -1,3 +1,5 @@
+var rustico = {};
+
 // Bits for actually running the emulator.
 // TODO: extract this whooole thing into a separate module and make
 // at least a pseudo-API as you go. As you work: comment above each
@@ -67,76 +69,12 @@ function rpc(task, args) {
   });
 }
 
-function automatic_frameskip() {
-  // first off, do we have enough profiling data collected?
-  if (g_trouble_detector.frames_requested >= 60) {
-    let audio_fail_percent = g_trouble_detector.failed_samples / g_trouble_detector.successful_samples;
-    if (g_frameskip < 2) {
-      // if our audio context is running behind, let's try
-      // rendering fewer frames to compensate
-      if (audio_fail_percent > g_increase_frameskip_threshold) {
-        g_trouble_detector.trouble_count += 1;
-        g_trouble_detector.got_better_count = 0;
-        console.log("Audio failure percentage: ", audio_fail_percent);
-        console.log("Trouble count incremented to: ", g_trouble_detector.trouble_count);
-        if (g_trouble_detector.trouble_count > 3) {
-          // that's quite enough of that
-          g_frameskip += 1;
-          g_trouble_detector.trouble_count = 0;
-          console.log("Frameskip increased to: ", g_frameskip);
-          console.log("Trouble reset")
-        }
-      } else {
-        // Slowly recover from brief trouble spikes
-        // without taking action
-        if (g_trouble_detector.trouble_count > 0) {
-          g_trouble_detector.trouble_count -= 1;
-          console.log("Trouble count relaxed to: ", g_trouble_detector.trouble_count);
-        }
-      }
-    }
-    if (g_frameskip > 0) {
-      // Perform a bunch of sanity checks to see if it looks safe to
-      // decrease frameskip.
-      if (audio_fail_percent < g_increase_frameskip_threshold) {
-        // how long would it take to render one frame right now?
-        let frame_render_cost = g_profiling_results.render_all_panels;
-        let cost_with_headroom = frame_render_cost * g_decrease_frameskip_headroom;
-        // Would a full render reliably fit in our idle time?
-        if (cost_with_headroom < g_profiling_results.idle) {
-          console.log("Frame render costs: ", frame_render_cost);
-          console.log("With headroom: ", cost_with_headroom);
-          console.log("Idle time currently: ", g_profiling_results.idle);
-          g_trouble_detector.got_better_count += 1;
-          console.log("Recovery count increased to: ", g_trouble_detector.got_better_count);
-        }
-        if (cost_with_headroom > g_profiling_results.idle) {
-          if (g_trouble_detector.got_better_count > 0) {
-            g_trouble_detector.got_better_count -= 1;
-            console.log("Recovery count decreased to: ", g_trouble_detector.got_better_count);
-          }
-        }
-        if (g_trouble_detector.got_better_count >= 10) {
-          g_frameskip -= 1;
-          console.log("Performance recovered! Lowering frameskip by 1 to: ");
-          g_trouble_detector.got_better_count = 0;
-        }
-      }
-    }
-
-    // now reset the counters for the next run
-    g_trouble_detector.frames_requested = 0;
-    g_trouble_detector.failed_samples = 0;
-    g_trouble_detector.successful_samples = 0;
-  }
-}
-
 async function init_audio_context() {
   g_audio_context = new AudioContext({
     latencyHint: 'interactive',
     sampleRate: 44100,
   });
-  await g_audio_context.audioWorklet.addModule('audio_processor.js');
+  await g_audio_context.audioWorklet.addModule('rustico_audio_processor.js');
   g_nes_audio_node = new AudioWorkletNode(g_audio_context, 'nes-audio-processor');
   g_nes_audio_node.connect(g_audio_context.destination);
   g_nes_audio_node.port.onmessage = handle_audio_message;
@@ -156,7 +94,7 @@ function handle_audio_message(e) {
 function sync_to_audio() {
   // On mobile browsers, sometimes window.setTimeout isn't called often enough to reliably
   // queue up single frames; try to catch up by up to 4 of them at once.
-  for (i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) {
     // Never, for any reason, request more than 10 frames at a time. This prevents
     // the message queue from getting flooded if the emulator can't keep up.
     if (g_pending_frames < 10) {
@@ -220,8 +158,8 @@ function render_loop() {
       const typed_pixels = new Uint8ClampedArray(panel.image_buffer);
       // TODO: don't hard-code the panel size here
       let rendered_frame = new ImageData(typed_pixels, panel.width, panel.height);
-      canvas = document.querySelector(panel.target_element);
-      ctx = canvas.getContext("2d", { alpha: false });
+      let canvas = document.querySelector(panel.target_element);
+      let ctx = canvas.getContext("2d", { alpha: false });
       ctx.putImageData(rendered_frame, 0, 0);
       ctx.imageSmoothingEnabled = false;
     }
@@ -372,9 +310,9 @@ async function emu_onready() {
 // Note: simply sets up the emulator's basic run context. Rustico boots with a default
 // cartridge, so we choose not to perform any fancy autoloading behavior or other nonsense
 // here. Call / Create those API functions as needed.
-function emu_init() {
+rustico.init = function() {
   const initPromise = new Promise((resolve, reject) => {
-    g_worker = new Worker('emu_worker.js');
+    g_worker = new Worker('rustico_worker.js');
     g_worker.onmessage = function(e) {
       if (e.data.type == "init") {
         emu_onready().then(resolve);
@@ -418,20 +356,21 @@ function emu_init() {
   return initPromise;  
 }
 
-function set_active_panels(screen_target_element, piano_roll_target_element) {
+rustico.set_active_panels = function (screen_target_element, piano_roll_target_element) {
   g_screen_target_element = screen_target_element;
   g_piano_roll_target_element = piano_roll_target_element
 }
 
-function set_p1_keys(key_state) {
+rustico.set_p1_keys = function (key_state) {
   g_p1_keys = key_state;
 }
 
-function set_p2_keys(key_state) {
+rustico.set_p2_keys = function(key_state) {
   g_p2_keys = key_state;
 }
 
-async function load_cartridge(cart_data) {
+rustico.load_cartridge = async function(cart_data) {
+  save_sram();
   console.log("Attempting to load cart with length: ", cart_data.length);
   await rpc("load_cartridge", [cart_data]);
   console.log("Cart data loaded?");
@@ -440,6 +379,8 @@ async function load_cartridge(cart_data) {
   load_sram();
 }
 
-function try_to_start_audio() {
+rustico.try_to_start_audio = function() {
   g_audio_context.resume();
 }
+
+export default rustico;

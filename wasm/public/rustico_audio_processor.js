@@ -1,4 +1,3 @@
-// An example thing, obviously fix this
 class NesAudioProcessor extends AudioWorkletProcessor {
   constructor (...args) {
     super(...args)
