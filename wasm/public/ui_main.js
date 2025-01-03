@@ -38,11 +38,20 @@ function update_click_to_play_overlays() {
   }
 }
 
+function collect_and_set_volume() {
+    let desiredVolume = document.querySelector("#volume").value;
+    rustico.set_volume(desiredVolume);
+}
+
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#testId", null);
 
   document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);
+  document.querySelector("#volume").addEventListener("change", collect_and_set_volume);
+  document.querySelector("#volume").addEventListener("input", collect_and_set_volume);
+
+
   window.setInterval(update_click_to_play_overlays, 100);
 
   load_cartridge_by_url("tactus.nes");

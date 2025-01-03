@@ -3,12 +3,16 @@ class NesAudioProcessor extends AudioWorkletProcessor {
     super(...args)
     this.sampleBuffer = new Int16Array(0);
     this.lastPlayedSample = 0;
+    this.volume = 100.0;
     this.port.onmessage = (e) => {
       if (e.data.type == "samples") {
         let mergedBuffer = new Int16Array(this.sampleBuffer.length + e.data.samples.length);
         mergedBuffer.set(this.sampleBuffer);
         mergedBuffer.set(e.data.samples, this.sampleBuffer.length);
         this.sampleBuffer = mergedBuffer;
+      }
+      if (e.data.type == "volume") {
+        this.volume = e.data.volume;
       }
     }
   }
@@ -22,8 +26,8 @@ class NesAudioProcessor extends AudioWorkletProcessor {
       // to every channel on the output. (I'm guessing usually 2?)
       output.forEach(channel => {
         for (let i = 0; i < channel.length; i++) {
-          // Convert from i16 to float, ranging from -1 to 1
-          channel[i] = (this.sampleBuffer[i] / 32768);
+          // Convert from i16 to float, ranging from -1 to 1, while also applying volume
+          channel[i] = (this.sampleBuffer[i] / 32768) * this.volume / 100.0;
         }
       })
       // Set the new last played sample, this will be our hold value if we have an underrun

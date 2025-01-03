@@ -398,6 +398,10 @@ rustico.run_status = function() {
   return "running";
 }
 
+rustico.set_volume = function(desiredVolume) {
+  g_nes_audio_node.port.postMessage({"type": "volume", "volume": desiredVolume});
+}
+
 rustico._intentionally_break_audio = function() {
   g_audio_context.suspend();
 }
