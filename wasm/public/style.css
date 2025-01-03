@@ -1,0 +1,41 @@
+.canvas-container {
+	width: 512px;
+	height: 480px;
+}
+
+.canvas-container canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -o-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+    image-rendering: pixelated;
+}
+
+.canvas-container img {
+	width: 100%;
+	height: 100%;
+	display: none;
+
+	image-rendering: -moz-crisp-edges;
+    image-rendering: -o-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+    image-rendering: pixelated;
+}
+
+.canvas-container.inactive canvas {
+	display: none;
+}
+
+.canvas-container.inactive img {
+	display: block;
+}
+
+.canvas-container.inactive:hover img {
+	filter: brightness(1.75);
+	cursor: pointer;
+}

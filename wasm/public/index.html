@@ -3,13 +3,15 @@
 <head>
   <title>Rustico</title>
   <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+  <link href="./style.css" rel="stylesheet">
   <meta charset="utf-8">
   <script type="module" src="./ui_main.js"></script>
 </head>
 <body>
   <h1>Hello World!</h1>
-  <canvas id="testId" width="256" height="240"></canvas>
-  <br/>
-  <button id="activateAudio">Start Audio</button>
+  <div class="canvas-container inactive">
+    <img src="./click_to_play.png" alt="Click To Play" />
+    <canvas id="testId" width="256" height="240"></canvas>
+  </div>
 </body>
 </html>

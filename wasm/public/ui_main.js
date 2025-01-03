@@ -1,4 +1,10 @@
 import rustico from "./rustico.js";
+// Mostly for ease of debugging
+window.rustico = rustico;
+
+
+// Global UI state
+let last_run_state = "";
 
 function load_cartridge_by_url(url) {
   var rawFile = new XMLHttpRequest();
@@ -15,11 +21,29 @@ function load_cartridge_by_url(url) {
   rawFile.send(null);
 }
 
+function update_click_to_play_overlays() {
+  let run_status = rustico.run_status();
+  if (run_status == last_run_state) {
+    return;
+  }
+  last_run_state = run_status;
+  if (run_status == "audio-stuck") {
+    document.querySelectorAll(".canvas-container").forEach(function(element) {
+      element.classList.add("inactive");
+    });
+  } else {
+    document.querySelectorAll(".canvas-container").forEach(function(element) {
+      element.classList.remove("inactive");
+    });
+  }
+}
+
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#testId", null);
 
-  document.querySelector("#activateAudio").addEventListener("click", rustico.try_to_start_audio);
+  document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);
+  window.setInterval(update_click_to_play_overlays, 100);
 
   load_cartridge_by_url("tactus.nes");
 }

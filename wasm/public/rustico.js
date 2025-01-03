@@ -1,5 +1,8 @@
 var rustico = {};
 
+const AUDIO_STUCK_THRESHOLD_MS = 1000 * 2;
+const DESIRED_SAMPLERATE = 44100;
+
 // Bits for actually running the emulator.
 // TODO: extract this whooole thing into a separate module and make
 // at least a pseudo-API as you go. As you work: comment above each
@@ -10,7 +13,7 @@ let g_pending_frames = 0;
 let g_frames_since_last_fps_count = 0;
 let g_rendered_frames = [];
 
-let g_last_frame_sample_count = 44100 / 60; // Close-ish enough
+let g_last_frame_sample_count = DESIRED_SAMPLERATE / 60; // Close-ish enough. Will be overwritten almost right away.
 let g_audio_samples_buffered = 0;
 let g_new_frame_sample_threshold = 4096; // under which we request a new frame
 let g_audio_overrun_sample_threshold = 8192; // over which we *drop* samples
@@ -72,7 +75,7 @@ function rpc(task, args) {
 async function init_audio_context() {
   g_audio_context = new AudioContext({
     latencyHint: 'interactive',
-    sampleRate: 44100,
+    sampleRate: DESIRED_SAMPLERATE,
   });
   await g_audio_context.audioWorklet.addModule('rustico_audio_processor.js');
   g_nes_audio_node = new AudioWorkletNode(g_audio_context, 'nes-audio-processor');
@@ -381,6 +384,22 @@ rustico.load_cartridge = async function(cart_data) {
 
 rustico.try_to_start_audio = function() {
   g_audio_context.resume();
+}
+
+// Returns a simple string that echoes the true run state
+// of the emulator. May indicate failure states such as "audio-stuck"
+rustico.run_status = function() {
+  let time_since_last_audio_packet = Date.now() - g_audio_last_packet;
+  if (time_since_last_audio_packet > AUDIO_STUCK_THRESHOLD_MS) {
+    return "audio-stuck";
+  }
+  // For now, the only other status is just "running" since we haven't implemented
+  // pause or debug states.
+  return "running";
+}
+
+rustico._intentionally_break_audio = function() {
+  g_audio_context.suspend();
 }
 
 export default rustico;
