@@ -57,3 +57,23 @@ body, html {
 	filter: brightness(1.75);
 	cursor: pointer;
 }
+
+.menu-overlay {
+	position: absolute;
+	top: 0%;
+	left: 0%;
+}
+
+.touch-toggle-overlay {
+	position: absolute;
+	top: 0%;
+	right: 0%;
+}
+
+.touch-toggle-overlay input {
+	display: none;
+}
+
+.touch-toggle-overlay.touch-controls-active input {
+	display: inline;
+}

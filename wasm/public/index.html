@@ -9,7 +9,6 @@
   <script type="module" src="./ui_main.js"></script>
 </head>
 <body>
-  <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
   <div class="canvas-container inactive">
     <img src="./click_to_play.png" alt="Click To Play" />
     <canvas id="testId" width="256" height="240"></canvas>
@@ -35,6 +34,14 @@
     <div class="pill-button-area">
       <div id="button_start" class="rectangle"></div>
     </div>
+  </div>
+
+  <div class="menu-overlay">
+    <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
+  </div>
+  <div class="touch-toggle-overlay touch-controls-active">
+    <input type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
+    <button id="touchToggle">🎮</button>
   </div>
 </body>
 </html>

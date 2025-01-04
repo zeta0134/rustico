@@ -56,6 +56,40 @@ function set_keys() {
   console.log("new p1 keys", p1_keys);
 }
 
+function hide_touch_controls() {
+  document.querySelectorAll(".touch-controls-active").forEach(function(e) {
+    e.classList.remove("touch-controls-active");
+    e.classList.add("touch-controls-inactive");
+  });
+}
+
+function show_touch_controls() {
+  document.querySelectorAll(".touch-controls-inactive").forEach(function(e) {
+    e.classList.remove("touch-controls-inactive");
+    e.classList.add("touch-controls-active");
+  });
+}
+
+function toggle_touch_controls() {
+  let elementsWithTouchActiveClass = document.querySelectorAll(".touch-controls-active");
+  let touchControlsActive = elementsWithTouchActiveClass.length > 0;
+  if (touchControlsActive) {
+    hide_touch_controls();  
+  } else {
+    show_touch_controls();
+  }
+}
+
+function resize_touch_controls() {
+  let desiredTouchPercentage = document.querySelector("#touchSize").value;
+  document.querySelectorAll(".touch-overlay-dpad").forEach(function(e) {
+    e.style.width = desiredTouchPercentage + "%";
+  });
+  document.querySelectorAll(".touch-overlay-buttons").forEach(function(e) {
+    e.style.width = desiredTouchPercentage + "%";
+  });
+}
+
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#testId", null);
@@ -74,6 +108,10 @@ async function onready() {
   document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);
   document.querySelector("#volume").addEventListener("change", collect_and_set_volume);
   document.querySelector("#volume").addEventListener("input", collect_and_set_volume);
+
+  document.querySelector("#touchToggle").addEventListener("click", toggle_touch_controls);
+  document.querySelector("#touchSize").addEventListener("change", resize_touch_controls);
+  document.querySelector("#touchSize").addEventListener("input", resize_touch_controls);
 
   window.setInterval(update_click_to_play_overlays, 100);
 
