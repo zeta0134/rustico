@@ -1,4 +1,6 @@
 import rustico from "./rustico.js";
+import keyboard_input from "./keyboard_input.js";
+
 // Mostly for ease of debugging
 window.rustico = rustico;
 
@@ -43,14 +45,20 @@ function collect_and_set_volume() {
     rustico.set_volume(desiredVolume);
 }
 
+// TODO: combine several input sources!
+function set_keys(p1_keys, p2_keys) {
+  rustico.set_p1_keys(p1_keys);
+  rustico.set_p2_keys(p2_keys);
+}
+
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#testId", null);
+  keyboard_input.onchange(set_keys);
 
   document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);
   document.querySelector("#volume").addEventListener("change", collect_and_set_volume);
   document.querySelector("#volume").addEventListener("input", collect_and_set_volume);
-
 
   window.setInterval(update_click_to_play_overlays, 100);
 
