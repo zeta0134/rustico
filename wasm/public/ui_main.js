@@ -108,10 +108,12 @@ async function onready() {
   document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);
   document.querySelector("#volume").addEventListener("change", collect_and_set_volume);
   document.querySelector("#volume").addEventListener("input", collect_and_set_volume);
+  document.querySelector("#volume").value = 100; // TODO: load this from settings!
 
   document.querySelector("#touchToggle").addEventListener("click", toggle_touch_controls);
   document.querySelector("#touchSize").addEventListener("change", resize_touch_controls);
   document.querySelector("#touchSize").addEventListener("input", resize_touch_controls);
+  document.querySelector("#touchSize").value = 25; // TODO: load this from settings!
 
   window.setInterval(update_click_to_play_overlays, 100);
 

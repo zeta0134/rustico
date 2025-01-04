@@ -142,8 +142,6 @@
   bottom: 0px;
   left: 0px;
   aspect-ratio: 1 / 1.2;
-
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .touch-controls-active.touch-overlay-dpad {
@@ -159,8 +157,6 @@
   bottom: 0px;
   right: 0px;
   aspect-ratio: 1 / 1.2;
-
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .touch-controls-active.touch-overlay-buttons {
