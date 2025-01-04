@@ -15,10 +15,17 @@ body, html {
 	overflow: hidden;
 }
 
+.ui-panel {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	/* We're gonna default to scrollable for the general case, some specific panels might override this
+	   if it's being particularly dumb. The main gameplay panels shouldn't need to scroll ever. */
+	overflow: scroll;
+}
+
 .canvas-container {
 	margin: 0 auto;
-	width: 512px;
-	height: 480px;
 }
 
 .canvas-container canvas {

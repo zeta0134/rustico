@@ -2,6 +2,10 @@
 <html>
 <head>
   <title>Rustico</title>
+  <!-- Hint to mobile browsers that we should disable tap to zoom and other shortcuts, as they
+       are too easy to trigger on accident with touch-based controls. We will compensate for this
+       with user-selectable text size and do our best to respect other accessibility hints. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
   <link rel="shortcut icon" type="image/png" href="favicon.png"/>
   <link href="./style.css" rel="stylesheet">
   <link href="./touch_input.css" rel="stylesheet">
@@ -9,9 +13,11 @@
   <script type="module" src="./ui_main.js"></script>
 </head>
 <body>
-  <div class="canvas-container inactive">
-    <img src="./click_to_play.png" alt="Click To Play" />
-    <canvas id="testId" width="256" height="240"></canvas>
+  <div id="gameplay-panel" class="ui-panel">
+    <div class="canvas-container inactive">
+      <img src="./click_to_play.png" alt="Click To Play" />
+      <canvas id="testId" width="256" height="240"></canvas>
+    </div>
   </div>
 
   <div class="touch-overlay-dpad touch-controls-active">

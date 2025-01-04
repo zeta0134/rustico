@@ -90,6 +90,45 @@ function resize_touch_controls() {
   });
 }
 
+function set_main_canvas_size() {
+  // Grab the reported width/height of our container element
+  let panelRect = document.querySelector("#gameplay-panel").getBoundingClientRect();
+  let canvasElement = document.querySelector("#gameplay-panel .canvas-container");
+  // Also grab the device pixel ratio for DPI purposes, which we'll try to use to obtain
+  // a pixel-perfect canvas size no matter the device
+  let devicePixelRatio = window.devicePixelRatio;
+
+  console.log("rect dims: ", panelRect.width, panelRect.height);
+  console.log("DPR: ", devicePixelRatio);
+
+  // We want the largest integer multiple, in device pixels, that we can actually accomodate
+  let canvasWidthsThatWouldFit = panelRect.width * devicePixelRatio / 256.0;
+  let canvasHeightsThatWouldFit = panelRect.height * devicePixelRatio / 240.0;
+
+  console.log("We think this many would fit:", canvasWidthsThatWouldFit, canvasHeightsThatWouldFit);
+
+  // Special case: if either of these is 0, we are on an unusually small device and must cheat
+  if (canvasWidthsThatWouldFit < 1.0 || canvasHeightsThatWouldFit < 1.0) {
+    console.log("Special case reached!");
+    // Which axis is constraining us the most?
+    if (canvasWidthsThatWouldFit < canvasHeightsThatWouldFit) {
+      // Size to the available width
+      canvasElement.width = panelRect.width / devicePixelRatio;
+      canvasElement.height = (panelRect.width / 256.0) * 240.0 / devicePixelRatio;
+    } else {
+      // Size to the available height
+      canvasElement.height = panelRect.height / devicePixelRatio;
+      canvasElement.width = (panelRect.height / 240.0) * 256.0 / devicePixelRatio;
+    }
+    return;
+  }
+  // Otherwise, clamp to the smallest integer size, and use that as our scaling value
+  let scalingValue = Math.floor(Math.min(canvasWidthsThatWouldFit, canvasHeightsThatWouldFit));
+  console.log("picked scaling value: ", scalingValue);
+  canvasElement.style.width = (256.0 * scalingValue / devicePixelRatio) + "px";
+  canvasElement.style.height = (240.0 * scalingValue / devicePixelRatio) + "px";
+}
+
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#testId", null);
@@ -114,6 +153,9 @@ async function onready() {
   document.querySelector("#touchSize").addEventListener("change", resize_touch_controls);
   document.querySelector("#touchSize").addEventListener("input", resize_touch_controls);
   document.querySelector("#touchSize").value = 25; // TODO: load this from settings!
+
+  set_main_canvas_size();
+  window.addEventListener("resize", set_main_canvas_size);
 
   window.setInterval(update_click_to_play_overlays, 100);
 
