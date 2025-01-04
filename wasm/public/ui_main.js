@@ -67,7 +67,8 @@ async function onready() {
   touch_input.register_button("#button_select");
   touch_input.register_button("#button_start");
   touch_input.register_d_pad("#d_pad");
-  touch_input.initialize_touch(".touch-overlay");
+  touch_input.initialize_touch(".touch-overlay-dpad");
+  touch_input.initialize_touch(".touch-overlay-buttons");
   touch_input.onchange(set_keys);
 
   document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);

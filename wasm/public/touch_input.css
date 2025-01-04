@@ -41,22 +41,14 @@
   background-color: #555555;
   border:  5px solid #222222;
   border-radius:  10%;
-  width:  calc(40% - 5px);
-  height: calc(100% - 5px);
+  width:  calc(60% - 5px);
+  height: calc(75% - 5px);
+  top: 12.5%;
+  left: 20%;
 }
 
 .rectangle.active {
   background-color: #cccccc;
-}
-
-#button_select {
-  top: 0%;
-  left: 0%;
-}
-
-#button_start {
-  top: 0%;
-  left: 60%;
 }
 
 .d-pad-button {
@@ -79,15 +71,12 @@
 .round-button-area {
   display:  none;
   position: absolute;
-  bottom: 2%;
-  right:  2%;
-  width:  20%;
+  bottom: 8.333%;
+  right:  10%;
+  width:  80%;
   height:  auto;
 
   aspect-ratio: 20 / 15;
-
-  pointer-events: auto;
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .touch-controls-active .round-button-area {
@@ -97,16 +86,12 @@
 .pill-button-area {
   display:  none;
   position: absolute;
-  width:  25%;
+  width:  100%;
   height:  auto;
   aspect-ratio: 5 / 1;
 
-  bottom:  4%;
-  left:  50%;
-  margin-left:  -12.5%;
-
-  pointer-events: auto;
-  background-color: rgba(255, 255, 255, 0.1);
+  bottom:  83.333%;
+  left:  0%;
 }
 
 .touch-controls-active .pill-button-area {
@@ -117,14 +102,11 @@
   display:  none;
   position: absolute;
 
-  left: 2%;
-  bottom: 2%;
-  width: 20%;
+  left: 10%;
+  bottom: 8.333%;
+  width: 80%;
   height: auto;
   aspect-ratio: 1 / 1;
-
-  pointer-events: auto;
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .touch-controls-active .dpad-area {
@@ -151,11 +133,24 @@
   left: calc(200% / 3);
 }
 
-.touch-overlay {
+.touch-overlay-dpad {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0px;
+  width: 25%;
+  height: auto;
+  bottom: 0px;
   left: 0px;
-  pointer-events: none;
+  aspect-ratio: 1 / 1.2;
+
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.touch-overlay-buttons {
+  position: absolute;
+  width: 25%;
+  height: auto;
+  bottom: 0px;
+  right: 0px;
+  aspect-ratio: 1 / 1.2;
+
+  background-color: rgba(255, 255, 255, 0.1);
 }

@@ -239,6 +239,8 @@ function handleTouches(touches, event) {
     // a new one. If so, activate it
     if (pruned_touches[touch.identifier].button == null) {
       for (let button_element of touch_button_elements) {
+      	// TODO: this radial check is really inappropriate for boxes. Write a box specific
+      	// check to handle the rectangle regions.
         if (is_inside_button(touch, button_element)) {
           pruned_touches[touch.identifier].button = button_element.id;
           event.preventDefault();
