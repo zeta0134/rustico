@@ -1,0 +1,161 @@
+/* Simple shapes for drawing the touch controls.
+   Later we should either spruce these up or replace the
+   CSS art with better looking images
+ */
+.circle {
+  position: absolute;
+  background-color: #FF0000;
+  border:  5px solid #551111;
+  border-radius:  50%;
+  width:  calc(45% - 5px);
+  height:  auto;
+  aspect-ratio: 1 / 1;
+}
+
+.circle.small {
+  width:  calc(25% - 5px);
+  background-color:  #EE2200;
+}
+
+.circle.active {
+  background-color: #FF8888;
+}
+
+#button_b {
+  top: 25%;
+  left: 0%;
+}
+
+#button_a {
+  top: 0%;
+  left: 55%;
+}
+
+#button_ab {
+  top: 26.25%;
+  left: 37.5%;
+}
+
+.rectangle {
+  position: absolute;
+  background-color: #555555;
+  border:  5px solid #222222;
+  border-radius:  10%;
+  width:  calc(40% - 5px);
+  height: calc(100% - 5px);
+}
+
+.rectangle.active {
+  background-color: #cccccc;
+}
+
+#button_select {
+  top: 0%;
+  left: 0%;
+}
+
+#button_start {
+  top: 0%;
+  left: 60%;
+}
+
+.d-pad-button {
+  background-color: #222222;
+  border:  5px solid #111111;
+  border-radius:  10%;
+
+  position: absolute;
+  width: calc(33% - 5px);
+  height: calc(33% - 5px);
+}
+
+.d-pad-button.active {
+  background-color: #666666;
+}
+
+/* Containers to PUT the button bits in */
+/* TODO: guard these on touch being detected */
+
+.round-button-area {
+  display:  none;
+  position: absolute;
+  bottom: 2%;
+  right:  2%;
+  width:  20%;
+  height:  auto;
+
+  aspect-ratio: 20 / 15;
+
+  pointer-events: auto;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.touch-controls-active .round-button-area {
+  display:  block;
+}
+
+.pill-button-area {
+  display:  none;
+  position: absolute;
+  width:  25%;
+  height:  auto;
+  aspect-ratio: 5 / 1;
+
+  bottom:  4%;
+  left:  50%;
+  margin-left:  -12.5%;
+
+  pointer-events: auto;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.touch-controls-active .pill-button-area {
+  display:  block;
+}
+
+.dpad-area {
+  display:  none;
+  position: absolute;
+
+  left: 2%;
+  bottom: 2%;
+  width: 20%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+
+  pointer-events: auto;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.touch-controls-active .dpad-area {
+  display:  block;
+}
+
+#d_pad_up {
+  top: 0%;
+  left: calc(100% / 3);
+}
+
+#d_pad_down {
+  top: 67%;
+  left: calc(100% / 3);
+}
+
+#d_pad_left {
+  top: calc(100% / 3);
+  left: 0%;
+}
+
+#d_pad_right {
+  top: calc(100% / 3);
+  left: calc(200% / 3);
+}
+
+.touch-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  left: 0px;
+  pointer-events: none;
+}

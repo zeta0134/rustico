@@ -1,5 +1,6 @@
 import rustico from "./rustico.js";
 import keyboard_input from "./keyboard_input.js";
+import touch_input from "./touch_input.js";
 
 // Mostly for ease of debugging
 window.rustico = rustico;
@@ -46,15 +47,28 @@ function collect_and_set_volume() {
 }
 
 // TODO: combine several input sources!
-function set_keys(p1_keys, p2_keys) {
+function set_keys() {
+  let p1_keys = keyboard_input.p1_keys() | touch_input.p1_keys();
+  let p2_keys = keyboard_input.p2_keys() | touch_input.p2_keys();
   rustico.set_p1_keys(p1_keys);
   rustico.set_p2_keys(p2_keys);
+
+  console.log("new p1 keys", p1_keys);
 }
 
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#testId", null);
   keyboard_input.onchange(set_keys);
+
+  touch_input.register_button("#button_a");
+  touch_input.register_button("#button_b");
+  touch_input.register_button("#button_ab");
+  touch_input.register_button("#button_select");
+  touch_input.register_button("#button_start");
+  touch_input.register_d_pad("#d_pad");
+  touch_input.initialize_touch(".touch-overlay");
+  touch_input.onchange(set_keys);
 
   document.querySelector(".canvas-container").addEventListener("click", rustico.try_to_start_audio);
   document.querySelector("#volume").addEventListener("change", collect_and_set_volume);

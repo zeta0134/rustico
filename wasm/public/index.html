@@ -4,15 +4,33 @@
   <title>Rustico</title>
   <link rel="shortcut icon" type="image/png" href="favicon.png"/>
   <link href="./style.css" rel="stylesheet">
+  <link href="./touch_input.css" rel="stylesheet">
   <meta charset="utf-8">
   <script type="module" src="./ui_main.js"></script>
 </head>
 <body>
-  <h1>Hello World!</h1>
+  <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
   <div class="canvas-container inactive">
     <img src="./click_to_play.png" alt="Click To Play" />
     <canvas id="testId" width="256" height="240"></canvas>
   </div>
-  <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
+
+  <div class="touch-overlay touch-controls-active">
+    <div class="round-button-area">
+      <div id="button_b" class="circle"></div>
+      <div id="button_a" class="circle"></div>
+      <div id="button_ab" class="small circle"></div>
+    </div>
+    <div class="pill-button-area horizontal">
+      <div id="button_select" class="rectangle"></div>
+      <div id="button_start" class="rectangle"></div>
+    </div>
+    <div id="d_pad" class="dpad-area">
+      <div id="d_pad_up"    class="d-pad-button"></div>
+      <div id="d_pad_down"  class="d-pad-button"></div>
+      <div id="d_pad_left"  class="d-pad-button"></div>
+      <div id="d_pad_right" class="d-pad-button"></div>
+    </div>
+  </div>
 </body>
 </html>

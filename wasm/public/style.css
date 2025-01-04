@@ -1,4 +1,22 @@
+body, html {
+	position: relative;
+	color: #DDDDDD;
+	background-color: #000000;
+
+	margin: 0px;
+	padding: 0px;
+	/* Fallback for older browsers */
+	width: 100%;
+	height: 100%;
+	/* Try to fill out the real viewport on mobile without scrolling */
+	width: 100dvw;
+	height: 100dvh;
+
+	overflow: hidden;
+}
+
 .canvas-container {
+	margin: 0 auto;
 	width: 512px;
 	height: 480px;
 }
