@@ -13,10 +13,18 @@
   <script type="module" src="./ui_main.js"></script>
 </head>
 <body>
-  <div id="gameplay-panel" class="ui-panel">
+  <div id="gameplay-panel" class="ui-panel active">
     <div class="canvas-container inactive">
       <img src="./click_to_play.png" alt="Click To Play" />
-      <canvas id="testId" width="256" height="240"></canvas>
+      <canvas id="mainGameplayCanvas" width="256" height="240"></canvas>
+    </div>
+  </div>
+  <div id="settings-panel" class="ui-panel">
+    <div class="centered-panel">
+      <label for="volume">Output Volume</label>
+      <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
+      <label for="volume">Touch Control Scale</label>
+      <input type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
     </div>
   </div>
 
@@ -42,12 +50,18 @@
     </div>
   </div>
 
-  <div class="menu-overlay">
-    <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
+  <div class="main-menu active">
+    <button id="switchToGameplay" class="active">📺 Play</button>
+    <button id="switchToSettings">⚙️ Settings</button>
   </div>
-  <div class="touch-toggle-overlay touch-controls-active">
-    <input type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
-    <button id="touchToggle">🎮</button>
+
+  <div class="top-bar">
+    <div class="menu-overlay">
+      <button id="menuToggle">🍔</button>
+    </div>
+    <div class="touch-toggle-overlay touch-controls-active">
+      <button id="touchToggle">🎮</button>
+    </div>
   </div>
 </body>
 </html>

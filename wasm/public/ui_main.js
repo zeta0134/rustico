@@ -129,9 +129,44 @@ function set_main_canvas_size() {
   canvasElement.style.height = (240.0 * scalingValue / devicePixelRatio) + "px";
 }
 
+function closeAllPanels() {
+  document.querySelectorAll(".ui-panel").forEach(function(e) {
+    e.classList.remove("active");
+  });
+  document.querySelectorAll(".main-menu button").forEach(function(e) {
+    e.classList.remove("active");
+  });
+}
+
+function switchToPanel(panel, button) {
+  closeAllPanels();
+  document.querySelector(panel).classList.add("active");
+  document.querySelector(button).classList.add("active");
+}
+
+function switchToGameplay() {
+  switchToPanel("#gameplay-panel", "#switchToGameplay");
+  rustico.set_active_panels("#mainGameplayCanvas", null);
+  hide_main_menu();
+}
+
+function switchToSettings() {
+  switchToPanel("#settings-panel", "#switchToSettings");
+  rustico.set_active_panels(null, null);
+  hide_main_menu();
+}
+
+function hide_main_menu() {
+  document.querySelector(".main-menu").classList.remove("active");
+}
+
+function toggle_main_menu() {
+  document.querySelector(".main-menu").classList.toggle("active");
+}
+
 async function onready() {
   await rustico.init();
-  rustico.set_active_panels("#testId", null);
+  rustico.set_active_panels("#mainGameplayCanvas", null);
   keyboard_input.onchange(set_keys);
 
   touch_input.register_button("#button_a");
@@ -150,9 +185,13 @@ async function onready() {
   document.querySelector("#volume").value = 100; // TODO: load this from settings!
 
   document.querySelector("#touchToggle").addEventListener("click", toggle_touch_controls);
+  document.querySelector("#menuToggle").addEventListener("click", toggle_main_menu);
   document.querySelector("#touchSize").addEventListener("change", resize_touch_controls);
   document.querySelector("#touchSize").addEventListener("input", resize_touch_controls);
   document.querySelector("#touchSize").value = 25; // TODO: load this from settings!
+
+  document.querySelector("#switchToGameplay").addEventListener("click", switchToGameplay);
+  document.querySelector("#switchToSettings").addEventListener("click", switchToSettings);
 
   set_main_canvas_size();
   window.addEventListener("resize", set_main_canvas_size);
