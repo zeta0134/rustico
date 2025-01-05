@@ -41,10 +41,10 @@
   background-color: #555555;
   border:  5px solid #222222;
   border-radius:  10%;
-  width:  calc(60% - 5px);
+  width:  calc(50% - 5px);
   height: calc(75% - 5px);
   top: 12.5%;
-  left: 20%;
+  left: 25%;
 }
 
 .rectangle.active {
@@ -88,9 +88,9 @@
   position: absolute;
   width:  100%;
   height:  auto;
-  aspect-ratio: 5 / 1;
+  aspect-ratio: 3 / 1;
 
-  bottom:  83.333%;
+  bottom:  100%;
   left:  0%;
 }
 
