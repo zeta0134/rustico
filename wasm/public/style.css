@@ -12,6 +12,9 @@ body, html {
 	width: 100dvw;
 	height: 100dvh;
 
+	/* please, no serif */
+	font-family: sans-serif;
+
 	overflow: hidden;
 }
 
@@ -157,4 +160,10 @@ body, html {
 
 .touch-toggle-overlay.touch-controls-active input {
 	display: inline;
+}
+
+.centered-panel label {
+	display: inline-block;
+	width: 20%;
+	text-align: right;
 }

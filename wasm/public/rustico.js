@@ -269,7 +269,7 @@ async function load_sram() {
       if (sram_str) {
         var sram = JSON.parse(sram_str);
         await rpc("set_sram", [sram]);
-        console.log("SRAM Loaded!", g_game_checksum);
+        //console.log("SRAM Loaded!", g_game_checksum);
       }
     } catch(e) {
       console.log("Local Storage is probably unavailable! SRAM saving and loading will not work.");
@@ -288,7 +288,7 @@ async function save_sram() {
           sram[i] = sram_uint8[i];
         }
         window.localStorage.setItem(g_game_checksum, JSON.stringify(sram));
-        console.log("SRAM Saved!", g_game_checksum);
+        //console.log("SRAM Saved!", g_game_checksum);
       } catch(e) {
         console.log("Local Storage is probably unavailable! SRAM saving and loading will not work.");
       }
@@ -374,9 +374,9 @@ rustico.set_p2_keys = function(key_state) {
 
 rustico.load_cartridge = async function(cart_data) {
   save_sram();
-  console.log("Attempting to load cart with length: ", cart_data.length);
+  //console.log("Attempting to load cart with length: ", cart_data.length);
   await rpc("load_cartridge", [cart_data]);
-  console.log("Cart data loaded?");
+  //console.log("Cart data loaded?");
   
   g_game_checksum = crc32(cart_data);
   load_sram();

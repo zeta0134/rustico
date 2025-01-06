@@ -9,6 +9,12 @@ const KEY_DOWN = 32
 const KEY_LEFT = 64
 const KEY_RIGHT = 128
 
+const DEFAULT_DPAD_INNER_DEADZONE_PERCENT = 0.25;
+const DEFAULT_DPAD_EXTRA_RADIUS_PERCENT = 0.10;
+const DEFAULT_DPAD_STICKY_DEGREES = 5;
+const DEFAULT_DPAD_CARDINAL_PRIORITY_DEGREES = 10;
+const DEFAULT_TOUCH_CONTROLS_SIZE = 25;
+
 const BUTTON_MAPPING = {
   "button_a": KEY_A,
   "button_b": KEY_B,
@@ -35,10 +41,11 @@ var active_touches = {};
 
 const stickiness_radius = 5; // pixels, ish
 
-const dpad_inner_deadzone_percent = 0.25;
-const dpad_extra_radius_percent = 0.10;
-const dpad_sticky_degrees = 5;
-const dpad_cardinal_priority_degrees = 10;
+touch_input.dpad_inner_deadzone_percent = DEFAULT_DPAD_INNER_DEADZONE_PERCENT;
+touch_input.dpad_extra_radius_percent = DEFAULT_DPAD_EXTRA_RADIUS_PERCENT;
+touch_input.dpad_sticky_degrees = DEFAULT_DPAD_STICKY_DEGREES;
+touch_input.dpad_cardinal_priority_degrees = DEFAULT_DPAD_CARDINAL_PRIORITY_DEGREES;
+touch_input.touch_controls_size = DEFAULT_TOUCH_CONTROLS_SIZE;
 
 // Relative to the viewport
 function element_centerpoint(element) {
@@ -96,8 +103,8 @@ function is_stuck_to_button(touch, element) {
 function is_inside_dpad(touch, element) {
   let [cx, cy] = element_centerpoint(element);
   let base_radius = element_radius(element) + stickiness_radius;
-  let outer_radius = base_radius + (base_radius * dpad_extra_radius_percent);
-  let deadzone_radius = base_radius * dpad_inner_deadzone_percent;
+  let outer_radius = base_radius + (base_radius * touch_input.dpad_extra_radius_percent);
+  let deadzone_radius = base_radius * touch_input.dpad_inner_deadzone_percent;
   let tx = touch.clientX;
   let ty = touch.clientY;
   let dx = tx - cx;
@@ -112,45 +119,52 @@ function is_sticky_dpad(angle) {
   // (ordered counter-clockwise, starting with 0 degrees "east")
 
   // East is split along the X axis
-  if (angle < (22.5 + dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle < (22.5 + touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
-  if (angle > (337.5 - dpad_cardinal_priority_degrees + dpad_sticky_degrees)) {
+  if (angle > (337.5 - touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // North East
-  if (angle > (22.5 + dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (67.5 - dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (22.5 + touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees) && 
+      angle < (67.5 - touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // North
-  if (angle > (67.5 - dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (112.5 + dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (67.5 - touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees) && 
+      angle < (112.5 + touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // North West
-  if (angle > (112.5 + dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (157.5 - dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (112.5 + touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees) && 
+      angle < (157.5 - touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // West
-  if (angle > (157.5 - dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (202.5 + dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (157.5 - touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees) && 
+      angle < (202.5 + touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // South West
-  if (angle > (202.5 + dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (247.5 - dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (202.5 + touch_input.dpad_cardinal_priority_degrees + dpad_sticky_degrees) && 
+      angle < (247.5 - touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // South
-  if (angle > (247.5 - dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (292.5 + dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (247.5 - touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees) && 
+      angle < (292.5 + touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
   // South East
-  if (angle > (292.5 + dpad_cardinal_priority_degrees + dpad_sticky_degrees) && angle < (337.5 - dpad_cardinal_priority_degrees - dpad_sticky_degrees)) {
+  if (angle > (292.5 + touch_input.dpad_cardinal_priority_degrees + touch_input.dpad_sticky_degrees) && 
+      angle < (337.5 - touch_input.dpad_cardinal_priority_degrees - touch_input.dpad_sticky_degrees)) {
     return false;
   }
 
@@ -383,6 +397,37 @@ touch_input.p2_keys = function() {
 
 touch_input.onchange = function(callback) {
 	onchange_callback = callback;
+}
+
+touch_input.init_settings = function() {
+  touch_input.load_settings(); // initializes defaults
+  touch_input.save_settings(); // populates those defaults to localStorage
+}
+
+touch_input.load_settings = function() {
+  touch_input.dpad_inner_deadzone_percent = JSON.parse(window.localStorage.getItem(
+    "touch_input.dpad_inner_deadzone_percent")) || DEFAULT_DPAD_INNER_DEADZONE_PERCENT;
+  touch_input.dpad_extra_radius_percent = JSON.parse(window.localStorage.getItem(
+    "touch_input.dpad_extra_radius_percent")) || DEFAULT_DPAD_EXTRA_RADIUS_PERCENT;
+  touch_input.dpad_sticky_degrees = JSON.parse(window.localStorage.getItem(
+    "touch_input.dpad_sticky_degrees")) || DEFAULT_DPAD_STICKY_DEGREES;
+  touch_input.dpad_cardinal_priority_degrees = JSON.parse(window.localStorage.getItem(
+    "touch_input.dpad_cardinal_priority_degrees")) || DEFAULT_DPAD_CARDINAL_PRIORITY_DEGREES;
+  touch_input.touch_controls_size = JSON.parse(window.localStorage.getItem(
+    "touch_input.touch_controls_size")) || DEFAULT_TOUCH_CONTROLS_SIZE;
+}
+
+touch_input.save_settings = function() {
+  window.localStorage.setItem("touch_input.dpad_inner_deadzone_percent",
+    JSON.stringify(touch_input.dpad_inner_deadzone_percent));
+  window.localStorage.setItem("touch_input.dpad_extra_radius_percent",
+    JSON.stringify(touch_input.dpad_extra_radius_percent));
+  window.localStorage.setItem("touch_input.dpad_sticky_degrees",
+    JSON.stringify(touch_input.dpad_sticky_degrees));
+  window.localStorage.setItem("touch_input.dpad_cardinal_priority_degrees",
+    JSON.stringify(touch_input.dpad_cardinal_priority_degrees));
+  window.localStorage.setItem("touch_input.touch_controls_size",
+    JSON.stringify(touch_input.touch_controls_size));
 }
 
 export default touch_input;

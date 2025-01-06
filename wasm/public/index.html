@@ -21,10 +21,25 @@
   </div>
   <div id="settings-panel" class="ui-panel">
     <div class="centered-panel">
-      <label for="volume">Output Volume</label>
-      <input type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
-      <label for="volume">Touch Control Scale</label>
-      <input type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
+      <h3>Audio</h3>
+      <p>
+        <label for="volume">Output Volume:</label>
+        <input 
+          type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
+      </p>
+      <h3>Touch Controls</h3>
+      <p>
+        <label for="volume">Size:</label>
+        <input 
+          class="persistent-setting-number" data-field="touch_input.touch_controls_size" 
+          type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
+      </p>
+      <p>
+        <label for="volume">Cardinal Bias:</label>
+        <input 
+          class="persistent-setting-number" data-field="touch_input.dpad_cardinal_priority_degrees" 
+          type="number" id="cardinalBias" name="touchSize" min="-22.5" max="22.5" value="10" step="0.5" />
+      </p>
     </div>
   </div>
 
@@ -50,7 +65,7 @@
     </div>
   </div>
 
-  <div class="main-menu active">
+  <div class="main-menu">
     <button id="switchToGameplay" class="active">📺 Play</button>
     <button id="switchToSettings">⚙️ Settings</button>
   </div>

@@ -16,7 +16,6 @@ function load_cartridge_by_url(url) {
   rawFile.responseType = "arraybuffer";
   rawFile.onreadystatechange = function() {
     if (rawFile.readyState === 4 && rawFile.status == "200") {
-      console.log(rawFile.responseType);
       let cart_data = new Uint8Array(rawFile.response);
       rustico.load_cartridge(cart_data);
     }
@@ -52,8 +51,6 @@ function set_keys() {
   let p2_keys = keyboard_input.p2_keys() | touch_input.p2_keys();
   rustico.set_p1_keys(p1_keys);
   rustico.set_p2_keys(p2_keys);
-
-  console.log("new p1 keys", p1_keys);
 }
 
 function hide_touch_controls() {
@@ -81,7 +78,7 @@ function toggle_touch_controls() {
 }
 
 function resize_touch_controls() {
-  let desiredTouchPercentage = document.querySelector("#touchSize").value;
+  let desiredTouchPercentage = touch_input.touch_controls_size
   document.querySelectorAll(".touch-overlay-dpad").forEach(function(e) {
     e.style.width = desiredTouchPercentage + "%";
   });
@@ -98,18 +95,12 @@ function set_main_canvas_size() {
   // a pixel-perfect canvas size no matter the device
   let devicePixelRatio = window.devicePixelRatio;
 
-  console.log("rect dims: ", panelRect.width, panelRect.height);
-  console.log("DPR: ", devicePixelRatio);
-
   // We want the largest integer multiple, in device pixels, that we can actually accomodate
   let canvasWidthsThatWouldFit = panelRect.width * devicePixelRatio / 256.0;
   let canvasHeightsThatWouldFit = panelRect.height * devicePixelRatio / 240.0;
 
-  console.log("We think this many would fit:", canvasWidthsThatWouldFit, canvasHeightsThatWouldFit);
-
   // Special case: if either of these is 0, we are on an unusually small device and must cheat
   if (canvasWidthsThatWouldFit < 1.0 || canvasHeightsThatWouldFit < 1.0) {
-    console.log("Special case reached!");
     // Which axis is constraining us the most?
     if (canvasWidthsThatWouldFit < canvasHeightsThatWouldFit) {
       // Size to the available width
@@ -124,7 +115,6 @@ function set_main_canvas_size() {
   }
   // Otherwise, clamp to the smallest integer size, and use that as our scaling value
   let scalingValue = Math.floor(Math.min(canvasWidthsThatWouldFit, canvasHeightsThatWouldFit));
-  console.log("picked scaling value: ", scalingValue);
   canvasElement.style.width = (256.0 * scalingValue / devicePixelRatio) + "px";
   canvasElement.style.height = (240.0 * scalingValue / devicePixelRatio) + "px";
 }
@@ -164,10 +154,43 @@ function toggle_main_menu() {
   document.querySelector(".main-menu").classList.toggle("active");
 }
 
+function initialize_persistent_settings() {
+  document.querySelectorAll(".persistent-setting-string").forEach(function(el) {
+    el.value = JSON.parse(window.localStorage.getItem(el.dataset.field));
+    el.addEventListener("change", persist_setting_string);
+    el.addEventListener("input", persist_setting_string);
+  });
+  document.querySelectorAll(".persistent-setting-number").forEach(function(el) {
+    el.valueAsNumber = JSON.parse(window.localStorage.getItem(el.dataset.field));
+    el.addEventListener("change", persist_setting_number);
+    el.addEventListener("input", persist_setting_number);
+  });
+}
+
+function persist_setting_string(e) {
+  window.localStorage.setItem(e.target.dataset.field, JSON.stringify(e.target.value));
+  apply_settings();
+}
+
+function persist_setting_number(e) {
+  window.localStorage.setItem(e.target.dataset.field, JSON.stringify(e.target.valueAsNumber));
+  apply_settings();
+}
+
+function apply_settings() {
+  // should we guard specific side effects on a datafield? reloading EVERYTHING
+  // might get expensive... but it's not like we change settings often
+  touch_input.load_settings();
+  resize_touch_controls();
+}
+
 async function onready() {
   await rustico.init();
   rustico.set_active_panels("#mainGameplayCanvas", null);
   keyboard_input.onchange(set_keys);
+
+  touch_input.init_settings();
+  initialize_persistent_settings();
 
   touch_input.register_button("#button_a");
   touch_input.register_button("#button_b");
@@ -186,9 +209,7 @@ async function onready() {
 
   document.querySelector("#touchToggle").addEventListener("click", toggle_touch_controls);
   document.querySelector("#menuToggle").addEventListener("click", toggle_main_menu);
-  document.querySelector("#touchSize").addEventListener("change", resize_touch_controls);
-  document.querySelector("#touchSize").addEventListener("input", resize_touch_controls);
-  document.querySelector("#touchSize").value = 25; // TODO: load this from settings!
+  resize_touch_controls();
 
   document.querySelector("#switchToGameplay").addEventListener("click", switchToGameplay);
   document.querySelector("#switchToSettings").addEventListener("click", switchToSettings);
