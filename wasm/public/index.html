@@ -27,13 +27,6 @@
         <input 
           type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
       </p>
-      <h3>Touch Controls</h3>
-      <p>
-        <label for="volume">Size:</label>
-        <input 
-          class="persistent-setting-number" data-field="touch_input.touch_controls_size" 
-          type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
-      </p>
       <p>
         <label for="volume">Cardinal Bias:</label>
         <input 
@@ -69,13 +62,21 @@
     <button id="switchToGameplay" class="active">📺 Play</button>
     <button id="switchToSettings">⚙️ Settings</button>
   </div>
+  <div class="touch-menu">
+    <button id="touchToggle">📺 Toggle Touch Controls</button>
+    <div class="section">⚙️ Size: 
+      <input 
+        class="persistent-setting-number" data-field="touch_input.touch_controls_size" 
+        type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
+    </div>
+  </div>
 
   <div class="top-bar">
     <div class="menu-overlay">
-      <button id="menuToggle">🍔</button>
+      <button id="menuToggle"><img src="main_menu_icon.png" alt="Main Menu" /></button>
     </div>
-    <div class="touch-toggle-overlay touch-controls-active">
-      <button id="touchToggle">🎮</button>
+    <div id="touchMenuToggle" class="touch-toggle-overlay">
+      <button ><img src="touch_controls_menu_icon.png" alt="Touch Controls" /></button>
     </div>
   </div>
 </body>

@@ -21,7 +21,7 @@ body, html {
 .top-bar {
 	position: absolute;
 	width: 100%;
-	height: 40px;
+	height: 48px;
 	top: 0px;
 	left: 0px;
 
@@ -29,26 +29,23 @@ body, html {
 }
 
 .top-bar button {
-	width: 40px;
-	height: 40px;
-	font-size: 1.5em;
-	background-color: #222;
-	border-left:   2px solid #333;
-	border-top:    2px solid #333;
-	border-right:  2px solid #111;
-	border-bottom: 2px solid #111;
+	margin: 0px;
+	padding: 0px;
+	border: none;
+	width: 48px;
+	height: 48px;
 }
 
-.top-bar button:hover {
-	background-color: #444;
+.top-bar button:hover img {
+	filter: brightness(1.5);
 }
 
 .ui-panel {
 	display: none;
 	position: relative;
 	width: 100%;
-	height: calc(100% - 40px);
-	top: 40px;
+	height: calc(100% - 48px);
+	top: 48px;
 	/* We're gonna default to scrollable for the general case, some specific panels might override this
 	   if it's being particularly dumb. The main gameplay panels shouldn't need to scroll ever. */
 	overflow: scroll;
@@ -59,7 +56,7 @@ body, html {
 }
 
 .centered-panel {
-	min-height: calc(100% - 40px);
+	min-height: calc(100% - 48px);
 	max-width: calc(980px - 40px);
 	padding: 20px;
 	margin: 0 auto;
@@ -70,12 +67,24 @@ body, html {
 	display: none;
 	position: absolute;
 	width: 200px;
-	top: 40px;
+	top: 48px;
 	left: 0%;
 	overflow: scroll;
 }
 
-.main-menu button {
+.touch-menu {
+	display: none;
+	position: absolute;
+	width: 300px;
+	top: 48px;
+	right: 0%;
+	overflow: scroll;
+}
+
+.main-menu button,
+.touch-menu button,
+.touch-menu .section
+ {
 	width: 100%;
 	text-align: left;
 	font-size: 1.5em;
@@ -84,20 +93,22 @@ body, html {
 	border: none;
 }
 
-.main-menu button:hover {
+.main-menu button:hover,
+.touch-menu button:hover {
 	background-color: #333;
 	color: #EEE;
 }
 
-
-.main-menu button.active {
+.main-menu button.active,
+.touch-menu button.active {
 	font-weight: bold;
 	background-color: #444;
 	color: #FFF;
 	border-left: 5px solid #AA33AA;
 }
 
-.main-menu.active {
+.main-menu.active,
+.touch-menu.active {
 	display: block;
 }
 

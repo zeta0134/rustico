@@ -154,6 +154,10 @@ function toggle_main_menu() {
   document.querySelector(".main-menu").classList.toggle("active");
 }
 
+function toggle_touch_menu() {
+  document.querySelector(".touch-menu").classList.toggle("active");
+}
+
 function initialize_persistent_settings() {
   document.querySelectorAll(".persistent-setting-string").forEach(function(el) {
     el.value = JSON.parse(window.localStorage.getItem(el.dataset.field));
@@ -209,6 +213,7 @@ async function onready() {
 
   document.querySelector("#touchToggle").addEventListener("click", toggle_touch_controls);
   document.querySelector("#menuToggle").addEventListener("click", toggle_main_menu);
+  document.querySelector("#touchMenuToggle").addEventListener("click", toggle_touch_menu);
   resize_touch_controls();
 
   document.querySelector("#switchToGameplay").addEventListener("click", switchToGameplay);
