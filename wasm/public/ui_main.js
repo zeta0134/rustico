@@ -219,7 +219,13 @@ async function onready() {
 
   window.setInterval(update_click_to_play_overlays, 100);
 
-  load_cartridge_by_url("tactus.nes");
+  let params = new URLSearchParams(location.search.slice(1));
+  if (params.get("cartridge")) {
+    load_cartridge_by_url(params.get("cartridge"));
+  } else {
+    // for THIS demo, default to tactus. it's fine?
+    load_cartridge_by_url("tactus.nes");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", onready);
