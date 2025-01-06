@@ -179,45 +179,52 @@ function dpad_directions(touch, element, old_directions) {
   }
 
     // East is split along the X axis
-  if (dpad_angle < (22.5 + dpad_cardinal_priority_degrees)) {
+  if (dpad_angle < (22.5 + touch_input.dpad_cardinal_priority_degrees)) {
     return ["right"];
   }
-  if (dpad_angle > (337.5 - dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (337.5 - touch_input.dpad_cardinal_priority_degrees)) {
     return ["right"];
   }
 
   // North East
-  if (dpad_angle > (22.5 + dpad_cardinal_priority_degrees) && dpad_angle < (67.5 - dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (22.5 + touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (67.5 - touch_input.dpad_cardinal_priority_degrees)) {
     return ["up", "right"];
   }
 
   // North
-  if (dpad_angle > (67.5 - dpad_cardinal_priority_degrees) && dpad_angle < (112.5 + dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > ( 67.5 - touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (112.5 + touch_input.dpad_cardinal_priority_degrees)) {
     return ["up"];
   }
 
   // North West
-  if (dpad_angle > (112.5 + dpad_cardinal_priority_degrees) && dpad_angle < (157.5 - dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (112.5 + touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (157.5 - touch_input.dpad_cardinal_priority_degrees)) {
     return ["up", "left"];
   }
 
   // West
-  if (dpad_angle > (157.5 - dpad_cardinal_priority_degrees) && dpad_angle < (202.5 + dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (157.5 - touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (202.5 + touch_input.dpad_cardinal_priority_degrees)) {
     return ["left"];
   }
 
   // South West
-  if (dpad_angle > (202.5 + dpad_cardinal_priority_degrees) && dpad_angle < (247.5 - dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (202.5 + touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (247.5 - touch_input.dpad_cardinal_priority_degrees)) {
     return ["down", "left"];
   }
 
   // South
-  if (dpad_angle > (247.5 - dpad_cardinal_priority_degrees) && dpad_angle < (292.5 + dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (247.5 - touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (292.5 + touch_input.dpad_cardinal_priority_degrees)) {
     return ["down"];
   }
 
   // South East
-  if (dpad_angle > (292.5 + dpad_cardinal_priority_degrees) && dpad_angle < (337.5 - dpad_cardinal_priority_degrees)) {
+  if (dpad_angle > (292.5 + touch_input.dpad_cardinal_priority_degrees) && 
+      dpad_angle < (337.5 - touch_input.dpad_cardinal_priority_degrees)) {
     return ["down", "right"];
   }
 
