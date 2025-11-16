@@ -266,8 +266,8 @@ impl Mapper for Mmc3 {
                                 3 => self.chr1_bank_3 = data as usize,
                                 4 => self.chr1_bank_4 = data as usize,
                                 5 => self.chr1_bank_5 = data as usize,
-                                6 => self.prg_bank_6  = (data & 0b0011_1111) as usize,
-                                7 => self.prg_bank_7  = (data & 0b0011_1111) as usize,
+                                6 => self.prg_bank_6  = (data & 0b1111_1111) as usize,
+                                7 => self.prg_bank_7  = (data & 0b1111_1111) as usize,
                                 _ => (),
                             }
                         },
