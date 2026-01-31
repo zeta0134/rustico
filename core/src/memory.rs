@@ -204,6 +204,13 @@ pub fn write_byte(nes: &mut NesState, address: u16, data: u8) {
                 // PPU MASK
                 1 => {
                     nes.ppu.mask = data;
+
+                    if !nes.ppu.rendering_enabled() {
+                        // Perform a dummy access immediately, to simulte the behavior of the PPU
+                        // address lines changing, so the mapper can react accordingly
+                        let address = nes.ppu.current_vram_address;
+                        nes.mapper.access_ppu(address);
+                    }
                 },
                 // PPUSTATUS is read-only
                 // OAM ADDRESS
