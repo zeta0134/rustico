@@ -38,7 +38,7 @@ impl From<std::io::Error> for INesError {
 
 #[derive(Copy, Clone)]
 pub struct INesHeader {
-    raw_bytes: [u8; 16]
+    pub raw_bytes: [u8; 16]
 }
 
 // header byte constants

@@ -22,8 +22,6 @@ impl Nrom {
         let prg_ram_block = ines.prg_ram_block()?;
         let chr_block = ines.chr_block()?;
 
-        println!("NROM Mirroring Mode: {}", mirroring_mode_name(ines.header.mirroring()));
-
         return Ok(Nrom {
             prg_rom: prg_rom_block.clone(),
             prg_ram: prg_ram_block.clone(),

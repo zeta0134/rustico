@@ -7,6 +7,7 @@ use mmc::fme7::Fme7;
 use mmc::fds::FdsMapper;
 use mmc::gxrom::GxRom;
 use mmc::ines31::INes31;
+use mmc::magic::MagicFloor;
 use mmc::mmc1::Mmc1;
 use mmc::mmc3::Mmc3;
 use mmc::mmc5::Mmc5;
@@ -46,6 +47,7 @@ fn mapper_from_ines(ines: INesCartridge) -> Result<Box<dyn Mapper>, String> {
         66 => Box::new(GxRom::from_ines(ines)?),
         69 => Box::new(Fme7::from_ines(ines)?),
         85 => Box::new(Vrc7::from_ines(ines)?),
+        218 => Box::new(MagicFloor::from_ines(ines)?),
         682 => Box::new(Rainbow::from_ines(ines)?),
         _ => {
             return Err(format!("Unsupported iNES mapper: {}", ines.header.mapper_number()));
