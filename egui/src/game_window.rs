@@ -116,7 +116,10 @@ impl GameWindow {
         let _ = runtime_tx.send(cartridge_load_event);
     }
 
-    pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState, runtime_tx: &mut Sender<events::Event>) {
+    pub fn update(&mut self, ctx: &egui::Context, settings: &SettingsState, runtime_tx: &mut Sender<events::Event>) -> Vec<ShellEvent> {
+        let statusbar_thing = format!("Frames queued: {:?}", self.last_rendered_frames.len());
+
+        let mut shell_events: Vec<ShellEvent> = Vec::new();
         self.process_rendered_frames();
 
         egui::TopBottomPanel::top("game_window_top_panel").show(ctx, |ui| {
@@ -171,7 +174,11 @@ impl GameWindow {
                         }
                     });
                     ui.separator();
-                    if ui.button("Preferences").clicked() {
+                    if ui.button("Configure Input...").clicked() {
+                        shell_events.push(ShellEvent::ToggleInputWindowShown);
+                        ui.close_menu();
+                    }
+                    if ui.button("Preferences...").clicked() {
                         ui.close_menu();
                     }
                 });
@@ -197,6 +204,12 @@ impl GameWindow {
             });
         });
 
+        egui::TopBottomPanel::bottom("game_window_bottom_panel").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.label(statusbar_thing);
+            });
+        });
+
         let game_window_width = (self.texture_handle.size()[0] * self.game_window_scale) as f32;
         let game_window_height = (self.texture_handle.size()[1] * self.game_window_scale) as f32;
         egui::CentralPanel::default().frame(egui::Frame::none()).show(ctx, |ui| {
@@ -209,11 +222,13 @@ impl GameWindow {
             );
         });
 
-        let menubar_height = ctx.style().spacing.interact_size[1];
+        let menubar_height = ctx.style().spacing.interact_size[1] + 6.0;
         ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([
             game_window_width, 
-            game_window_height + menubar_height].into()));
+            game_window_height + menubar_height + menubar_height].into()));
         ctx.request_repaint();
+
+        return shell_events;
     }
 }
 

@@ -240,7 +240,7 @@ hidden = true
 
 "###;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SettingsState {
     pub root: Value
 }

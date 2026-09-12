@@ -788,6 +788,7 @@ impl Rainbow {
         // If we go 3 CPU reads without any PPU access, assume rendering has stopped
         if self.cpu_cycles_since_last_ppu_read == 4 {
             self.in_frame = false;
+            self.consecutive_nametable_count = 0;
             self.in_hblank = false;
             self.ppu_read_mode = PpuMode::PpuData;
         }
@@ -795,12 +796,12 @@ impl Rainbow {
         // the scanline IRQ, if it is still pending
         if address == 0xFFFA || address == 0xFFFB {
             self.in_frame = false;
+            self.consecutive_nametable_count = 0;
             self.in_hblank = false;
             self.scanline_irq_pending = false;
             self.current_scanline = 0;
             self.ppu_read_mode = PpuMode::PpuData;
         }
-        self.scanline_jitter_counter = self.scanline_jitter_counter.wrapping_add(1);
     }
 }
 
@@ -821,6 +822,7 @@ impl Mapper for Rainbow {
         self.vrc6_pulse2.clock();
         self.vrc6_sawtooth.clock();
         self.clock_irq();
+        self.scanline_jitter_counter = self.scanline_jitter_counter.wrapping_add(1);
     }
 
     fn irq_flag(&self) -> bool {
@@ -1199,14 +1201,13 @@ impl Mapper for Rainbow {
             0x4153 => {
                 self.scanline_irq_offset = data;
             },
-            
             0x4158 => {
-                self.cpu_irq_latch &= 0b1111_1111_0000_0000;
-                self.cpu_irq_latch |= data as u16;
-            },
-            0x4159 => {
                 self.cpu_irq_latch &= 0b0000_0000_1111_1111;
                 self.cpu_irq_latch |= (data as u16) << 8;
+            },
+            0x4159 => {
+                self.cpu_irq_latch &= 0b1111_1111_0000_0000;
+                self.cpu_irq_latch |= data as u16;
             },
             0x415A => {
                 self.cpu_irq_auto_repeat = (data & 0b0000_0001) != 0;
@@ -1309,6 +1310,18 @@ impl Mapper for Rainbow {
         self.vrc6_pulse1.record_current_output();
         self.vrc6_pulse2.record_current_output();
         self.vrc6_sawtooth.record_current_output();
+    }
+
+    fn has_sram(&self) -> bool {
+        return true;
+    }
+
+    fn get_sram(&self) -> Vec<u8> {
+        return self.prg_ram.as_vec().clone();
+    }
+
+    fn load_sram(&mut self, sram_data: Vec<u8>) {
+        *self.prg_ram.as_mut_vec() = sram_data;
     }
 }
 
