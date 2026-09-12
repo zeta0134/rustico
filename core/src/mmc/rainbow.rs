@@ -47,7 +47,8 @@ pub enum ChrBankingMode {
 pub enum ChrChipSelect {
     ChrRom,
     ChrRam,
-    FpgaRam
+    FpgaRam,
+    CiRam
 }
 
 #[derive(Debug,Copy,Clone)]
@@ -481,26 +482,32 @@ impl Rainbow {
     }
 
     // CHR variant of that helper for regularly banked memory (ignoring extended bg/obj)
-    fn read_banked_chr(&self, bank_number: usize, blocksize: usize, address: usize) -> Option<u8> {
+    fn read_banked_chr(&self, bank_number: usize, blocksize: usize, ppu_address: usize) -> Option<u8> {
         match self.chr_chip {
-            ChrChipSelect::ChrRom => self.chr_rom.banked_read(blocksize, bank_number, address),
-            ChrChipSelect::ChrRam => self.chr_ram.banked_read(blocksize, bank_number, address),
+            ChrChipSelect::ChrRom => self.chr_rom.banked_read(blocksize, bank_number, ppu_address),
+            ChrChipSelect::ChrRam => self.chr_ram.banked_read(blocksize, bank_number, ppu_address),
+            // when using CIRAM as patterns, Rainbow entirely ignores the mapper computed address, and instead
+            // simply passes the PPU Address in, including for CIRAM A10
+            ChrChipSelect::CiRam => self.ciram.banked_read(0x800, 0, ppu_address),
             // when using FPGA mode, banking settings are ignored, 4k mode is forced, and the
             // first 4k is mirrored to both banks
-            ChrChipSelect::FpgaRam => self.fpga_ram.banked_read(0x1000, 0, address),
+            ChrChipSelect::FpgaRam => self.fpga_ram.banked_read(0x1000, 0, ppu_address),
         }
     }
 
-    fn write_banked_chr(&mut self, bank_number: usize, blocksize: usize, address: usize, data: u8) {
+    fn write_banked_chr(&mut self, bank_number: usize, blocksize: usize, ppu_address: usize, data: u8) {
         match self.chr_chip {
             ChrChipSelect::ChrRom => {/* this space intentionally left blank */},
             ChrChipSelect::ChrRam => {
                 //println!("CHR RAM: bank:{}, blocksize:{}, [${:04X}] = ${:02X}", bank_number, blocksize, address, data);
-                self.chr_ram.banked_write(blocksize, bank_number, address, data)
+                self.chr_ram.banked_write(blocksize, bank_number, ppu_address, data)
             },
+            // when using CIRAM as patterns, Rainbow entirely ignores the mapper computed address, and instead
+            // simply passes the PPU Address in, including for CIRAM A10
+            ChrChipSelect::CiRam => self.ciram.banked_write(0x800, 0, ppu_address, data),
             // when using FPGA mode, banking settings are ignored, 4k mode is forced, and the
             // first 4k is mirrored to both banks
-            ChrChipSelect::FpgaRam => self.fpga_ram.banked_write(0x1000, 0, address, data),
+            ChrChipSelect::FpgaRam => self.fpga_ram.banked_write(0x1000, 0, ppu_address, data),
         }
     }
 
@@ -904,12 +911,13 @@ impl Mapper for Rainbow {
                 };
                 let window_split_bit     = if self.window_split     {0b0001_0000} else {0};
                 let extended_sprites_bit = if self.extended_sprites {0b0010_0000} else {0};
-                let chip_select_bit = match self.chr_chip {
+                let chip_select_bits = match self.chr_chip {
                     ChrChipSelect::ChrRom  => 0b0000_0000,
                     ChrChipSelect::ChrRam  => 0b0100_0000,
                     ChrChipSelect::FpgaRam => 0b1000_0000,
+                    ChrChipSelect::CiRam   => 0b1100_0000,
                 };
-                Some(chr_banking_bits | window_split_bit | extended_sprites_bit | chip_select_bit)
+                Some(chr_banking_bits | window_split_bit | extended_sprites_bit | chip_select_bits)
             },
 
             0x4151 => {
@@ -1115,10 +1123,12 @@ impl Mapper for Rainbow {
                 match (data & 0b1100_0000) >> 6 {
                     0b00 => self.chr_chip = ChrChipSelect::ChrRom,
                     0b01 => self.chr_chip = ChrChipSelect::ChrRam,
-                    _    => self.chr_chip = ChrChipSelect::FpgaRam
+                    0b10 => self.chr_chip = ChrChipSelect::FpgaRam,
+                    0b11 => self.chr_chip = ChrChipSelect::CiRam,
+                    _ => unreachable!()
                 };
-                println!("CHR mode: {:?}, chip: {:?}, splitwindow: {}, ext.sprites: {}", 
-                    self.chr_mode, self.chr_chip, self.window_split, self.extended_sprites);
+                //println!("CHR mode: {:?}, chip: {:?}, splitwindow: {}, ext.sprites: {}", 
+                //    self.chr_mode, self.chr_chip, self.window_split, self.extended_sprites);
             },
 
             0x4121 => {self.chr_bank_high_bits = (data & 0b0001_1111) as usize;},
