@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rustico</title>
+  <!-- Hint to mobile browsers that we should disable tap to zoom and other shortcuts, as they
+       are too easy to trigger on accident with touch-based controls. We will compensate for this
+       with user-selectable text size and do our best to respect other accessibility hints. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+  <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+  <link href="./style.css" rel="stylesheet">
+  <link href="./touch_input.css" rel="stylesheet">
+  <meta charset="utf-8">
+  <script type="module" src="./ui_main.js"></script>
+</head>
+<body>
+  <div id="gameplay-panel" class="ui-panel active">
+    <div class="canvas-container inactive">
+      <img src="./click_to_play.png" alt="Click To Play" />
+      <canvas id="mainGameplayCanvas" width="256" height="240"></canvas>
+    </div>
+  </div>
+  <div id="settings-panel" class="ui-panel">
+    <div class="centered-panel">
+      <h3>Audio</h3>
+      <p>
+        <label for="volume">Output Volume:</label>
+        <input 
+          type="range" id="volume" name="volume" min="0" max="100" value="100" step="1" />
+      </p>
+      <p>
+        <label for="volume">Cardinal Bias:</label>
+        <input 
+          class="persistent-setting-number" data-field="touch_input.dpad_cardinal_priority_degrees" 
+          type="number" id="cardinalBias" name="touchSize" min="-22.5" max="22.5" value="10" step="0.5" />
+      </p>
+    </div>
+  </div>
+
+  <div class="touch-overlay-dpad touch-controls-active">
+    <div id="d_pad" class="dpad-area">
+      <div id="d_pad_up"    class="d-pad-button"></div>
+      <div id="d_pad_down"  class="d-pad-button"></div>
+      <div id="d_pad_left"  class="d-pad-button"></div>
+      <div id="d_pad_right" class="d-pad-button"></div>
+    </div>
+    <div class="pill-button-area">
+      <div id="button_select" class="rectangle"></div>
+    </div>
+  </div>
+  <div class="touch-overlay-buttons touch-controls-active">
+    <div class="round-button-area">
+      <div id="button_b" class="circle"></div>
+      <div id="button_a" class="circle"></div>
+      <div id="button_ab" class="small circle"></div>
+    </div>
+    <div class="pill-button-area">
+      <div id="button_start" class="rectangle"></div>
+    </div>
+  </div>
+
+  <div class="main-menu">
+    <button id="switchToGameplay" class="active">📺 Play</button>
+    <button id="switchToSettings">⚙️ Settings</button>
+  </div>
+  <div class="touch-menu">
+    <button id="touchToggle">📺 Toggle Touch Controls</button>
+    <div class="section">⚙️ Size: 
+      <input 
+        class="persistent-setting-number" data-field="touch_input.touch_controls_size" 
+        type="range" id="touchSize" name="touchSize" min="10" max="50" value="25" step="1" />
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <div class="menu-overlay">
+      <button id="menuToggle"><img src="main_menu_icon.png" alt="Main Menu" /></button>
+    </div>
+    <div id="touchMenuToggle" class="touch-toggle-overlay">
+      <button ><img src="touch_controls_menu_icon.png" alt="Touch Controls" /></button>
+    </div>
+  </div>
+</body>
+</html>
