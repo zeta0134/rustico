@@ -16,3 +16,7 @@ pub mod opcode_info;
 pub mod palettes;
 pub mod ppu;
 pub mod unofficial_opcodes;
+
+pub fn version() -> &'static str {
+    option_env!("CARGO_PKG_VERSION").unwrap_or("unknown")
+}
